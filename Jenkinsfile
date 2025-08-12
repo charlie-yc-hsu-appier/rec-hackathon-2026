@@ -246,6 +246,14 @@ pipeline {
       }
     }
 
+    stage('QA system tests') {
+      steps {
+        container('golang') {
+          sh 'curl --fail --max-time 30 --connect-timeout 10 https://rec-vendor-api-stg.arepa.appier.info/healthz'
+        }
+      }
+    }
+
     stage('Remove unused docker images') {
       when {
         branch 'master'
