@@ -2,6 +2,7 @@ image:
   repository: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/rec-vendor-api
   pullPolicy: IfNotPresent
   tag: latest
+
 ingress:
   enabled: true
   annotations:
@@ -13,7 +14,7 @@ ingress:
 
   tls: rec-vendor-api-prd-tls
   rules:
-    - host: rec-vendor-api-prd.appier.co
+    - host: rec-vendor-api-prd.arepa.appier.info
 
 autoscaling:
   enabled: true
