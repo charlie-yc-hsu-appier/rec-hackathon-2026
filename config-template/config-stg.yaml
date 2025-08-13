@@ -2,6 +2,7 @@ logging:
   level: info
   format: json
   set_report_caller: true
+enable_gin_logger: true
 tracing:
   enable: true
   service_name: rec-vendor-api-stg

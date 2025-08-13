@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -38,7 +41,18 @@ func main() {
 		}
 	}()
 
-	r := gin.Default()
+	r := gin.New()
+
+	if cfg.EnableGinLogger {
+		r.Use(gin.Logger())
+	}
+
+	if cfg.Logging.Format == "json" {
+		r.Use(gin.RecoveryWithWriter(io.Discard, jsonRecoveryHandler))
+	} else {
+		r.Use(gin.Recovery())
+	}
+
 	r.GET("/healthz", controller.HealthCheck)
 
 	addr := "0.0.0.0:8080"
@@ -78,4 +92,9 @@ func initTracer(cfg tracekit.Config) func(context.Context) error {
 	}
 
 	return shutdownFunc
+}
+
+func jsonRecoveryHandler(ctx *gin.Context, recovered any) {
+	log.WithContext(ctx).WithField("stack", string(debug.Stack())).Error(fmt.Sprintf("%v", recovered))
+	ctx.AbortWithStatus(http.StatusInternalServerError)
 }

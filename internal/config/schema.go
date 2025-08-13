@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
-	Logging logkit.Config   `mapstructure:"logging"`
-	Tracing tracekit.Config `mapstructure:"tracing"`
+	Logging         logkit.Config   `mapstructure:"logging"`
+	EnableGinLogger bool            `mapstructure:"enable_gin_logger"`
+	Tracing         tracekit.Config `mapstructure:"tracing"`
 }

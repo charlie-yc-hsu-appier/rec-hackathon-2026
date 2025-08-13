@@ -2,6 +2,7 @@ logging:
   level: warn
   format: json
   set_report_caller: true
+enable_gin_logger: false
 tracing:
   enable: true
   service_name: rec-vendor-api-prd
