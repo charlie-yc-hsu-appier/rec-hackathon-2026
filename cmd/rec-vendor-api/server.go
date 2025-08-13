@@ -15,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/plaxieappier/rec-go-kit/logkit"
+	"bitbucket.org/plaxieappier/rec-go-kit/tracekit"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,12 +30,21 @@ func main() {
 	}
 	logkit.InitLogging(cfg.Logging, &logkit.BaseLogFormat{})
 
+	// Init tracer
+	shutdownFunc := initTracer(cfg.Tracing)
+	defer func() {
+		if err := shutdownFunc(context.Background()); err != nil {
+			log.Errorf("Fail to shutdown tracer provider, err: %v.", err)
+		}
+	}()
+
 	r := gin.Default()
 	r.GET("/healthz", controller.HealthCheck)
 
+	addr := "0.0.0.0:8080"
 	s := &http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: r,
+		Addr:    addr,
+		Handler: tracekit.OtelHTTPHandler(r, "vendor-api", cfg.Tracing),
 	}
 	defer func() {
 		timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -45,7 +55,7 @@ func main() {
 	}()
 	go func() {
 		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to listen and serve http server, err: %v", err)
+			log.Fatalf("Failed to listen and serve http server on %s, err: %v", addr, err)
 		}
 	}()
 
@@ -54,4 +64,18 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 	log.Info("Shutting down server ...")
+}
+
+func initTracer(cfg tracekit.Config) func(context.Context) error {
+	if !cfg.Enable {
+		return func(context.Context) error { return nil }
+	}
+
+	shutdownFunc, err := tracekit.InitProvider(cfg)
+	if err != nil {
+		log.Errorf("Fail to initialize tracer provider, err: %v", err)
+		return func(context.Context) error { return nil }
+	}
+
+	return shutdownFunc
 }
