@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path"
+	"rec-vendor-api/internal/controller"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
@@ -61,11 +63,7 @@ func main() {
 
 	// Example GIN service
 	r := gin.Default()
-	r.GET("/healthz", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "ok",
-		})
-	})
+	r.GET("/healthz", controller.HealthCheck)
 
 	s := &http.Server{
 		Addr:    "0.0.0.0:8080",
