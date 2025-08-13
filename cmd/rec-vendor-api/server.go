@@ -4,64 +4,31 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
+	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
 	"syscall"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
+	"bitbucket.org/plaxieappier/rec-go-kit/logkit"
+
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
-type Config struct {
-	Test string `mapstructure:"test"`
-}
-
-func loadConfig(configPath string, cfg *Config) error {
-	configName := path.Base(configPath)
-	ext := path.Ext(configPath)
-	dir := path.Dir(configPath)
-
-	if configPath == "" {
-		return errors.New("config path is empty")
-	}
-	if ext != ".yaml" {
-		return errors.New("only accept .yaml file")
-	}
-
-	v := viper.New()
-	v.SetConfigType("yaml")
-	v.SetConfigName(configName)
-	v.AddConfigPath(dir)
-
-	if err := v.ReadInConfig(); err != nil {
-		return err
-	}
-
-	// Unmarshal the configuration into the struct
-	if err := v.Unmarshal(cfg); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func main() {
-	// Parse config
 	var cf = flag.String("c", "", "config file")
 	flag.Parse()
 
-	cfg := &Config{}
-	if err := loadConfig(*cf, cfg); err != nil {
+	cfg := &config.Config{}
+	if err := config.Load(*cf, cfg); err != nil {
 		log.Fatalf("Failed to load config, err: %v", err)
 	}
-	log.Printf("== %v ==", cfg)
+	logkit.InitLogging(cfg.Logging, &logkit.BaseLogFormat{})
 
-	// Example GIN service
 	r := gin.Default()
 	r.GET("/healthz", controller.HealthCheck)
 
@@ -86,5 +53,5 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down server ...")
+	log.Info("Shutting down server ...")
 }

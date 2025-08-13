@@ -1,1 +1,4 @@
-test: success
+logging:
+  level: warn
+  format: json
+  set_report_caller: true

@@ -1,1 +1,4 @@
-test: success
+logging:
+  level: debug
+  format: console
+  set_report_caller: true
