@@ -10,6 +10,8 @@ RUN mkdir -pm 0600 /root/.ssh \
     && ssh-keygen -f "/root/.ssh/known_hosts" -R "bitbucket.org" \
     && curl https://bitbucket.org/site/ssh >> /root/.ssh/known_hosts
 
+RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6   
+
 COPY .gitconfig /root/.gitconfig
 COPY go.* ./
 

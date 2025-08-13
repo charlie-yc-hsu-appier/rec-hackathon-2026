@@ -23,6 +23,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @title Vendor API service
+// @version 1.0
+// @description Vendor API service for recommendation ecosystem
+// @contact.email ai-rec-sys@appier.com
+// @basePath /
+// @schemes https
+//
+//go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs
+
 func main() {
 	var cf = flag.String("c", "", "config file")
 	flag.Parse()

@@ -25,7 +25,7 @@ clean: delete-dev
 
 
 .PHONY: pre-commit-check
-pre-commit-check: test
+pre-commit-check: generate test
 	golangci-lint run
 
 
@@ -63,7 +63,7 @@ generate:
 
 
 .PHONY: test
-test: generate
+test:
 	go test -v ./...
 
 
