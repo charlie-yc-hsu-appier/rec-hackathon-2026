@@ -1,0 +1,20 @@
+basePath: /
+info:
+  contact:
+    email: ai-rec-sys@appier.com
+  description: Vendor API service for recommendation ecosystem
+  title: Vendor API service
+  version: "1.0"
+paths:
+  /healthz:
+    get:
+      description: Usage for checking service liveness
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+      summary: Health check
+schemes:
+- https
+swagger: "2.0"

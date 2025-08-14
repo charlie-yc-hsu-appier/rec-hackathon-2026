@@ -1,0 +1,17 @@
+image:
+  repository: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/rec-vendor-api
+  pullPolicy: Always
+  tag: latest
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx-internal
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    cert-manager.io/cluster-issuer: default
+
+  tls: rec-vendor-api-stg-tls
+  rules:
+    - host: rec-vendor-api-stg.arepa.appier.info

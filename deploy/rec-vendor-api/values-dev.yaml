@@ -1,0 +1,4 @@
+image:
+  repository: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/rec-vendor-api-dev
+  pullPolicy: Always
+  tag: latest
