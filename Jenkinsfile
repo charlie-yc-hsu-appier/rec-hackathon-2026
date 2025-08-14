@@ -86,6 +86,19 @@ pipeline {
             image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/argo-deploy-kits:1.3.0
             tty: true
 
+          - name: robot
+            image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/qa/system_test_robot:v1.0.25
+            tty: true
+            command:
+             - cat
+            resources:
+              limits:
+                memory: 2Gi
+                cpu: 2
+              requests:
+                memory: 2Gi
+                cpu: 2
+
           volumes:
             - name: build-volume
               emptyDir: {}
@@ -118,6 +131,10 @@ pipeline {
     VERSION_MAJOR = 1
     VERSION_MINOR = 0
     VERSION_PATCH = "${BUILD_NUMBER}"
+
+    // for QA system tests
+    WORK_DIR = './tests/system_tests/API'
+    TESTRAIL_URL = 'https://appier.testrail.io/index.php?/runs/view'
   }
 
   stages {
@@ -247,9 +264,81 @@ pipeline {
     }
 
     stage('QA system tests') {
+      when {
+        branch 'staging'
+      }
+      options {
+        timeout(time: 10, unit: 'MINUTES')   // timeout on this stage
+      }
       steps {
-        container('golang') {
-          sh 'curl --fail --max-time 30 --connect-timeout 10 https://rec-vendor-api-stg.arepa.appier.info/healthz'
+            container('robot'){
+              withCredentials([[$class: 'UsernamePasswordMultiBinding',
+              credentialsId: 'testrail',
+              usernameVariable: 'TESTRAIL_USER',
+              passwordVariable: 'TESTRAIL_API_KEY']]){
+
+                  // Check the path
+                  echo "Checking the permission ..."
+                  sh "pwd"
+                  sh "ls -al ${WORK_DIR}"
+                  sh "ls -al ${WORK_DIR}/run_robot.sh"
+                  sh "ls -al ${WORK_DIR}/res"
+
+                  // Since the local path is different compared with Jenkins, we need to move sa.json to RF's /etc
+                  sh "mkdir /etc/secrets"
+                  sh "cp ${CHART_DIR}/secrets/sa.json /etc/secrets/."
+
+                  // The content of pass_rate.txt will be given by the run_robot.sh below after the automation run is completed
+                  sh "touch ${WORK_DIR}/testsuite/pass_rate.txt"
+                  sh "chmod 666 ${WORK_DIR}/testsuite/pass_rate.txt"
+
+                  // run the robot script
+                  script{
+                    env.RUN_ID = sh(script: '${WORK_DIR}/run_robot.sh -u $TESTRAIL_USER  -k $TESTRAIL_API_KEY  -c ec_rec -t rat -d no | grep  \'Task ID is :\' | cut -c\'22-\'',returnStdout: true).trim()
+                    if (env.RUN_ID){
+                        sh "echo 'ec_rec run ID:' ${RUN_ID}"
+                        env.EXECUTION_RATE = sh(script: "cat ${WORK_DIR}/testsuite/pass_rate.txt",returnStdout: true).trim()
+                        sh "echo ${EXECUTION_RATE}"
+
+                        // merge the report
+                        sh "rebot -d ${WORK_DIR}/report/ --RemoveKeywords passed -o output.xml  ${WORK_DIR}/report/ec_rec_rat.xml  &> /dev/null"
+                        sh "sleep 60"
+                        sh "ls -al ${WORK_DIR}/report/"
+
+                        // Since multiple result will be merged into the same case_ID at testrail, we try to use the number of fail from the final XML report
+                        env.FAIL_COUNT = sh(script: "cat ${WORK_DIR}/report/ec_rec_rat.xml | grep -oP \"<stat (.+?)>All Tests</stat>\" | grep -P -o -e '(?<=fail=\").*?(?=\")'",returnStdout: true).trim()
+                        sh "echo 'Failed Count:'  ${FAIL_COUNT}"
+                    }
+                    else {
+                        // stop the automation process if we can not get the run_id from testrail API
+                        error("[FAIL][QA-TESTRAIL] Can't get the test run_id. Stop executing the E2E automation...")
+                    }
+                    if (env.FAIL_COUNT != '0') {
+                        error '!!! There are some failed cases in the E2E testing !!!'
+                    }
+                  }
+              }
+            }
+      }
+      post {
+        always {
+          script {
+            if (env.BRANCH_NAME == 'staging' && env.RUN_ID ) {
+              step(
+                [
+                  $class              : 'RobotPublisher',
+                  outputPath          : "${WORK_DIR}/report",
+                  outputFileName      : '**/output.xml',
+                  reportFileName      : '**/report.html',
+                  logFileName         : '**/log.html',
+                  disableArchiveOutput: false,
+                  passThreshold       : 100,
+                  unstableThreshold   : 100,
+                  otherFiles          : "**/*.png,**/*.jpg",
+                ]
+              )
+            }
+          }
         }
       }
     }
