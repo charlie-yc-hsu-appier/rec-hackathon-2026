@@ -1,0 +1,16 @@
+logging:
+  level: debug
+  format: console
+  set_report_caller: true
+enable_gin_logger: true
+tracing:
+  enable: true
+  service_name: rec-vendor-api-dev
+  collector_fqdn: otel-collector.opentelemetry-operator.svc.cluster.local:4317
+  sample_rate: 1
+  batch_size: 2000
+  max_queue_size: 4000
+  batch_timeout: 120s
+  excluded_paths:
+    - /metrics
+    - /healthz

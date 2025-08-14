@@ -1,0 +1,11 @@
+{{- if .Values.disruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "rec-vendor-api.fullname" . }}
+spec:
+  maxUnavailable: {{ .Values.disruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "rec-vendor-api.selectorLabels" . | nindent 6 }}
+{{- end }}
