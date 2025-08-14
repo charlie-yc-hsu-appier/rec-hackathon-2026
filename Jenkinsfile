@@ -87,7 +87,7 @@ pipeline {
             tty: true
 
           - name: robot
-            image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/qa/system_test_robot:v1.0.25
+            image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/qa/system_test_robot:v1.0.27
             tty: true
             command:
              - cat
