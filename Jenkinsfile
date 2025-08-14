@@ -284,29 +284,25 @@ pipeline {
                   sh "ls -al ${WORK_DIR}/run_robot.sh"
                   sh "ls -al ${WORK_DIR}/res"
 
-                  // Since the local path is different compared with Jenkins, we need to move sa.json to RF's /etc
-                  sh "mkdir /etc/secrets"
-                  sh "cp ${CHART_DIR}/secrets/sa.json /etc/secrets/."
-
                   // The content of pass_rate.txt will be given by the run_robot.sh below after the automation run is completed
                   sh "touch ${WORK_DIR}/testsuite/pass_rate.txt"
                   sh "chmod 666 ${WORK_DIR}/testsuite/pass_rate.txt"
 
                   // run the robot script
                   script{
-                    env.RUN_ID = sh(script: '${WORK_DIR}/run_robot.sh -u $TESTRAIL_USER  -k $TESTRAIL_API_KEY  -c ec_rec -t rat -d no | grep  \'Task ID is :\' | cut -c\'22-\'',returnStdout: true).trim()
+                    env.RUN_ID = sh(script: '${WORK_DIR}/run_robot.sh -u $TESTRAIL_USER  -k $TESTRAIL_API_KEY  -c rec_vendor -t rat -d no | grep  \'Task ID is :\' | cut -c\'22-\'',returnStdout: true).trim()
                     if (env.RUN_ID){
-                        sh "echo 'ec_rec run ID:' ${RUN_ID}"
+                        sh "echo 'rec_vendor run ID:' ${RUN_ID}"
                         env.EXECUTION_RATE = sh(script: "cat ${WORK_DIR}/testsuite/pass_rate.txt",returnStdout: true).trim()
                         sh "echo ${EXECUTION_RATE}"
 
                         // merge the report
-                        sh "rebot -d ${WORK_DIR}/report/ --RemoveKeywords passed -o output.xml  ${WORK_DIR}/report/ec_rec_rat.xml  &> /dev/null"
+                        sh "rebot -d ${WORK_DIR}/report/ --RemoveKeywords passed -o output.xml  ${WORK_DIR}/report/rec_vendor_rat.xml  &> /dev/null"
                         sh "sleep 60"
                         sh "ls -al ${WORK_DIR}/report/"
 
                         // Since multiple result will be merged into the same case_ID at testrail, we try to use the number of fail from the final XML report
-                        env.FAIL_COUNT = sh(script: "cat ${WORK_DIR}/report/ec_rec_rat.xml | grep -oP \"<stat (.+?)>All Tests</stat>\" | grep -P -o -e '(?<=fail=\").*?(?=\")'",returnStdout: true).trim()
+                        env.FAIL_COUNT = sh(script: "cat ${WORK_DIR}/report/rec_vendor_rat.xml | grep -oP \"<stat (.+?)>All Tests</stat>\" | grep -P -o -e '(?<=fail=\").*?(?=\")'",returnStdout: true).trim()
                         sh "echo 'Failed Count:'  ${FAIL_COUNT}"
                     }
                     else {

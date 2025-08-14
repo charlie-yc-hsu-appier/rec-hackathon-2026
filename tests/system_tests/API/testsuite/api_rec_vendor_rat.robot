@@ -22,7 +22,7 @@ Suite Teardown      Release Test Value
 
 # Coupang INL Group
 [C4202651] [RAT] [INL] Check the Coupang INL group
-  [Tags]      testrailid=4202651  RAT     inl_group
+  [Tags]      testrailid=4202651  RAT-T     inl_group
   [Template]  Check the Coupang vendor group
   [Documentation]  We'll check if the subparam exists in the url and the img domain should be ads-partners.coupang.com
   ...              the subparam is encode (cid.bidobjid) in base64, you could refer to https://appier.atlassian.net/browse/AI-23485
@@ -54,7 +54,7 @@ Suite Teardown      Release Test Value
 
 # Coupang Linkmine Group
 [C4608232] [RAT] [Linkmine] Check the Coupang Linkmine group
-  [Tags]      testrailid=4608232  RAT     linkmine_group
+  [Tags]      testrailid=4608232  RAT-T     linkmine_group
   [Template]  Check the Coupang vendor group
   [Documentation]  We'll check if the param1 exists in the url and the img domain should be ads-partners.coupang.com
   ...              the param1 is encode (cid.bidobjid) in base64, you could refer to https://appier.atlassian.net/browse/AI-23485
@@ -68,7 +68,7 @@ Suite Teardown      Release Test Value
 
 # Coupang Replace Group
 [C4962884] [RAT] [Replace] Check the Coupang Replace group
-  [Tags]      testrailid=4962884  RAT     replace_group
+  [Tags]      testrailid=4962884  RAT-T     replace_group
   [Template]  Check the Coupang vendor group
   [Documentation]  We'll check if the param1 exists in the url and the img domain should be ads-partners.coupang.com
   ...              the param1 is encode (cid.bidobjid) in base64, you could refer to https://appier.atlassian.net/browse/AI-23485
@@ -82,7 +82,7 @@ Suite Teardown      Release Test Value
 
 # Coupang Adpopcorn Group
 [C4965132] [RAT] [Adpopcorn] Check the Coupang Adpopcorn group
-  [Tags]      testrailid=4965132  RAT     adpopcorn_group
+  [Tags]      testrailid=4965132  RAT-T     adpopcorn_group
   [Template]  Check the Coupang vendor group
   [Documentation]  We'll check if the param1 exists in the url and the img domain should be ads-partners.coupang.com
   ...              the param1 is encode (cid.bidobjid) in base64, you could refer to https://appier.atlassian.net/browse/AI-23485
@@ -96,7 +96,7 @@ Suite Teardown      Release Test Value
 
 # Coupang Adpacker Group
 [C4975033] [RAT] [Adpacker] Check the Coupang Adpacker group
-  [Tags]      testrailid=4975033  RAT     adpacker_group
+  [Tags]      testrailid=4975033  RAT-T     adpacker_group
   [Template]  Check the Coupang vendor group
   [Documentation]  We'll check if the param1 exists in the url and the img domain should be ads-partners.coupang.com
   ...              the param1 is encode (cid.bidobjid) in base64, you could refer to https://appier.atlassian.net/browse/AI-23485
@@ -110,7 +110,7 @@ Suite Teardown      Release Test Value
 
 # Keeta Customed Group
 [C4911675] [RAT] [Keeta] Check the keeta group
-  [Tags]      testrailid=4911675  RAT     keeta_group
+  [Tags]      testrailid=4911675  RAT-T     keeta_group
   [Template]  Check the keeta vendor group
   [Documentation]  To verify the Keeta's recommendation
   ...              We should use the df="android--com.sankuai.sailor.afooddelivery_2" to verify the Keeta-api group
