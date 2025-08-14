@@ -1,0 +1,15 @@
+# For api_rec_vendor_rat.robot
+  [Server1]
+  tags=dev
+  HTTP_METHOD=http
+  VENDOR_HOST=host.docker.internal:8080
+  PRODUCT_API_HOST=datafeed-product-api-prd.appier.co
+  CONFIG_API_HOST=recommendation-config-stg.appier.co
+
+# For api_rec_vendor_rat.robot
+  [Server2]
+  tags=stag
+  HTTP_METHOD=https
+  VENDOR_HOST=rec-vendor-api-stg.arepa.appier.info
+  CONFIG_API_HOST=recommendation-config-stg.appier.co
+
