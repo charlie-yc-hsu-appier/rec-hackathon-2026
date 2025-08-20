@@ -14,3 +14,13 @@ tracing:
   excluded_paths:
     - /metrics
     - /healthz
+vendor_config:
+  {{- with secret "secret/project/recommendation/rec-serving/staging/rec-proxy" }}
+  proxy_url: http://{{ .Data.data.user }}:{{ .Data.data.password }}@rec-proxy-smp-prd.arepa.appier.co:3128
+  {{- end }}
+  timeout: 1s
+  vendors:
+    - name: linkmine
+      request_url: "https://api.adfork.kr/coupang_sch/?app_code=FAXXi4vdOY&limit=10&type=DNY&adid={user_id}&size={size}"
+      tracking_url: "{product_url}&param1={click_id}"
+      with_proxy: true
