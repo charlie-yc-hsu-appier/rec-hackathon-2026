@@ -31,9 +31,5 @@ func (c *client) Get(ctx context.Context, req *httpkit.Request, timeout time.Dur
 		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues(vendorKey),
 		telemetry.Metrics.RestApiErrorTotal.WithLabelValues(vendorKey),
 	)
-	resp, err := c.httpClient.Get(ctx, req, timeout, validStatus, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return c.httpClient.Get(ctx, req, timeout, validStatus, opts...)
 }

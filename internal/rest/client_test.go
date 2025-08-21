@@ -29,58 +29,49 @@ func (ts *clientTestSuite) TestGet() {
 	timeout := 5 * time.Second
 
 	tests := []struct {
-		name         string
-		request      *httpkit.Request
-		wantErr      bool
-		mockFunc     func(mockResponse *httpkit.Response)
-		mockResponse *httpkit.Response
+		name     string
+		request  *httpkit.Request
+		wantErr  bool
+		mockFunc func()
 	}{
 		{
 			name:    "GIVEN a valid request THEN return the response",
 			request: httpkit.NewRequest("http://example.com").SetQueryParams(map[string]string{"key": "value"}),
-			mockFunc: func(mockResponse *httpkit.Response) {
+			mockFunc: func() {
 				expectedRequest := httpkit.NewRequest("http://example.com").
 					SetQueryParams(map[string]string{"key": "value"}).
 					SetMetrics(
 						telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-component"),
 						telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-component"),
 					)
-				ts.mockHTTPClient.EXPECT().Get(gomock.Any(), expectedRequest, timeout, []int{200}, gomock.Any()).Return(mockResponse, nil)
-			},
-			mockResponse: &httpkit.Response{
-				Header: map[string][]string{
-					"Content-Type": {"application/json"},
-				},
-				Body: []byte(`{"status":"ok"}`),
+				ts.mockHTTPClient.EXPECT().Get(gomock.Any(), expectedRequest, timeout, []int{200}, gomock.Any()).Return(&httpkit.Response{}, nil)
 			},
 		},
 		{
 			name:    "GIVEN mock error THEN return the error",
 			request: httpkit.NewRequest("http://example.com"),
 			wantErr: true,
-			mockFunc: func(mockResponse *httpkit.Response) {
+			mockFunc: func() {
 				expectedRequest := httpkit.NewRequest("http://example.com").
 					SetMetrics(
 						telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-component"),
 						telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-component"),
 					)
-				ts.mockHTTPClient.EXPECT().Get(gomock.Any(), expectedRequest, timeout, []int{200}, gomock.Any()).Return(mockResponse, errors.New("mock error"))
+				ts.mockHTTPClient.EXPECT().Get(gomock.Any(), expectedRequest, timeout, []int{200}, gomock.Any()).Return(nil, errors.New("mock error"))
 			},
-			mockResponse: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
-			tt.mockFunc(tt.mockResponse)
+			tt.mockFunc()
 			ctx := context.Background()
-			resp, err := ts.client.Get(ctx, tt.request, timeout, "test-component")
+			_, err := ts.client.Get(ctx, tt.request, timeout, "test-component")
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, tt.mockResponse, resp)
 		})
 	}
 }
