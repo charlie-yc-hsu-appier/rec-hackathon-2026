@@ -1,19 +1,23 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
+
+	"rec-vendor-api/internal/service"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 type VendorController struct {
-	// TODO
+	vendorRegistry map[string]service.Client
 }
 
-// TODO: add swagger documentation
-func NewVendorController() *VendorController {
-	return &VendorController{}
+func NewVendorController(vendorRegistry map[string]service.Client) *VendorController {
+	return &VendorController{
+		vendorRegistry: vendorRegistry,
+	}
 }
 
 type RecommendQuery struct {
@@ -32,8 +36,25 @@ func (c *VendorController) Recommend(ctx *gin.Context) {
 		return
 	}
 
-	// TODO:
-	// response, err := vendorClient.GetRecommendationItems(ctx.Request.Context(), serviceReq)
+	serviceReq := service.Request{
+		UserID:    req.UserID,
+		ClickID:   req.ClickID,
+		ImgWidth:  req.ImgWidth,
+		ImgHeight: req.ImgHeight,
+	}
 
-	ctx.JSON(http.StatusOK, "message: success")
+	vendorClient := c.vendorRegistry[req.VendorKey]
+	if vendorClient == nil {
+		log.WithContext(ctx).Errorf("Invalid vendor key: %s", req.VendorKey)
+		handleBadRequest(ctx, errors.New("Invalid vendor key"))
+		return
+	}
+
+	response, err := vendorClient.GetUserRecommendationItems(ctx.Request.Context(), serviceReq)
+	if err != nil {
+		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
+		handleInternalServerError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response)
 }
