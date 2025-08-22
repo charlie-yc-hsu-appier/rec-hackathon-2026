@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"rec-vendor-api/internal/service"
@@ -46,7 +47,7 @@ func (c *VendorController) Recommend(ctx *gin.Context) {
 	vendorClient := c.vendorRegistry[req.VendorKey]
 	if vendorClient == nil {
 		log.WithContext(ctx).Errorf("Invalid vendor key: %s", req.VendorKey)
-		handleBadRequest(ctx, errors.New("Invalid vendor key"))
+		handleBadRequest(ctx, errors.New(fmt.Sprintf("Vendor key '%s' not found", req.VendorKey)))
 		return
 	}
 
