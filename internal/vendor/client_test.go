@@ -2,7 +2,6 @@ package vendor
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"rec-vendor-api/internal/config"
@@ -33,14 +32,13 @@ func (m *mockRequestURLStrategy) GenerateRequestURL(params requester.Params) str
 	return "http://test-url"
 }
 
-type mockRespUnmarshalStrategy struct{}
+type mockRespUnmarshalStrategy struct {
+	resp *[]unmarshaler.CoupangPartnerResp
+	err  error
+}
 
 func (m *mockRespUnmarshalStrategy) UnmarshalResponse(body []byte) (*[]unmarshaler.CoupangPartnerResp, error) {
-	var resp []unmarshaler.CoupangPartnerResp
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("invalid format. body: %v", string(body))
-	}
-	return &resp, nil
+	return m.resp, m.err
 }
 
 type mockTrackingURLStrategy struct{}
@@ -60,28 +58,31 @@ func (ts *VendorClientTestSuite) SetupTest() {
 
 func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 	tt := []struct {
-		name        string
-		mockResp    *httpkit.Response
-		wantedError error
-		want        Response
+		name          string
+		mockResp      *httpkit.Response
+		mockRespErr   error
+		mockUnmarshal *mockRespUnmarshalStrategy
+		wantErr       bool
+		want          Response
 	}{
 		{
-			name:        "GIVEN valid response THEN expect success",
-			mockResp:    &httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"},{"productId":2,"productUrl":"url2","productImage":"img2"}]`)},
-			wantedError: nil,
-			want:        Response{ProductIDs: []string{"1", "2"}, ProductPatch: map[string]ProductPatch{"1": {Url: "http://tracking-url", Image: "img1"}, "2": {Url: "http://tracking-url", Image: "img2"}}},
+			name:          "GIVEN valid response THEN expect success",
+			mockResp:      &httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)},
+			mockUnmarshal: &mockRespUnmarshalStrategy{resp: &[]unmarshaler.CoupangPartnerResp{{ProductID: 1, ProductURL: "url1", ProductImage: "img1"}}},
+			want:          Response{ProductIDs: []string{"1"}, ProductPatch: map[string]ProductPatch{"1": {Url: "http://tracking-url", Image: "img1"}}},
 		},
 		{
 			name:        "GIVEN network error THEN expect error",
-			mockResp:    nil,
-			wantedError: errors.New("network error"),
+			mockRespErr: errors.New("network error"),
+			wantErr:     true,
 			want:        Response{},
 		},
 		{
-			name:        "GIVEN unmarshal error THEN expect error",
-			mockResp:    &httpkit.Response{Body: []byte("invalid json")},
-			wantedError: fmt.Errorf("invalid format. body: %v", "invalid json"),
-			want:        Response{},
+			name:          "GIVEN unmarshal error THEN expect error",
+			mockResp:      &httpkit.Response{Body: []byte("invalid json")},
+			mockUnmarshal: &mockRespUnmarshalStrategy{err: fmt.Errorf("invalid format. body: %v", "invalid json")},
+			wantErr:       true,
+			want:          Response{},
 		},
 	}
 	for _, tc := range tt {
@@ -92,7 +93,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				1*time.Second,
 				&mockHeaderStrategy{},
 				&mockRequestURLStrategy{},
-				&mockRespUnmarshalStrategy{},
+				tc.mockUnmarshal,
 				&mockTrackingURLStrategy{},
 			)
 			req := httpkit.NewRequest("http://test-url")
@@ -100,13 +101,13 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor"),
 				telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor"),
 			)
-			ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).Return(tc.mockResp, tc.wantedError)
+			ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).Return(tc.mockResp, tc.mockRespErr)
 			got, err := vc.GetUserRecommendationItems(context.Background(), Request{UserID: "u1"})
-			if tc.wantedError != nil {
+			require.Equal(t, tc.want, got)
+			if tc.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tc.want, got)
 			}
 		})
 	}

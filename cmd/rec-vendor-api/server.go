@@ -62,7 +62,10 @@ func main() {
 		r.Use(gin.Recovery())
 	}
 
-	vendorRegistry := vendor.BuildRegistry(cfg.VendorConfig)
+	vendorRegistry, err := vendor.BuildRegistry(cfg.VendorConfig)
+	if err != nil {
+		log.Fatalf("Failed to build vendor registry, err: %v", err)
+	}
 	vendorController := controller.NewVendorController(vendorRegistry)
 
 	r.GET("/r", vendorController.Recommend)

@@ -91,7 +91,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 
 		trackParams := tracker.Params{
 			TrackingURL: v.cfg.TrackingURL,
-			ProductURL:  ele.ProductUrl,
+			ProductURL:  ele.ProductURL,
 			ClickID:     req.ClickID,
 		}
 		productUrl := v.trackingURLStrategy.GenerateTrackingURL(trackParams)
