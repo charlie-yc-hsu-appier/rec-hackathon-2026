@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
+	"rec-vendor-api/internal/telemetry"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -62,7 +63,11 @@ func main() {
 		r.Use(gin.Recovery())
 	}
 
+	vendorController := controller.NewVendorController()
+
+	r.GET("/r", vendorController.Recommend)
 	r.GET("/healthz", controller.HealthCheck)
+	r.GET("/metrics", telemetry.PromHandler())
 
 	addr := "0.0.0.0:8080"
 	s := &http.Server{
