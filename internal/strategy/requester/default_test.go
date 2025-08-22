@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefaultRequestURLStrategy(t *testing.T) {
+func TestDefault(t *testing.T) {
 	tt := []struct {
 		name       string
 		requestURL string
@@ -35,7 +35,7 @@ func TestDefaultRequestURLStrategy(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			strategy := &DefaultRequestURLStrategy{}
+			strategy := &Default{}
 			params := Params{
 				RequestURL: tc.requestURL,
 				UserID:     tc.userID,

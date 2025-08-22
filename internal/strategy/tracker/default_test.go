@@ -1,4 +1,4 @@
-package trackurl
+package tracker
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefaultTrackingURLStrategy(t *testing.T) {
+func TestDefault(t *testing.T) {
 	tt := []struct {
 		name        string
 		trackingURL string
@@ -32,7 +32,7 @@ func TestDefaultTrackingURLStrategy(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			strategy := &DefaultTrackingURLStrategy{}
+			strategy := &Default{}
 			params := Params{
 				TrackingURL: tc.trackingURL,
 				ProductURL:  tc.productURL,

@@ -1,4 +1,4 @@
-package service
+package vendor
 
 import (
 	"context"
@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	header "rec-vendor-api/internal/service/header_strategy"
-	requester "rec-vendor-api/internal/service/request_strategy"
-	trackurl "rec-vendor-api/internal/service/trackurl_strategy"
-	unmarshaler "rec-vendor-api/internal/service/unmarshal_strategy"
+	"rec-vendor-api/internal/strategy/header"
+	"rec-vendor-api/internal/strategy/requester"
+	"rec-vendor-api/internal/strategy/tracker"
+	"rec-vendor-api/internal/strategy/unmarshaler"
 
 	"bitbucket.org/plaxieappier/rec-go-kit/httpkit"
 	"github.com/stretchr/testify/require"
@@ -45,7 +45,7 @@ func (m *mockRespUnmarshalStrategy) UnmarshalResponse(body []byte) (*[]unmarshal
 
 type mockTrackingURLStrategy struct{}
 
-func (m *mockTrackingURLStrategy) GenerateTrackingURL(params trackurl.Params) string {
+func (m *mockTrackingURLStrategy) GenerateTrackingURL(params tracker.Params) string {
 	return "http://tracking-url"
 }
 
@@ -86,7 +86,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 	}
 	for _, tc := range tt {
 		ts.T().Run(tc.name, func(t *testing.T) {
-			vc := NewVendorClient(
+			vc := NewClient(
 				config.Vendor{Name: "test-vendor"},
 				ts.mockRestClient,
 				1*time.Second,

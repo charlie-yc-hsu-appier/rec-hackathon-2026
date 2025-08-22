@@ -1,4 +1,4 @@
-package service
+package vendor
 
 type Response struct {
 	ProductIDs   []string                `json:"product_ids"`

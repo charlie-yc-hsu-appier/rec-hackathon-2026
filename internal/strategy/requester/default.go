@@ -12,9 +12,9 @@ type Params struct {
 	ImgHeight  int
 }
 
-type DefaultRequestURLStrategy struct{}
+type Default struct{}
 
-func (s *DefaultRequestURLStrategy) GenerateRequestURL(params Params) string {
+func (s *Default) GenerateRequestURL(params Params) string {
 	url := params.RequestURL
 	url = strings.Replace(url, "{width}", fmt.Sprintf("%d", params.ImgWidth), 1)
 	url = strings.Replace(url, "{height}", fmt.Sprintf("%d", params.ImgHeight), 1)

@@ -1,4 +1,4 @@
-package service
+package vendor
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"rec-vendor-api/internal/config"
-	header "rec-vendor-api/internal/service/header_strategy"
-	requester "rec-vendor-api/internal/service/request_strategy"
-	trackurl "rec-vendor-api/internal/service/trackurl_strategy"
-	unmarshaler "rec-vendor-api/internal/service/unmarshal_strategy"
+	"rec-vendor-api/internal/strategy/header"
+	"rec-vendor-api/internal/strategy/requester"
+	"rec-vendor-api/internal/strategy/tracker"
+	"rec-vendor-api/internal/strategy/unmarshaler"
 	"rec-vendor-api/internal/telemetry"
 
 	"bitbucket.org/plaxieappier/rec-go-kit/httpkit"
@@ -19,26 +19,10 @@ type vendorClient struct {
 	cfg                   config.Vendor
 	client                httpkit.Client
 	timeout               time.Duration
-	headerStrategy        HeaderStrategy
-	requestURLStrategy    RequestURLStrategy
-	respUnmarshalStrategy RespUnmarshalStrategy
-	trackingURLStrategy   TrackingURLStrategy
-}
-
-type HeaderStrategy interface {
-	GenerateHeaders(params header.Params) map[string]string
-}
-
-type RequestURLStrategy interface {
-	GenerateRequestURL(params requester.Params) string
-}
-
-type RespUnmarshalStrategy interface {
-	UnmarshalResponse(body []byte) (*[]unmarshaler.CoupangPartnerResp, error)
-}
-
-type TrackingURLStrategy interface {
-	GenerateTrackingURL(params trackurl.Params) string
+	headerStrategy        header.Strategy
+	requestURLStrategy    requester.Strategy
+	respUnmarshalStrategy unmarshaler.Strategy
+	trackingURLStrategy   tracker.Strategy
 }
 
 type Request struct {
@@ -52,9 +36,9 @@ type Client interface {
 	GetUserRecommendationItems(ctx context.Context, req Request) (Response, error)
 }
 
-func NewVendorClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
-	headerStrategy HeaderStrategy, requestURLStrategy RequestURLStrategy,
-	respUnmarshalStrategy RespUnmarshalStrategy, trackingURLStrategy TrackingURLStrategy) Client {
+func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
+	headerStrategy header.Strategy, requestURLStrategy requester.Strategy,
+	respUnmarshalStrategy unmarshaler.Strategy, trackingURLStrategy tracker.Strategy) Client {
 	return &vendorClient{
 		cfg:                   cfg,
 		client:                client,
@@ -105,7 +89,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		productIDStr := strconv.Itoa(ele.ProductID)
 		productIDs = append(productIDs, productIDStr)
 
-		trackParams := trackurl.Params{
+		trackParams := tracker.Params{
 			TrackingURL: v.cfg.TrackingURL,
 			ProductURL:  ele.ProductUrl,
 			ClickID:     req.ClickID,

@@ -11,8 +11,8 @@ import (
 	"os/signal"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
-	"rec-vendor-api/internal/service"
 	"rec-vendor-api/internal/telemetry"
+	"rec-vendor-api/internal/vendor"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -62,7 +62,7 @@ func main() {
 		r.Use(gin.Recovery())
 	}
 
-	vendorRegistry := service.InitVendors(cfg.VendorConfig)
+	vendorRegistry := vendor.BuildRegistry(cfg.VendorConfig)
 	vendorController := controller.NewVendorController(vendorRegistry)
 
 	r.GET("/r", vendorController.Recommend)

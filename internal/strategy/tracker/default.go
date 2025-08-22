@@ -1,4 +1,4 @@
-package trackurl
+package tracker
 
 import (
 	"encoding/base64"
@@ -11,9 +11,9 @@ type Params struct {
 	ClickID     string
 }
 
-type DefaultTrackingURLStrategy struct{}
+type Default struct{}
 
-func (s *DefaultTrackingURLStrategy) GenerateTrackingURL(params Params) string {
+func (s *Default) GenerateTrackingURL(params Params) string {
 	trackingURL := params.TrackingURL
 	trackingURL = strings.Replace(trackingURL, "{product_url}", params.ProductURL, 1)
 	encoded := base64.RawURLEncoding.EncodeToString([]byte(params.ClickID))

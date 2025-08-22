@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"net/http"
 
-	"rec-vendor-api/internal/service"
+	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 type VendorController struct {
-	vendorRegistry map[string]service.Client
+	vendorRegistry map[string]vendor.Client
 }
 
-func NewVendorController(vendorRegistry map[string]service.Client) *VendorController {
+func NewVendorController(vendorRegistry map[string]vendor.Client) *VendorController {
 	return &VendorController{
 		vendorRegistry: vendorRegistry,
 	}
@@ -36,7 +36,7 @@ func (c *VendorController) Recommend(ctx *gin.Context) {
 		return
 	}
 
-	serviceReq := service.Request{
+	serviceReq := vendor.Request{
 		UserID:    req.UserID,
 		ClickID:   req.ClickID,
 		ImgWidth:  req.ImgWidth,

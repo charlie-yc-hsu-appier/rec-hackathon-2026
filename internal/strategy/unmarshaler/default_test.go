@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefaultUnmarshalStrategy(t *testing.T) {
+func TestDefault(t *testing.T) {
 	tt := []struct {
 		name        string
 		input       []byte
@@ -28,7 +28,7 @@ func TestDefaultUnmarshalStrategy(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			strategy := &DefaultUnmarshalStrategy{}
+			strategy := &Default{}
 			got, err := strategy.UnmarshalResponse(tc.input)
 			if tc.wantedError != nil {
 				require.Error(t, err)
