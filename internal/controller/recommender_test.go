@@ -16,26 +16,28 @@ import (
 
 type RecommenderTestSuite struct {
 	suite.Suite
-	mockClient *vendor.MockClient
+	mockClient     *vendor.MockClient
+	vendorRegistry map[string]vendor.Client
 }
 
 func (ts *RecommenderTestSuite) SetupTest() {
 	ts.mockClient = vendor.NewMockClient(gomock.NewController(ts.T()))
+	ts.vendorRegistry = map[string]vendor.Client{"test_vendor": ts.mockClient}
 }
 
 func (ts *RecommenderTestSuite) TestRecommend() {
 	tt := []struct {
-		name           string
-		requestURL     string
-		vendorRegistry map[string]vendor.Client
-		setupMock      func(mockClient *vendor.MockClient)
-		wantCode       int
-		wantBody       string
+		name       string
+		vendorKey  string
+		requestURL string
+		setupMock  func(mockClient *vendor.MockClient)
+		wantCode   int
+		wantBody   string
 	}{
 		{
-			name:           "GIVEN a valid request THEN expect a successful response",
-			requestURL:     "/r?vendor_key=test_vendor&user_id=123&w=100&h=200",
-			vendorRegistry: map[string]vendor.Client{"test_vendor": ts.mockClient},
+			name:       "GIVEN a valid request THEN expect a successful response",
+			vendorKey:  "test_vendor",
+			requestURL: "/r/test_vendor?user_id=123&click_id=456&w=100&h=200",
 			setupMock: func(mc *vendor.MockClient) {
 				mockResp := vendor.Response{ProductIDs: []string{"1"}, ProductPatch: map[string]vendor.ProductPatch{"1": {Url: "url", Image: "img"}}}
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(mockResp, nil)
@@ -44,25 +46,25 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 			wantBody: `{"product_ids":["1"],"product_patch":{"1":{"url":"url","image":"img"}}}`,
 		},
 		{
-			name:           "GIVEN an invalid vendor key THEN expect a bad request response",
-			requestURL:     "/r?vendor_key=bad_vendor&user_id=123&w=100&h=200",
-			vendorRegistry: map[string]vendor.Client{},
-			setupMock:      func(mc *vendor.MockClient) {},
-			wantCode:       http.StatusBadRequest,
-			wantBody:       `{"detail":"Vendor key 'bad_vendor' not supported", "status":400}`,
+			name:       "GIVEN an invalid vendor key THEN expect a bad request response",
+			vendorKey:  "bad_vendor",
+			requestURL: "/r/bad_vendor?user_id=123&click_id=456&w=100&h=200",
+			setupMock:  func(mc *vendor.MockClient) {},
+			wantCode:   http.StatusBadRequest,
+			wantBody:   `{"detail":"Vendor key 'bad_vendor' not supported", "status":400}`,
 		},
 		{
-			name:           "GIVEN a missing user ID THEN expect a bad request response",
-			requestURL:     "/r?vendor_key=test_vendor&w=100&h=200",
-			vendorRegistry: map[string]vendor.Client{"test_vendor": ts.mockClient},
-			setupMock:      func(mc *vendor.MockClient) {},
-			wantCode:       http.StatusBadRequest,
-			wantBody:       `{"detail":"Key: 'RecommendQuery.UserID' Error:Field validation for 'UserID' failed on the 'required' tag", "status":400}`,
+			name:       "GIVEN a missing user ID THEN expect a bad request response",
+			vendorKey:  "test_vendor",
+			requestURL: "/r/test_vendor?click_id=456&w=100&h=200",
+			setupMock:  func(mc *vendor.MockClient) {},
+			wantCode:   http.StatusBadRequest,
+			wantBody:   `{"detail":"Key: 'Request.UserID' Error:Field validation for 'UserID' failed on the 'required' tag", "status":400}`,
 		},
 		{
-			name:           "GIVEN an internal error THEN expect an internal server error response",
-			requestURL:     "/r?vendor_key=test_vendor&user_id=123&w=100&h=200",
-			vendorRegistry: map[string]vendor.Client{"test_vendor": ts.mockClient},
+			name:       "GIVEN an internal error THEN expect an internal server error response",
+			vendorKey:  "test_vendor",
+			requestURL: "/r/test_vendor?user_id=123&click_id=456&w=100&h=200",
 			setupMock: func(mc *vendor.MockClient) {
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(vendor.Response{}, errors.New("fail"))
 			},
@@ -76,10 +78,11 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest(http.MethodGet, tc.requestURL, nil)
+			c.Params = []gin.Param{{Key: "vendor_key", Value: tc.vendorKey}}
 
 			tc.setupMock(ts.mockClient)
 
-			vc := NewVendorController(tc.vendorRegistry)
+			vc := NewVendorController(ts.vendorRegistry)
 			vc.Recommend(c)
 
 			require.Equal(t, tc.wantCode, w.Code)

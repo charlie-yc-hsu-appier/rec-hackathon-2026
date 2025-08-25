@@ -31,7 +31,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/r": {
+        "/r/{vendor_key}": {
             "get": {
                 "description": "Returns recommended products for a user from a vendor",
                 "produces": [
@@ -43,7 +43,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Vendor Key",
                         "name": "vendor_key",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -57,7 +57,8 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Click ID",
                         "name": "click_id",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",

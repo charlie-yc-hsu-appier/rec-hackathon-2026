@@ -34,12 +34,12 @@ paths:
         "200":
           description: ok
       summary: Health check
-  /r:
+  /r/{vendor_key}:
     get:
       description: Returns recommended products for a user from a vendor
       parameters:
       - description: Vendor Key
-        in: query
+        in: path
         name: vendor_key
         required: true
         type: string
@@ -51,6 +51,7 @@ paths:
       - description: Click ID
         in: query
         name: click_id
+        required: true
         type: string
       - description: Image Width
         in: query

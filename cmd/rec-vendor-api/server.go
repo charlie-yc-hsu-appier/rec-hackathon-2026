@@ -68,7 +68,7 @@ func main() {
 	}
 	vendorController := controller.NewVendorController(vendorRegistry)
 
-	r.GET("/r", vendorController.Recommend)
+	r.GET("/r/:vendor_key", vendorController.Recommend)
 	r.GET("/healthz", controller.HealthCheck)
 	r.GET("/metrics", telemetry.PromHandler())
 
