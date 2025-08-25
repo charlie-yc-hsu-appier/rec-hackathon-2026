@@ -32,6 +32,7 @@ type Request struct {
 	ImgHeight int
 }
 
+//go:generate mockgen -source=./client.go -destination=./client_mock.go -package=vendor
 type Client interface {
 	GetUserRecommendationItems(ctx context.Context, req Request) (Response, error)
 }
