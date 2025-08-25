@@ -22,12 +22,29 @@ I would like to set the session under vendor endpoint with
     Set Local Variable  ${endpoint}  /healthz
   END
 
+  # Handle optional parameters - Method 2: Direct dictionary filtering
+  ${query_params} =         Create Dictionary
+  @{param_names} =          Create List  vendor_key  user_id  click_id  w  h
+  
+  FOR  ${param}  IN  @{param_names}
+    ${param_exists} =       Run Keyword And Return Status
+    ...                     Dictionary Should Contain Key  ${args}  ${param}
+    IF  ${param_exists}
+      Set To Dictionary     ${query_params}  ${param}=${args}[${param}]
+    END
+  END
+
   # Set the request header with Accept: */*
   &{HEADERS} =            Create Dictionary
   ...                     Accept=*/*
 
-  # Start to send the GET request
-  ${resp} =               Get On Session          VendorSession           url=${endpoint}     headers=&{HEADERS}
+  # Start to send the GET request - handle empty params safely
+  ${has_params} =         Get Length              ${query_params}
+  IF  ${has_params} > 0
+    ${resp} =             Get On Session          VendorSession           url=${endpoint}     headers=&{HEADERS}    params=&{query_params}
+  ELSE
+    ${resp} =             Get On Session          VendorSession           url=${endpoint}     headers=&{HEADERS}
+  END
 
   # Validate response is not empty
   Should Not Be Empty

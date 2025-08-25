@@ -11,8 +11,21 @@ Check the Coupang vendor group
   ...                 ${expected_layout_code}=${Empty}
   ...                 ${with_fix_click_id}=${Empty}
 
-  Given Get an actived datafeed id from sid  android--com.coupang.mobile_s2s_v3
-  Given I have an ecrec session and domain is "dync-stg.c.appier.net"
+  Given I have an vendor session
+
+  # Parse layout_id to extract width and height
+  ${w} =    Set Variable    300
+  ${h} =    Set Variable    300
+  
+  # Check if layout_id contains dimensions (e.g., "300x300", "1200x627")
+  ${dimension_match} =    Run Keyword And Return Status    Should Match Regexp    ${layout_id}    ^.*?(\\d+)x(\\d+).*$
+  IF    ${dimension_match}
+    ${matches} =    Get Regexp Matches    ${layout_id}    ^.*?(\\d+)x(\\d+).*$    1    2
+    IF    ${matches}
+      ${w} =    Set Variable    ${matches[0]}
+      ${h} =    Set Variable    ${matches[1]}
+    END
+  END
 
   IF  '${with_fix_click_id}' != '${Empty}'
     Set Local Variable  ${_cid}         RFTEST
@@ -24,18 +37,12 @@ Check the Coupang vendor group
 
   # When the vendor is from linkmine, we don't need the i_group param
   IF  '${group_id}' != '${Empty}'
-    When I would like to set the session under user2item endpoint with  sid=android--com.coupang.mobile_s2s_v3  df=${extracted_df}  oid=${oid}
-    ...     _debug_creative=false   i_group=${group_id}     idfa=55660000-0000-4C18-AAAA-556624AF0000  cid=${_cid}  bidobjid=${_bidobjid}
-    ...     num_items=1             no_cache=true           layout_id=${layout_id}
+    When I would like to set the session under vendor endpoint with  endpoint=r  vendor_key=${oid}  user_id=55660000-0000-4C18-AAAA-556624AF0000  click_id=${_cid}  w=${w}  h=${h}
   # When the vendor is from replace (oid = ig6jGmNbQvqiqpQ0XDqNpw), we'll use the xst to decide the layout
   ELSE IF  '${oid}' == 'ig6jGmNbQvqiqpQ0XDqNpw'
-    When I would like to set the session under user2item endpoint with  sid=android--com.coupang.mobile_s2s_v3  df=${extracted_df}  oid=${oid}
-    ...     _debug_creative=false   idfa=55660000-0000-4C18-AAAA-556624AF0000  cid=${_cid}  bidobjid=${_bidobjid}
-    ...     num_items=1             no_cache=true   xst=${layout_id}
+    When I would like to set the session under vendor endpoint with  endpoint=r  vendor_key=${oid}  user_id=55660000-0000-4C18-AAAA-556624AF0000  click_id=${_cid}  w=${w}  h=${h}
   ELSE
-    When I would like to set the session under user2item endpoint with  sid=android--com.coupang.mobile_s2s_v3  df=${extracted_df}  oid=${oid}
-    ...     _debug_creative=false   idfa=55660000-0000-4C18-AAAA-556624AF0000  cid=${_cid}  bidobjid=${_bidobjid}
-    ...     num_items=1             no_cache=true   layout_id=${layout_id}
+    When I would like to set the session under vendor endpoint with  endpoint=r  vendor_key=${oid}  user_id=55660000-0000-4C18-AAAA-556624AF0000  click_id=${_cid}  w=${w}  h=${h}
   END
 
   Then I would like to check status_code should be "200" within the current session
