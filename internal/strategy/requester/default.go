@@ -5,13 +5,6 @@ import (
 	"strings"
 )
 
-type Params struct {
-	RequestURL string
-	UserID     string
-	ImgWidth   int
-	ImgHeight  int
-}
-
 type Default struct{}
 
 func (s *Default) GenerateRequestURL(params Params) string {

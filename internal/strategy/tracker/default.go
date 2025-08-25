@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-type Params struct {
-	TrackingURL string
-	ProductURL  string
-	ClickID     string
-}
-
 type Default struct{}
 
 func (s *Default) GenerateTrackingURL(params Params) string {
