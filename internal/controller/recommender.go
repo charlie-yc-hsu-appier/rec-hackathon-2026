@@ -28,6 +28,19 @@ type RecommendQuery struct {
 	ImgHeight int    `form:"h" binding:"required"`
 }
 
+// Recommend godoc
+// @Summary      Get vendor recommendations
+// @Description  Returns recommended products for a user from a vendor
+// @Produce      json
+// @Param        vendor_key  query string true  "Vendor Key"
+// @Param        user_id     query string true  "User ID"
+// @Param        click_id    query string false "Click ID"
+// @Param        w           query int    true  "Image Width"
+// @Param        h           query int    true  "Image Height"
+// @Success      200 {object} vendor.Response
+// @Failure      400 {object} map[string]string "Bad Request"
+// @Failure      500 {object} map[string]string "Internal Error"
+// @Router       /r [get]
 func (c *VendorController) Recommend(ctx *gin.Context) {
 	var req RecommendQuery
 	if err := ctx.ShouldBindQuery(&req); err != nil {

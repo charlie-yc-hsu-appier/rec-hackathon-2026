@@ -30,7 +30,7 @@ import (
 // @basePath /
 // @schemes https
 //
-//go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs
+//go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 func main() {
 	var cf = flag.String("c", "", "config file")

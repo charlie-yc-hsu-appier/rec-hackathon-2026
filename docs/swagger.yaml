@@ -1,4 +1,23 @@
 basePath: /
+definitions:
+  vendor.ProductPatch:
+    properties:
+      image:
+        type: string
+      url:
+        type: string
+    type: object
+  vendor.Response:
+    properties:
+      product_ids:
+        items:
+          type: string
+        type: array
+      product_patch:
+        additionalProperties:
+          $ref: '#/definitions/vendor.ProductPatch'
+        type: object
+    type: object
 info:
   contact:
     email: ai-rec-sys@appier.com
@@ -15,6 +34,54 @@ paths:
         "200":
           description: ok
       summary: Health check
+  /r:
+    get:
+      description: Returns recommended products for a user from a vendor
+      parameters:
+      - description: Vendor Key
+        in: query
+        name: vendor_key
+        required: true
+        type: string
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Click ID
+        in: query
+        name: click_id
+        type: string
+      - description: Image Width
+        in: query
+        name: w
+        required: true
+        type: integer
+      - description: Image Height
+        in: query
+        name: h
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/vendor.Response'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get vendor recommendations
 schemes:
 - https
 swagger: "2.0"
