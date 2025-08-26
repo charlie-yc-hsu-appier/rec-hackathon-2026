@@ -29,7 +29,7 @@ Suite Teardown      Release Test Value
   ...              when ${with_fix_click_id} is ${TRUE}, we'll use "RFTEST" as the cid and bidobjid
   ...              otherwise, we'll let the cid and bidobjid blank
   ...              In this template, we will also use the layout_id to check related code in INL api:
-  ...              https://bitbucket.org/plaxieappier/rec-reyka/src/staging/config-template/config-prd.yaml
+  ...              https://github.com/plaxieappier/rec-reyka/blob/staging/config-template/config-prd.yaml
   ...              Turn off the group 3 at 2025/06/11: https://appier.slack.com/archives/C07TTKA4SHJ/p1749604656454839
 
   # Args: ${oid}  ${group_id}  ${layout_id}  ${expected_group_name}  ${expected_url_params}  ${expected_img_domain}  ${expected_layout_code}=${Empty}  ${with_fix_click_id}=${Empty}
