@@ -279,60 +279,59 @@ Download the video and check the size > 1
 
 # Vendor API testing utility keywords #
 Extract dimensions from request url
-  [Arguments]    ${request_url}
-  [Documentation]    Extract width and height from request_url
-  ...               Pattern: size={width}x{height}
+  [Arguments]         ${request_url}
+  [Documentation]  Extract width and height from request_url
+  ...              Pattern: size={width}x{height}
 
   # Default dimensions
-  &{dimensions} =    Create Dictionary    width=300    height=300
+  &{dimensions} =     Create Dictionary   width=300           height=300
 
   # Extract from size parameter pattern: size={width}x{height}
-  ${size_matches} =    Get Regexp Matches    ${request_url}    size=\\{([^}]+)\\}x\\{([^}]+)\\}    1    2
-  IF    ${size_matches}
+  ${size_matches} =   Get Regexp Matches  ${request_url}      size=\\{([^}]+)\\}x\\{([^}]+)\\}  1  2
+  IF  ${size_matches}
     ${width_param} =    Set Variable    ${size_matches[0]}
-    ${height_param} =    Set Variable    ${size_matches[1]}
+    ${height_param} =   Set Variable    ${size_matches[1]}
     # For patterns like {width} and {height}, use default values
-    IF    '${width_param}' == 'width' and '${height_param}' == 'height'
-      Set To Dictionary    ${dimensions}    width=300    height=300
+    IF  '${width_param}' == 'width' and '${height_param}' == 'height'
+      Set To Dictionary   ${dimensions}   width=300   height=300
     END
   END
-  RETURN    &{dimensions}
+  RETURN              &{dimensions}
 
 
 Generate UUID4
-  [Documentation]    Generate a random UUID4 for user_id
-  ${uuid} =    Evaluate    str(__import__('uuid').uuid4())
-  RETURN    ${uuid}
+  [Documentation]  Generate a random UUID4 for user_id
+  ${uuid} =   Evaluate    str(__import__('uuid').uuid4())
+  RETURN      ${uuid}
 
 
 Encode Base64
-  [Arguments]    ${text}
-  [Documentation]    Encode text to base64
+  [Arguments]     ${text}
+  [Documentation]  Encode text to base64
   ${encoded} =    Evaluate    __import__('base64').b64encode('${text}'.encode()).decode()
-  RETURN    ${encoded}
+  RETURN          ${encoded}
+
 
 Parse yaml tracking url template
-  [Arguments]    ${tracking_url}
-  [Documentation]    Parse YAML tracking_url to extract parameter configuration
-  ...               Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
-  
+  [Arguments]         ${tracking_url}
+  [Documentation]  Parse YAML tracking_url to extract parameter configuration
+  ...              Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
+
   # Extract parameter name using regex
-  ${param_matches} =    Get Regexp Matches    ${tracking_url}    [&?]([^=]+)=    1
-  ${param_name} =    Set Variable If    ${param_matches}    ${param_matches[0]}    unknown
-  
+  ${param_matches} =  Get Regexp Matches  ${tracking_url}     [&?]([^=]+)=            1
+  ${param_name} =     Set Variable If     ${param_matches}    ${param_matches[0]}     unknown
+
   # Check if uses base64 encoding
-  ${uses_base64} =    Run Keyword And Return Status    Should Contain    ${tracking_url}    base64
-  
+  ${uses_base64} =    Run Keyword And Return Status
+  ...                 Should Contain      ${tracking_url}     base64
+
   # Check if requires group_id (typically for INL vendors)
-  ${has_group_id} =    Set Variable If    '${param_name}' == 'subparam'    ${TRUE}    ${FALSE}
-  
+  ${has_group_id} =   Set Variable If     '${param_name}' == 'subparam'  ${TRUE}  ${FALSE}
+
   # Create config dictionary
-  &{config} =    Create Dictionary    
-  ...            param_name=${param_name}
-  ...            uses_base64=${uses_base64}
-  ...            has_group_id=${has_group_id}
-  
-  RETURN    &{config}
+  &{config} =         Create Dictionary
+  ...                 param_name=${param_name}
+  ...                 uses_base64=${uses_base64}
+  ...                 has_group_id=${has_group_id}
 
-
-
+  RETURN              &{config}
