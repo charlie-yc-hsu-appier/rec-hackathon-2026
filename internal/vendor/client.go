@@ -54,10 +54,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	url := v.requestURLStrategy.GenerateRequestURL(reqParams)
 	restReq := httpkit.NewRequest(url)
 
-	headerParams := header.Params{
-		UserID:  req.UserID,
-		ClickID: req.ClickID,
-	}
+	headerParams := header.Params{}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 

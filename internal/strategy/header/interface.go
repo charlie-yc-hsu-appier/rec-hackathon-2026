@@ -1,8 +1,7 @@
 package header
 
 type Params struct {
-	UserID  string
-	ClickID string
+	// Add any necessary fields for header generation
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=header

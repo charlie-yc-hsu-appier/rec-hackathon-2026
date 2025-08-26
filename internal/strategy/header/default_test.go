@@ -8,7 +8,7 @@ import (
 
 func TestDefault(t *testing.T) {
 	strategy := &Default{}
-	params := Params{UserID: "user1", ClickID: "click1"}
+	params := Params{}
 	result := strategy.GenerateHeaders(params)
 	require.Nil(t, result)
 }
