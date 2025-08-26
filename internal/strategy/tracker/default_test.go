@@ -16,17 +16,17 @@ func TestDefault(t *testing.T) {
 	}{
 		{
 			name:        "GIVEN valid parameters THEN return the expected URL",
-			trackingURL: "https://track.com?url={product_url}&id={click_id_base64}",
+			trackingURL: "{product_url}&click_param=test&id={click_id_base64}",
 			productURL:  "https://product.com/item123",
 			clickID:     "abc123",
-			want:        "https://track.com?url=https://product.com/item123&id=YWJjMTIz",
+			want:        "https://product.com/item123&click_param=test&id=YWJjMTIz",
 		},
 		{
 			name:        "GIVEN missing placeholders THEN return the expected URL",
-			trackingURL: "https://track.com?url={product_url}",
+			trackingURL: "{product_url}&click_param=test",
 			productURL:  "https://product.com/item123",
 			clickID:     "abc123",
-			want:        "https://track.com?url=https://product.com/item123",
+			want:        "https://product.com/item123&click_param=test",
 		},
 	}
 
