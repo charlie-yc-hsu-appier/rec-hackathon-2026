@@ -28,7 +28,7 @@ func TestDefault(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			strategy := &Default{}
+			strategy := &CoupangPartner{}
 			got, err := strategy.UnmarshalResponse(tc.input)
 			if tc.wantedError != nil {
 				require.Error(t, err)

@@ -24,7 +24,7 @@ func BuildRequester(name string) requester.Strategy {
 func BuildUnmarshaler(name string) unmarshaler.Strategy {
 	switch name {
 	default:
-		return &unmarshaler.Default{}
+		return &unmarshaler.CoupangPartner{}
 	}
 }
 

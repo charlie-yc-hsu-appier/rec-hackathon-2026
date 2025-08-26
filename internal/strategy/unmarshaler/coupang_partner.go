@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-type Default struct{}
+type CoupangPartner struct{}
 
-func (s *Default) UnmarshalResponse(body []byte) (*[]PartnerResp, error) {
+func (s *CoupangPartner) UnmarshalResponse(body []byte) (*[]PartnerResp, error) {
 	var resp []PartnerResp
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("invalid format. body: %v", string(body))
