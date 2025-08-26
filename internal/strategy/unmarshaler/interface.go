@@ -1,6 +1,6 @@
 package unmarshaler
 
-type CoupangPartnerResp struct {
+type PartnerResp struct {
 	ProductID    int    `json:"productId"`
 	ProductURL   string `json:"productUrl"`
 	ProductImage string `json:"productImage"`
@@ -9,5 +9,5 @@ type CoupangPartnerResp struct {
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=unmarshaler
 
 type Strategy interface {
-	UnmarshalResponse(body []byte) (*[]CoupangPartnerResp, error)
+	UnmarshalResponse(body []byte) (*[]PartnerResp, error)
 }

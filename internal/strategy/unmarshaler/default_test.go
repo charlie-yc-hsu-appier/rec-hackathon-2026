@@ -11,13 +11,13 @@ func TestDefault(t *testing.T) {
 	tt := []struct {
 		name        string
 		input       []byte
-		want        *[]CoupangPartnerResp
+		want        *[]PartnerResp
 		wantedError error
 	}{
 		{
 			name:  "GIVEN valid JSON THEN return the expected struct",
 			input: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"},{"productId":2,"productUrl":"url2","productImage":"img2"}]`),
-			want:  &[]CoupangPartnerResp{{ProductID: 1, ProductImage: "img1", ProductURL: "url1"}, {ProductID: 2, ProductImage: "img2", ProductURL: "url2"}},
+			want:  &[]PartnerResp{{ProductID: 1, ProductImage: "img1", ProductURL: "url1"}, {ProductID: 2, ProductImage: "img2", ProductURL: "url2"}},
 		},
 		{
 			name:        "GIVEN invalid JSON THEN return an error",
