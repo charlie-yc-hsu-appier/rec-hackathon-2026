@@ -7,8 +7,8 @@ import (
 )
 
 func TestDefault(t *testing.T) {
-	strategy := &NilHeader{}
+	strategy := &NoHeader{}
 	params := Params{}
 	result := strategy.GenerateHeaders(params)
-	require.Nil(t, result)
+	require.Equal(t, map[string]string{}, result)
 }
