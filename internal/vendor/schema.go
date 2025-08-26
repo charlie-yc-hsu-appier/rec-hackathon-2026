@@ -7,12 +7,8 @@ type Request struct {
 	ImgHeight int    `form:"h" binding:"required"`
 }
 
-type Response struct {
-	ProductIDs   []string                `json:"product_ids"`
-	ProductPatch map[string]ProductPatch `json:"product_patch"`
-}
-
-type ProductPatch struct {
-	Url   string `json:"url"`
-	Image string `json:"image"`
+type ProductInfo struct {
+	ProductID int    `json:"product_id"`
+	Url       string `json:"url"`
+	Image     string `json:"image"`
 }

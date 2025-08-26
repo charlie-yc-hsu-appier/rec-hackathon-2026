@@ -29,7 +29,7 @@ func NewVendorController(vendorRegistry map[string]vendor.Client) *VendorControl
 // @Param        click_id    query string true  "Click ID"
 // @Param        w           query int    true  "Image Width"
 // @Param        h           query int    true  "Image Height"
-// @Success      200 {object} vendor.Response
+// @Success      200 {object} []vendor.ProductInfo
 // @Failure      400 {object} map[string]string "Bad Request"
 // @Failure      500 {object} map[string]string "Internal Error"
 // @Router       /r/{vendor_key} [get]

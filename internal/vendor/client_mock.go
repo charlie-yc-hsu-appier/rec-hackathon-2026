@@ -40,10 +40,10 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // GetUserRecommendationItems mocks base method.
-func (m *MockClient) GetUserRecommendationItems(ctx context.Context, req Request) (Response, error) {
+func (m *MockClient) GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserRecommendationItems", ctx, req)
-	ret0, _ := ret[0].(Response)
+	ret0, _ := ret[0].([]ProductInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -1,22 +1,13 @@
 basePath: /
 definitions:
-  vendor.ProductPatch:
+  vendor.ProductInfo:
     properties:
       image:
         type: string
+      product_id:
+        type: integer
       url:
         type: string
-    type: object
-  vendor.Response:
-    properties:
-      product_ids:
-        items:
-          type: string
-        type: array
-      product_patch:
-        additionalProperties:
-          $ref: '#/definitions/vendor.ProductPatch'
-        type: object
     type: object
 info:
   contact:
@@ -69,7 +60,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/vendor.Response'
+            items:
+              $ref: '#/definitions/vendor.ProductInfo'
+            type: array
         "400":
           description: Bad Request
           schema:

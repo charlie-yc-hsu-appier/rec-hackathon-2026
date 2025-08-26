@@ -39,11 +39,11 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 			vendorKey:  "test_vendor",
 			requestURL: "/r/test_vendor?user_id=123&click_id=456&w=100&h=200",
 			setupMock: func(mc *vendor.MockClient) {
-				mockResp := vendor.Response{ProductIDs: []string{"1"}, ProductPatch: map[string]vendor.ProductPatch{"1": {Url: "url", Image: "img"}}}
+				mockResp := []vendor.ProductInfo{{ProductID: 1, Url: "url", Image: "img"}}
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(mockResp, nil)
 			},
 			wantCode: http.StatusOK,
-			wantBody: `{"product_ids":["1"],"product_patch":{"1":{"url":"url","image":"img"}}}`,
+			wantBody: `[{"product_id":1,"url":"url","image":"img"}]`,
 		},
 		{
 			name:       "GIVEN an invalid vendor key THEN expect a bad request response",
@@ -66,7 +66,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 			vendorKey:  "test_vendor",
 			requestURL: "/r/test_vendor?user_id=123&click_id=456&w=100&h=200",
 			setupMock: func(mc *vendor.MockClient) {
-				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(vendor.Response{}, errors.New("fail"))
+				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(nil, errors.New("fail"))
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: `{"detail":"fail", "status":500}`,

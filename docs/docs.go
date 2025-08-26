@@ -79,7 +79,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/vendor.Response"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vendor.ProductInfo"
+                            }
                         }
                     },
                     "400": {
@@ -105,31 +108,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "vendor.ProductPatch": {
+        "vendor.ProductInfo": {
             "type": "object",
             "properties": {
                 "image": {
                     "type": "string"
                 },
+                "product_id": {
+                    "type": "integer"
+                },
                 "url": {
                     "type": "string"
-                }
-            }
-        },
-        "vendor.Response": {
-            "type": "object",
-            "properties": {
-                "product_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "product_patch": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/vendor.ProductPatch"
-                    }
                 }
             }
         }

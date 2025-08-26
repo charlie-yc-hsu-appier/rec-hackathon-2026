@@ -2,7 +2,6 @@ package vendor
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"rec-vendor-api/internal/config"
@@ -27,7 +26,7 @@ type vendorClient struct {
 
 //go:generate mockgen -source=./client.go -destination=./client_mock.go -package=vendor
 type Client interface {
-	GetUserRecommendationItems(ctx context.Context, req Request) (Response, error)
+	GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error)
 }
 
 func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
@@ -44,7 +43,7 @@ func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
 	}
 }
 
-func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Request) (Response, error) {
+func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error) {
 	reqParams := requester.Params{
 		RequestURL: v.cfg.RequestURL,
 		UserID:     req.UserID,
@@ -65,21 +64,17 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 
 	restResp, err := v.client.Get(ctx, restReq, v.timeout, []int{200})
 	if err != nil {
-		return Response{}, err
+		return nil, err
 	}
 
 	cpResp, err := v.respUnmarshalStrategy.UnmarshalResponse(restResp.Body)
 	if err != nil {
-		return Response{}, err
+		return nil, err
 	}
 
-	productIDs := make([]string, 0, len(*cpResp))
-	productPatch := make(map[string]ProductPatch, len(*cpResp))
+	products := make([]ProductInfo, 0, len(*cpResp))
 
 	for _, ele := range *cpResp {
-		productIDStr := strconv.Itoa(ele.ProductID)
-		productIDs = append(productIDs, productIDStr)
-
 		trackParams := tracker.Params{
 			TrackingURL: v.cfg.TrackingURL,
 			ProductURL:  ele.ProductURL,
@@ -87,14 +82,12 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		}
 		productUrl := v.trackingURLStrategy.GenerateTrackingURL(trackParams)
 
-		productPatch[productIDStr] = ProductPatch{
-			Url:   productUrl,
-			Image: ele.ProductImage,
-		}
+		products = append(products, ProductInfo{
+			ProductID: ele.ProductID,
+			Url:       productUrl,
+			Image:     ele.ProductImage,
+		})
 	}
 
-	return Response{
-		ProductIDs:   productIDs,
-		ProductPatch: productPatch,
-	}, nil
+	return products, nil
 }

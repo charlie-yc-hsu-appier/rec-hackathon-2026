@@ -45,7 +45,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 		mockRespErr  error
 		mockStrategy func()
 		wantErr      bool
-		want         Response
+		want         []ProductInfo
 	}{
 		{
 			name:     "GIVEN valid response THEN expect success",
@@ -57,7 +57,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				ts.mockTracker.EXPECT().GenerateTrackingURL(gomock.Any()).Return("http://tracking-url")
 
 			},
-			want: Response{ProductIDs: []string{"1"}, ProductPatch: map[string]ProductPatch{"1": {Url: "http://tracking-url", Image: "img1"}}},
+			want: []ProductInfo{{ProductID: 1, Url: "http://tracking-url", Image: "img1"}},
 		},
 		{
 			name:        "GIVEN network error THEN expect error",
@@ -68,7 +68,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 
 			},
 			wantErr: true,
-			want:    Response{},
+			want:    nil,
 		},
 		{
 			name:     "GIVEN unmarshal error THEN expect error",
@@ -79,7 +79,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
 			},
 			wantErr: true,
-			want:    Response{},
+			want:    nil,
 		},
 	}
 	for _, tc := range tt {
