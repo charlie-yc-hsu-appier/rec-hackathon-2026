@@ -16,12 +16,10 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"bitbucket.org/plaxieappier/rec-go-kit/logkit"
-	"bitbucket.org/plaxieappier/rec-go-kit/tracekit"
-
 	"github.com/gin-gonic/gin"
+	"github.com/plaxieappier/rec-go-kit/logkit"
+	"github.com/plaxieappier/rec-go-kit/tracekit"
+	log "github.com/sirupsen/logrus"
 )
 
 // @title Vendor API service
