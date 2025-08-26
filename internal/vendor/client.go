@@ -12,7 +12,7 @@ import (
 	"rec-vendor-api/internal/strategy/unmarshaler"
 	"rec-vendor-api/internal/telemetry"
 
-	"bitbucket.org/plaxieappier/rec-go-kit/httpkit"
+	"github.com/plaxieappier/rec-go-kit/httpkit"
 )
 
 type vendorClient struct {

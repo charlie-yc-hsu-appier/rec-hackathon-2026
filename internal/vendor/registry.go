@@ -4,7 +4,7 @@ import (
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/strategy"
 
-	"bitbucket.org/plaxieappier/rec-go-kit/httpkit"
+	"github.com/plaxieappier/rec-go-kit/httpkit"
 )
 
 func BuildRegistry(config config.VendorConfig) (map[string]Client, error) {

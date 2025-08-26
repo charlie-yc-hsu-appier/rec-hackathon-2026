@@ -14,7 +14,7 @@ import (
 	"rec-vendor-api/internal/strategy/tracker"
 	"rec-vendor-api/internal/strategy/unmarshaler"
 
-	"bitbucket.org/plaxieappier/rec-go-kit/httpkit"
+	"github.com/plaxieappier/rec-go-kit/httpkit"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
