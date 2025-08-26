@@ -9,8 +9,10 @@ I would like to set the session under vendor endpoint with
   [Documentation]  Send GET request to vendor API endpoint.
   ...              Available parameters:
   ...              endpoint - The endpoint path (default: /healthz)
+  ...              For /r endpoint format: endpoint=r/{vendor_name}
   ...              For example:
   ...              Given I would like to set the session under vendor endpoint with  endpoint=/healthz
+  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300
   [Arguments]             &{args}
 
   # Set default endpoint if not provided
@@ -37,6 +39,12 @@ I would like to set the session under vendor endpoint with
   # Set the request header with Accept: */*
   &{HEADERS} =            Create Dictionary
   ...                     Accept=*/*
+
+  # Handle endpoint path - add leading slash if not present
+  ${endpoint_starts_with_slash} =    Run Keyword And Return Status    Should Start With    ${endpoint}    /
+  IF    not ${endpoint_starts_with_slash}
+    ${endpoint} =    Set Variable    /${endpoint}
+  END
 
   # Start to send the GET request - handle empty params safely
   ${has_params} =         Get Length              ${query_params}
@@ -90,134 +98,55 @@ I would like to check status_code should be "${expected_code}" within the curren
   ...     values=False
 
 
-I would like to check content_length should be "${expected_content_length}" within the tracker session
-  Should Be Equal As Strings
-  ...     ${content_length}
-  ...     ${expected_content_length}
-  ...     @{TEST TAGS} The content_length code isn't we expected:${expected_content_length}, we get:${content_length}, Request:${request.url}, R_Header:${request.headers}
-  ...     values=False
+Validate vendor response structure
+  [Arguments]    ${response_json}
+  [Documentation]    Validate the basic structure of vendor response
+  ...               Expected structure:
+  ...               {
+  ...                 "product_ids": [...],
+  ...                 "product_patch": {...}
+  ...               }
+  
+  Dictionary Should Contain Key    ${response_json}    product_ids
+  ...    Response should contain 'product_ids' key
+  
+  Dictionary Should Contain Key    ${response_json}    product_patch
+  ...    Response should contain 'product_patch' key
+  
+  ${product_ids} =    Get From Dictionary    ${response_json}    product_ids
+  Should Not Be Empty    ${product_ids}    product_ids should not be empty
+  
+  ${product_patch} =    Get From Dictionary    ${response_json}    product_patch
+  Should Not Be Empty    ${product_patch}    product_patch should not be empty
+  
+  Log    ✅ Response structure validation passed
 
 
-In the user2item response payload, the value of alg should not be "${alg_type}"
-  [Arguments]     ${rmn_ignore_num}=${FALSE}
-
-  Check the "${alg_type}" should not in each JSON value items  rmn_ignore_num=${rmn_ignore_num}
-
-
-In the user2item response payload, the "${expected_item}" should exist (EC-REC Common Key)
-  Check "${expected_item}" key in the JSON response
-
-
-In the user2item response payload, the "${expected_item}" should exist (EC-REC Common Value)
-  IF  '${expected_item}' == 'rec_req_id'
-    Check the rec_req_id should be within the response
-  ELSE IF  '${expected_item}' == 'preview'
-    Check the value of preview should be "${True}" within the response
-  ELSE IF  '${expected_item}' == 'land_append'
-    Check the land_append should be within the response
-  ELSE IF  '${expected_item}' == 'rmn_required keys'
-    Check the rmn_required keys should be within the response
-  ELSE
-    Check "${expected_item}" value in each JSON response items  layout_id=${extracted_layout_id}
+Validate product patch contains product ids
+  [Arguments]    ${response_json}    ${param_name}    ${expected_click_id_base64}
+  [Documentation]    Validate that product_ids appear in product_patch
+  ...               and verify the tracking parameter contains correct base64 encoded click_id
+  
+  ${product_ids} =    Get From Dictionary    ${response_json}    product_ids
+  ${product_patch} =    Get From Dictionary    ${response_json}    product_patch
+  
+  # Check that each product_id appears in product_patch
+  FOR    ${product_id}    IN    @{product_ids}
+    Dictionary Should Contain Key    ${product_patch}    ${product_id}
+    ...    Product ID ${product_id} should exist in product_patch
+    
+    # Get the product info and validate URL contains correct parameter
+    ${product_info} =    Get From Dictionary    ${product_patch}    ${product_id}
+    Dictionary Should Contain Key    ${product_info}    url
+    ...    Product ${product_id} should have 'url' field
+    
+    ${product_url} =    Get From Dictionary    ${product_info}    url
+    
+    # Verify the tracking parameter contains the base64 encoded click_id
+    Should Contain    ${product_url}    ${param_name}=${expected_click_id_base64}
+    ...    Product URL should contain ${param_name}=${expected_click_id_base64}, but got: ${product_url}
+    
+    Log    ✅ Product ${product_id} validation passed - URL contains correct tracking parameter
   END
-
-
-In the spark log, we can find the "${expected_idfa}" & "${expected_rec_req_id}" information
-  [Arguments]             &{args}
-  [Documentation]  You can add the check_xxx after the keywords to verify related cases
-
-  # 1st find the spark_log information via idfa & rec_req_id
-  ${spark_log_json} =     Spark Log Consumer      ${expected_idfa}    ${expected_rec_req_id}
-  Should Not Be Empty     ${spark_log_json}
-  log  ${spark_log_json}
-
-  ${need_to_check_bidobjid} =  Run Keyword And Return Status
-  ...                     Dictionary Should Contain Key  ${args}  check_bidobjid
-
-  ${need_to_check_ufo} =  Run Keyword And Return Status
-  ...                     Dictionary Should Contain Key  ${args}  check_ufo
-
-  ${need_to_check_chosen_mg_and_ranker} =  Run Keyword And Return Status
-  ...                     Dictionary Should Contain Key  ${args}  check_matcher_ranker_results
-
-  ${need_to_check_rank_recommend_order} =  Run Keyword And Return Status
-  ...                     Dictionary Should Contain Key  ${args}  check_rank_recommend_order
-
-  # 2nd verify other features we want
-  IF  ${need_to_check_bidobjid}
-    Set Local Variable  ${expected_bidobjid}    ${args}[check_bidobjid]
-    Check "bidobjid" in spark JSON response  ${spark_log_json}  ${expected_bidobjid}
-  END
-
-  IF  ${need_to_check_ufo}
-    Set Local Variable  ${expected_ufo}     ${args}[check_ufo]
-    Check "ufos_user_features" in spark JSON response  ${spark_log_json}  ${expected_ufo}
-  END
-
-  IF  ${need_to_check_chosen_mg_and_ranker}
-    Set Local Variable  ${expected_chosen_mg_and_ranker}  ${args}[check_matcher_ranker_results]
-    Check "experiments[*]" in spark JSON response  ${spark_log_json}  ${expected_chosen_mg_and_ranker}
-  END
-
-  IF  ${need_to_check_rank_recommend_order}
-    Dictionary Should Contain Key  ${args}  check_order_should_be  msg=When the "need_to_check_rank_recommend_order" is "TRUE", please provide "shuffled" or not after the "check_order_should_be"
-    Set Local Variable  ${expected_rank_recommend_order}  ${args}[check_rank_recommend_order]
-    Set Local Variable  ${check_order_should_be}      ${args}[check_order_should_be]
-    Check "recommended_skus[*].product_id" in spark JSON response  ${spark_log_json}  ${expected_rank_recommend_order}  ${check_order_should_be}
-  END
-
-
-In the user2item response payload, the "${expected_item}" should not exist
-  Check "${expected_item}" value doesn't exist in each JSON response items
-
-
-In the user2item response payload, the amount of recommended products should be as same as the vaule of num_items="${expected_num_items}"
-  Check the amount of recommended products should be equal to "${expected_num_items}"
-
-
-In the user2item response payload, there is no duplicated SKU item in the response
-  Check no duplicated SKU items in the response
-
-
-In all the user2item response payloads, the order of each recommend proudcts should be "${expected_result}"
-  Should Match Regexp     ${expected_result}      (different|same)    msg= [Fail] Please check the expected_result, should be: (different|same)
-
-  FOR  ${index}  IN RANGE  3
-    ${random_1} =       Generate Random String  1                   0123456789
-    ${random_1} =       Convert To Integer      ${random_1}
-
-    IF  '${random_1}' == '8'
-      Set Local Variable  ${random_2}     0
-    ELSE IF  '${random_1}' == '9'
-      Set Local Variable  ${random_2}     1
-    ELSE
-      ${random_2} =   Evaluate    ${random_1} + 2
-    END
-
-    ${status}           ${msg} =                Run Keyword And Ignore Error
-    ...                 Lists Should Be Equal   ${${random_1}_products_list}  ${${random_2}_products_list}
-
-    Set Test Message    \n\r                    append=yes
-    Set Test Message
-    ...                 [Shuffle Check] The order of list (${random_1} & ${random_2}) ${${random_1}_products_list} & ${${random_2}_products_list} is "${expected_result}"
-    ...                 append=yes
-
-    IF  "${status}" == "PASS" and "${expected_result}" == "different"
-      FAIL
-      ...     The order of two recommend (${${random_1}_products_list}|${${random_2}_products_list}) result is same --> 1st:${${random_1}_products_list} 2nd:${${random_2}_products_list}
-    ELSE IF  "${status}" == "FAIL" and "${expected_result}" == "same"
-      FAIL
-      ...     The order of two recommend (${${random_1}_products_list}|${${random_2}_products_list}) result is different --> 1st:${${random_1}_products_list} 2nd:${${random_2}_products_list}
-    END
-  END
-
-
-In all the user2item response payloads, the diversity of each recommend proudcts should >= "${expected_num}"
-  ${expected_num} =   Convert To Integer  ${expected_num}
-  ${cnt} =            Get length          ${u_all_product_list}
-  Should Be True
-  ...                 ${cnt} >= ${expected_num}
-  ...                 The diversity of products isn't bigger than we expect: ${expected_num}
-
-  Set Test Message    \n\r                append=yes
-  Set Test Message    [Shuffle Check] The diversity(${cnt}) of list: ${u_all_product_list}  append=yes
+  
+  Log    ✅ All product_ids found in product_patch with correct tracking parameters

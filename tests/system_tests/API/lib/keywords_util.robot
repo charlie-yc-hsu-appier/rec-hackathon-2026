@@ -1,16 +1,5 @@
 *** Keywords ***
 # Utility #
-Replacing the special characters for urlencode
-  [Tags]              robot:flatten
-  [Arguments]         ${string}
-  ${temp_string} =    Replace String      ${string}       ,   %2C
-  ${temp_string} =    Replace String      ${temp_string}  :   %3A
-  ${temp_string} =    Replace String      ${temp_string}  /   %2F
-  ${temp_string} =    Replace String      ${temp_string}  (   %28
-  ${final_string} =   Replace String      ${temp_string}  )   %29
-  Return              ${final_string}
-
-
 Replacing the special characters
   [Tags]              robot:flatten
   [Arguments]         ${string}
@@ -229,28 +218,6 @@ Check the "${alg_type}" should be in debug information
   END
 
 
-Check two lists are subsequence
-  [Arguments]             ${long_list}        ${short_list}
-  [Documentation]  This ensures that the index does not exceed the range of short_list while correctly determining
-  ...              whether short_list is a subsequence of long_list.
-
-  ${index} =              Set Variable        0
-  ${index} =              Convert To Integer  ${index}
-  ${short_list_len} =     Evaluate            len(${short_list})
-
-  FOR  ${item}  IN  @{long_list}
-    IF  ${index} < ${short_list_len}
-      ${short_item} =     Set Variable    ${short_list}[${index}]
-      IF  '${item}' == '${short_item}'
-        ${index} =  Evaluate    ${index} + 1
-      END
-    END
-  END
-
-  ${result} =             Evaluate            ${index} == ${short_list_len}
-  RETURN                  ${result}
-
-
 The key should exist in the params dictionary
   [Tags]              robot:flatten
   [Arguments]         ${args}         ${key}
@@ -310,95 +277,62 @@ Download the video and check the size > 1
   END
 
 
-Using the given random bidobjid or generating a new one
-  [Tags]              robot:flatten
-  [Arguments]         ${args}
-  # Since the bidobjid will be cached for 4 hours in the DNA service, we give a random value to avoid getting the same item
-  ${has_bidobjid} =   Run Keyword And Return Status
-  ...                 Dictionary Should Contain Key  ${args}  bidobjid
-  IF  ${has_bidobjid}
-    Set Test Variable   ${bidobjid}             ${args}[bidobjid]
-  ELSE
-    ${bidobjid} =       Generate Random String  15              [NUMBERS]abcdefghi
-    Set Test Variable   ${bidobjid}             ${bidobjid}
+# Vendor API testing utility keywords #
+Extract dimensions from request url
+  [Arguments]    ${request_url}
+  [Documentation]    Extract width and height from request_url
+  ...               Pattern: size={width}x{height}
+
+  # Default dimensions
+  &{dimensions} =    Create Dictionary    width=300    height=300
+
+  # Extract from size parameter pattern: size={width}x{height}
+  ${size_matches} =    Get Regexp Matches    ${request_url}    size=\\{([^}]+)\\}x\\{([^}]+)\\}    1    2
+  IF    ${size_matches}
+    ${width_param} =    Set Variable    ${size_matches[0]}
+    ${height_param} =    Set Variable    ${size_matches[1]}
+    # For patterns like {width} and {height}, use default values
+    IF    '${width_param}' == 'width' and '${height_param}' == 'height'
+      Set To Dictionary    ${dimensions}    width=300    height=300
+    END
   END
-  RETURN              ${bidobjid}
+  RETURN    &{dimensions}
 
 
-Extract the required params for predict item
-  [Arguments]             ${resp_json}
-
-  # If the resp_json is from redis, then it should contain the key --> "p"
-  ${is_from_redis} =      Run Keyword And Return Status
-  ...                     Dictionary Should Contain Key  ${resp_json}  p
-
-  IF  ${is_from_redis}
-    ${sku} =                Get Value From Json     ${resp_json}    $.p
-    Set Test Variable       ${extracted_sku}        ${sku[0]}
-
-    ${custom_dna_layout} =  Get Value From Json     ${resp_json}    $.i
-    Set Test Variable       ${extracted_custom_dna_layout}  ${custom_dna_layout[0]}
-
-    ${predictid} =          Get Value From Json     ${resp_json}    $.id
-    Set Test Variable       ${extracted_predictid}  ${predictid}
-    Set Test Variable       ${extracted_predict_default}  ${0}
-  ELSE
-    ${sku} =                Get Value From Json     ${resp_json}    $.value[0].sku
-    Set Test Variable       ${extracted_sku}        ${sku[0]}
-
-    ${custom_dna_layout} =  Get Value From Json     ${resp_json}    $.value[0].custom_dna_layout
-    ${custom_dna_layout} =  Get Regexp Matches      ${custom_dna_layout[0]}  v0\/(.+)  1
-    Set Test Variable       ${extracted_custom_dna_layout}  ${custom_dna_layout[0]}
-
-    ${predictid} =          Generate Random String  7               [NUMBERS]poqstuvwxyz
-    Set Test Variable       ${extracted_predictid}  ${predictid}
-    Set Test Variable       ${extracted_predict_default}  ${0}
-  END
-
-  Log                     sku: ${extracted_sku}, img: ${extracted_custom_dna_layout}, predict_id: ${extracted_predictid}, predict_default: ${extracted_predict_default}  level=DEBUG
+Generate UUID4
+  [Documentation]    Generate a random UUID4 for user_id
+  ${uuid} =    Evaluate    str(__import__('uuid').uuid4())
+  RETURN    ${uuid}
 
 
-Extract the required assertion data for multiple_URL
-  [Tags]                  robot:flatten
-  Variable Should Exist   ${resp_json['value']}
-  ${resp_json_value} =    Set Variable            ${resp_json['value']}
-  Should Not Be Empty     ${resp_json_value}      @{TEST TAGS} The value[] is empty
+Encode Base64
+  [Arguments]    ${text}
+  [Documentation]    Encode text to base64
+  ${encoded} =    Evaluate    __import__('base64').b64encode('${text}'.encode()).decode()
+  RETURN    ${encoded}
 
-  ${dict_get_item} =      Create Dictionary
-
-  FOR  ${item}  IN  @{resp_json_value}
-    Log                 ${item}             level=DEBUG
-    Dictionary Should Contain Key  ${item}  sku  @{TEST TAGS} No "sku" Key within the response, Request:${request.url}, R_Header:${request.headers}
-    Dictionary Should Contain Key  ${item}  url  @{TEST TAGS} No "url" Key within the response, Request:${request.url}, R_Header:${request.headers}
-
-    Set Local Variable  ${get_sku}          ${item['sku']}
-    Set Local Variable  ${get_url}          ${item['url']}
-
-    Set To Dictionary   ${dict_get_item}    ${get_sku}=${get_url}
-  END
-
-  Set Test Variable       ${mul_url_dict}         ${dict_get_item}
-
-
-Get Current Epoch Time
-  [Tags]              robot:flatten
-  ${date} =           Get Current Date    exclude_millis=True
-  ${epoch_date} =     Convert Date        ${date}                 epoch
-  ${epoch_int} =      Convert To Integer  ${epoch_date}
-  RETURN              ${epoch_int}
-
-
-Generating all user ids
-  ${idfa} =   Get A UUID In Upper
-  ${auid} =   Generate Random String  12
-
-  RETURN      ${idfa}                 ${auid}
+Parse yaml tracking url template
+  [Arguments]    ${tracking_url}
+  [Documentation]    Parse YAML tracking_url to extract parameter configuration
+  ...               Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
+  
+  # Extract parameter name using regex
+  ${param_matches} =    Get Regexp Matches    ${tracking_url}    [&?]([^=]+)=    1
+  ${param_name} =    Set Variable If    ${param_matches}    ${param_matches[0]}    unknown
+  
+  # Check if uses base64 encoding
+  ${uses_base64} =    Run Keyword And Return Status    Should Contain    ${tracking_url}    base64
+  
+  # Check if requires group_id (typically for INL vendors)
+  ${has_group_id} =    Set Variable If    '${param_name}' == 'subparam'    ${TRUE}    ${FALSE}
+  
+  # Create config dictionary
+  &{config} =    Create Dictionary    
+  ...            param_name=${param_name}
+  ...            uses_base64=${uses_base64}
+  ...            has_group_id=${has_group_id}
+  
+  RETURN    &{config}
 
 
-Get A UUID In Upper
-  [Tags]      robot:flatten
-
-  ${uuid} =   Evaluate        uuid.uuid4()        modules=uuid
-  ${UUID} =   Evaluate        "${uuid}".upper()
-  RETURN      ${UUID}
 

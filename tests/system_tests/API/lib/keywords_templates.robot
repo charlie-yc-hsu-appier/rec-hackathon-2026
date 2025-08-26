@@ -1,62 +1,59 @@
 *** Keywords ***
-# BDD Template For Checking Coupang vendor Group #
-Check the Coupang vendor group
-  [Arguments]
-  ...                 ${oid}
-  ...                 ${group_id}
-  ...                 ${layout_id}
-  ...                 ${expected_group_name}
-  ...                 ${expected_url_params}
-  ...                 ${expected_img_domain}
-  ...                 ${expected_layout_code}=${Empty}
-  ...                 ${with_fix_click_id}=${Empty}
-
-  Given I have an vendor session
-
-  # Parse layout_id to extract width and height
-  ${w} =    Set Variable    300
-  ${h} =    Set Variable    300
+# Automated YAML-driven vendor testing keywords #
+Test vendors from yaml configuration
+  [Arguments]    ${yaml_content}
+  [Documentation]    Automated test for all vendors defined in YAML configuration
+  ...               Tests the /r endpoint with dynamic parameters extracted from YAML
+  ...               URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
+  ...               Tests exactly the number of vendors defined in the YAML
   
-  # Check if layout_id contains dimensions (e.g., "300x300", "1200x627")
-  ${dimension_match} =    Run Keyword And Return Status    Should Match Regexp    ${layout_id}    ^.*?(\\d+)x(\\d+).*$
-  IF    ${dimension_match}
-    ${matches} =    Get Regexp Matches    ${layout_id}    ^.*?(\\d+)x(\\d+).*$    1    2
-    IF    ${matches}
-      ${w} =    Set Variable    ${matches[0]}
-      ${h} =    Set Variable    ${matches[1]}
-    END
+  # Parse YAML once at the beginning
+  ${yaml_data} =    Evaluate    yaml.safe_load('''${yaml_content}''')    yaml
+  ${vendors} =    Get From Dictionary    ${yaml_data}    vendors
+  
+  ${vendor_count} =    Get Length    ${vendors}
+  Log    Found ${vendor_count} vendor(s) in YAML configuration
+  
+  # Test each vendor defined in YAML
+  FOR    ${vendor_config}    IN    @{vendors}
+    ${vendor_name} =    Get From Dictionary    ${vendor_config}    name
+    Log    Testing vendor: ${vendor_name}
+    
+    # Extract parameters from vendor configuration
+    ${request_url} =    Get From Dictionary    ${vendor_config}    request_url
+    ${tracking_url} =    Get From Dictionary    ${vendor_config}    tracking_url
+    
+    # Parse dimensions from request_url if available
+    ${dimensions} =    Extract dimensions from request url    ${request_url}
+    ${width} =    Get From Dictionary    ${dimensions}    width
+    ${height} =    Get From Dictionary    ${dimensions}    height
+    
+    # Parse tracking URL to get parameter info
+    ${tracking_config} =    Parse yaml tracking url template    ${tracking_url}
+    ${param_name} =    Get From Dictionary    ${tracking_config}    param_name
+    ${uses_base64} =    Get From Dictionary    ${tracking_config}    uses_base64
+    
+    # Generate test data
+    ${user_id} =    Generate UUID4
+    ${click_id} =    Set Variable    12aa
+    ${click_id_base64} =    Run Keyword If    ${uses_base64}    Encode Base64    ${click_id}
+    ...                     ELSE    Set Variable    ${click_id}
+    
+    # Test the vendor endpoint
+    Given I have an vendor session
+    When I would like to set the session under vendor endpoint with    endpoint=r/${vendor_name}    user_id=${user_id}    click_id=${click_id}    w=${width}    h=${height}
+    
+    # Verify response
+    Then I would like to check status_code should be "200" within the current session
+    
+    # Validate response structure and content
+    Validate vendor response structure    ${resp_json}
+    Validate product patch contains product ids    ${resp_json}    ${param_name}    ${click_id_base64}
+    
+    Log    ✅ Vendor ${vendor_name} test PASSED
   END
-
-  IF  '${with_fix_click_id}' != '${Empty}'
-    Set Local Variable  ${_cid}         RFTEST
-    Set Local Variable  ${_bidobjid}    RFTEST
-  ELSE
-    Set Local Variable  ${_cid}         ${Empty}
-    Set Local Variable  ${_bidobjid}    ${Empty}
-  END
-
-  # When the vendor is from linkmine, we don't need the i_group param
-  IF  '${group_id}' != '${Empty}'
-    When I would like to set the session under vendor endpoint with  endpoint=r  vendor_key=${oid}  user_id=55660000-0000-4C18-AAAA-556624AF0000  click_id=${_cid}  w=${w}  h=${h}
-  # When the vendor is from replace (oid = ig6jGmNbQvqiqpQ0XDqNpw), we'll use the xst to decide the layout
-  ELSE IF  '${oid}' == 'ig6jGmNbQvqiqpQ0XDqNpw'
-    When I would like to set the session under vendor endpoint with  endpoint=r  vendor_key=${oid}  user_id=55660000-0000-4C18-AAAA-556624AF0000  click_id=${_cid}  w=${w}  h=${h}
-  ELSE
-    When I would like to set the session under vendor endpoint with  endpoint=r  vendor_key=${oid}  user_id=55660000-0000-4C18-AAAA-556624AF0000  click_id=${_cid}  w=${w}  h=${h}
-  END
-
-  Then I would like to check status_code should be "200" within the current session
-  Then In the user2item response payload, there is no duplicated SKU item in the response
-  Then In the user2item response payload, the "url" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_url}  (${expected_group_name})
-  Then Check the regex pattern in the given list  ${extracted_url}  (${expected_url_params})
-  # When the vendor is from INL, we will base on the group to check the layout code
-  IF  '${group_id}' != '${Empty}'
-    Then Check the regex pattern in the given list  ${extracted_url}  (${expected_layout_code})
-  END
-  Then In the user2item response payload, the "img" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_img_url}  (${expected_img_domain})
-  Then In the user2item response payload, the "custom_label" should not exist
+  
+  Log    ✅ Completed testing ${vendor_count} vendor(s) from YAML configuration
 
 
 # BDD Template For Checking customized vendor Group #
