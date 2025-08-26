@@ -17,7 +17,7 @@ func TestDefault(t *testing.T) {
 	}{
 		{
 			name:       "GIVEN valid parameters THEN return the expected URL",
-			requestURL: "https://example.com/image?size={width}x{height}&user={user_id}",
+			requestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}",
 			userID:     "TestUser",
 			imgWidth:   200,
 			imgHeight:  100,
