@@ -7,7 +7,7 @@ import (
 )
 
 func TestDefault(t *testing.T) {
-	strategy := &Default{}
+	strategy := &NilHeader{}
 	params := Params{}
 	result := strategy.GenerateHeaders(params)
 	require.Nil(t, result)

@@ -10,7 +10,7 @@ import (
 func BuildHeader(name string) header.Strategy {
 	switch name {
 	default:
-		return &header.Default{}
+		return &header.NilHeader{}
 	}
 }
 
