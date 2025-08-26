@@ -115,7 +115,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "product_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "url": {
                     "type": "string"

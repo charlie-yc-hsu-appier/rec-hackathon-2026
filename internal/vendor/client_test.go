@@ -57,7 +57,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				ts.mockTracker.EXPECT().GenerateTrackingURL(gomock.Any()).Return("http://tracking-url")
 
 			},
-			want: []ProductInfo{{ProductID: 1, Url: "http://tracking-url", Image: "img1"}},
+			want: []ProductInfo{{ProductID: "1", Url: "http://tracking-url", Image: "img1"}},
 		},
 		{
 			name:        "GIVEN network error THEN expect error",

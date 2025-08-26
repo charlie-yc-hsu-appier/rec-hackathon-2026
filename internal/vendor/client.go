@@ -2,6 +2,7 @@ package vendor
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"rec-vendor-api/internal/config"
@@ -83,7 +84,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		productUrl := v.trackingURLStrategy.GenerateTrackingURL(trackParams)
 
 		products = append(products, ProductInfo{
-			ProductID: ele.ProductID,
+			ProductID: strconv.Itoa(ele.ProductID),
 			Url:       productUrl,
 			Image:     ele.ProductImage,
 		})

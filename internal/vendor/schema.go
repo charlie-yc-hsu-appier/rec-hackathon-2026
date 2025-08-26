@@ -8,7 +8,7 @@ type Request struct {
 }
 
 type ProductInfo struct {
-	ProductID int    `json:"product_id"`
+	ProductID string `json:"product_id"`
 	Url       string `json:"url"`
 	Image     string `json:"image"`
 }
