@@ -11,16 +11,15 @@ import (
 	"os/signal"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
+	"rec-vendor-api/internal/telemetry"
 	"runtime/debug"
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"bitbucket.org/plaxieappier/rec-go-kit/logkit"
-	"bitbucket.org/plaxieappier/rec-go-kit/tracekit"
-
 	"github.com/gin-gonic/gin"
+	"github.com/plaxieappier/rec-go-kit/logkit"
+	"github.com/plaxieappier/rec-go-kit/tracekit"
+	log "github.com/sirupsen/logrus"
 )
 
 // @title Vendor API service
@@ -62,7 +61,11 @@ func main() {
 		r.Use(gin.Recovery())
 	}
 
+	vendorController := controller.NewVendorController()
+
+	r.GET("/r", vendorController.Recommend)
 	r.GET("/healthz", controller.HealthCheck)
+	r.GET("/metrics", telemetry.PromHandler())
 
 	addr := "0.0.0.0:8080"
 	s := &http.Server{

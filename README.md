@@ -26,7 +26,7 @@ make install-tool
 
 ```shell
 # since we use private module, need to setup related env variable
-export GOPRIVATE=bitbucket.org/plaxieappier
+export GOPRIVATE=github.com/plaxieappier
 
 # copy config to ~/.gitconfig
 cat .gitconfig >> ~/.gitconfig

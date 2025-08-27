@@ -184,13 +184,12 @@ pipeline {
     stage('Pre-commit check') {
       steps {
         container('golang') {
-          sh 'apk add --no-cache openssh curl make git build-base'
+          sh 'apk add --no-cache openssh make git build-base'
           sh 'wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.61.0'
 
           sh 'mkdir -p -m 0600 /root/.ssh'
           sh 'touch /root/.ssh/known_hosts'
-          sh 'ssh-keygen -f "/root/.ssh/known_hosts" -R "bitbucket.org"'
-          sh 'curl https://bitbucket.org/site/ssh >> /root/.ssh/known_hosts'
+          sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
           sh 'cp $REC_COMMON_LIB_KEY /root/.ssh/ai_rec_common'
           sh 'cp .gitconfig /root/.gitconfig'
           sh 'GIT_SSH_COMMAND="ssh -i /root/.ssh/ai_rec_common" go mod download'
