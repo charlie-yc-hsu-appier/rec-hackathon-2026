@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefault(t *testing.T) {
+func TestCoupangPartner(t *testing.T) {
 	tt := []struct {
 		name        string
 		input       []byte

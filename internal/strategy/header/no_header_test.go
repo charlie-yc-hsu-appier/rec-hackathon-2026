@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefault(t *testing.T) {
+func TestNoHeader(t *testing.T) {
 	strategy := &NoHeader{}
 	params := Params{}
 	result := strategy.GenerateHeaders(params)
