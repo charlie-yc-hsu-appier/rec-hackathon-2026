@@ -9,19 +9,26 @@ import (
 
 func BuildRegistry(config config.VendorConfig) (map[string]Client, error) {
 	registry := map[string]Client{}
-	for _, v := range config.Vendors {
-		var opts []httpkit.ClientOption
-		if v.WithProxy {
-			opts = append(opts, httpkit.WithProxy(config.ProxyURL))
-		}
-		httpClient, err := httpkit.NewClient(opts...)
-		if err != nil {
-			return nil, err
-		}
 
+	// Initialize two http clients: one with proxy, one without
+	httpProxyClient, err := httpkit.NewClient(httpkit.WithProxy(config.ProxyURL))
+	if err != nil {
+		return nil, err
+	}
+	httpClient, err := httpkit.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	httpClients := map[bool]httpkit.Client{
+		true:  httpProxyClient,
+		false: httpClient,
+	}
+
+	for _, v := range config.Vendors {
 		client := NewClient(
 			v,
-			httpClient,
+			httpClients[v.WithProxy],
 			config.Timeout,
 			strategy.BuildHeader(v.Name),
 			strategy.BuildRequester(v.Name),
