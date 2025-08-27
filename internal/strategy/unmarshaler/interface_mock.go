@@ -39,10 +39,10 @@ func (m *MockStrategy) EXPECT() *MockStrategyMockRecorder {
 }
 
 // UnmarshalResponse mocks base method.
-func (m *MockStrategy) UnmarshalResponse(body []byte) (*[]PartnerResp, error) {
+func (m *MockStrategy) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UnmarshalResponse", body)
-	ret0, _ := ret[0].(*[]PartnerResp)
+	ret0, _ := ret[0].([]PartnerResp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

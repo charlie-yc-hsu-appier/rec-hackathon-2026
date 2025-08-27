@@ -53,7 +53,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
 				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url")
-				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return(&[]unmarshaler.PartnerResp{{ProductID: 1, ProductURL: "url1", ProductImage: "img1"}}, nil)
+				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
 				ts.mockTracker.EXPECT().GenerateTrackingURL(gomock.Any()).Return("http://tracking-url")
 
 			},
