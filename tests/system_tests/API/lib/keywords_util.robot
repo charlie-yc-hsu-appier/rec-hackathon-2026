@@ -221,3 +221,30 @@ Parse yaml tracking url template
   ...                 has_group_id=${has_group_id}
 
   RETURN              &{config}
+
+
+Load vendor config from file
+  [Arguments]         ${config_file_path}=${Empty}
+  [Documentation]  Load vendor configuration from config.yaml file
+  ...              Returns vendor_config section as YAML string for testing
+  ...              Default path: deploy/rec-vendor-api/secrets/config.yaml (from project root)
+
+  # Calculate default config file path if not provided
+  IF  '${config_file_path}' == '${Empty}'
+    # From keywords_util.robot location: lib -> API -> system_tests -> tests -> project_root
+    ${project_root} =     Set Variable    ${CURDIR}/../../../../..
+    ${config_file_path} = Set Variable    ${project_root}/deploy/rec-vendor-api/secrets/config.yaml
+  END
+
+  # Read the configuration file
+  ${yaml_content} =       Get File    ${config_file_path}
+  
+  # Parse the YAML to extract only vendor_config section
+  ${config_data} =        Evaluate        yaml.safe_load('''${yaml_content}''')  yaml
+  ${vendor_config} =      Get From Dictionary    ${config_data}    vendor_config
+  
+  # Convert vendor_config back to YAML string for testing framework
+  ${vendor_yaml} =        Evaluate        yaml.dump($vendor_config)  yaml
+  
+  Log    📄 Loaded vendor config from: ${config_file_path}
+  RETURN              ${vendor_yaml}

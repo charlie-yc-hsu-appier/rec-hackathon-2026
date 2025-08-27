@@ -12,22 +12,19 @@ Suite Teardown      Release Test Value
 # Automated vendor testing from YAML - Complete automation
 [] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
   [Tags]              testrailid=     RAT             VENDOR
-  [Documentation]  Fully automated vendor testing using YAML configuration
-  ...              Tests all vendors in YAML with complete automation:
+  [Documentation]  Fully automated vendor testing using actual config.yaml file
+  ...              Loads vendor configuration from deploy/rec-vendor-api/secrets/config.yaml
+  ...              Tests all vendors in config with complete automation:
   ...              - Dynamic endpoint generation: /r/{vendor_name}
   ...              - Auto-selected test dimensions: 300x300, 1200x627, 1200x600
   ...              - Base64 encoding validation for click_id parameters
   ...              - Response structure validation (array of products)
   ...              - Product patch verification with tracking parameters
 
-  # Complete YAML configuration for testing
+  # Load YAML configuration from actual config file
   # Note: size={width}x{height} parameters are auto-selected from predefined sizes (300x300, 1200x627, 1200x600)
-  ${yaml_content} =   Catenate        SEPARATOR=\n
-  ...                 vendors:
-  ...                 ${SPACE}${SPACE}- name: linkmine
-  ...                 ${SPACE}${SPACE}${SPACE}${SPACE}request_url: "https://api.adfork.kr/coupang_sch/?app_code=FAXXi4vdOY&limit=10&type=DNY&adid={user_id}&size={width}x{height}"
-  ...                 ${SPACE}${SPACE}${SPACE}${SPACE}tracking_url: "{product_url}&param1={click_id_base64}"
-  ...                 ${SPACE}${SPACE}${SPACE}${SPACE}with_proxy: true
+  ${config_path} =        Set Variable    ${CURDIR}/../../../../deploy/rec-vendor-api/secrets/config.yaml
+  ${yaml_content} =       Load vendor config from file    ${config_path}
 
   # Run complete automated testing for all vendors in YAML
   Test vendors from yaml configuration  ${yaml_content}
