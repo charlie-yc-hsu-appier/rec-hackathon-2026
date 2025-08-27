@@ -102,51 +102,75 @@ Validate vendor response structure
   [Arguments]    ${response_json}
   [Documentation]    Validate the basic structure of vendor response
   ...               Expected structure:
-  ...               {
-  ...                 "product_ids": [...],
-  ...                 "product_patch": {...}
-  ...               }
+  ...               [
+  ...                 {
+  ...                   "product_id": "1703093047",
+  ...                   "url": "https://...",
+  ...                   "image": "https://..."
+  ...                 }
+  ...               ]
   
-  Dictionary Should Contain Key    ${response_json}    product_ids
-  ...    Response should contain 'product_ids' key
+  # Response should be a list/array
+  ${response_type} =    Evaluate    type($response_json).__name__
+  Should Be Equal    ${response_type}    list
+  ...    Response should be a list/array, but got: ${response_type}
   
-  Dictionary Should Contain Key    ${response_json}    product_patch
-  ...    Response should contain 'product_patch' key
+  # Response should not be empty
+  Should Not Be Empty    ${response_json}    
+  ...    Response array should not be empty
   
-  ${product_ids} =    Get From Dictionary    ${response_json}    product_ids
-  Should Not Be Empty    ${product_ids}    product_ids should not be empty
+  # Validate each product in the response
+  FOR    ${product}    IN    @{response_json}
+    Dictionary Should Contain Key    ${product}    product_id
+    ...    Each product should contain 'product_id' key
+    
+    Dictionary Should Contain Key    ${product}    url
+    ...    Each product should contain 'url' key
+    
+    Dictionary Should Contain Key    ${product}    image
+    ...    Each product should contain 'image' key
+    
+    # Validate that values are not empty
+    ${product_id} =    Get From Dictionary    ${product}    product_id
+    Should Not Be Empty    ${product_id}    product_id should not be empty
+    
+    ${url} =    Get From Dictionary    ${product}    url
+    Should Not Be Empty    ${url}    url should not be empty
+    
+    ${image} =    Get From Dictionary    ${product}    image
+    Should Not Be Empty    ${image}    image should not be empty
+    
+    Log    ✅ Product ${product_id} structure validation passed
+  END
   
-  ${product_patch} =    Get From Dictionary    ${response_json}    product_patch
-  Should Not Be Empty    ${product_patch}    product_patch should not be empty
-  
-  Log    ✅ Response structure validation passed
+  ${product_count} =    Get Length    ${response_json}
+  Log    ✅ Response structure validation passed for ${product_count} products
 
 
 Validate product patch contains product ids
   [Arguments]    ${response_json}    ${param_name}    ${expected_click_id_base64}
-  [Documentation]    Validate that product_ids appear in product_patch
-  ...               and verify the tracking parameter contains correct base64 encoded click_id
+  [Documentation]    Validate that each product contains the correct tracking parameter
+  ...               with base64 encoded click_id in the URL
+  ...               New response format: array of products with product_id, url, image
   
-  ${product_ids} =    Get From Dictionary    ${response_json}    product_ids
-  ${product_patch} =    Get From Dictionary    ${response_json}    product_patch
+  # Response should be a list/array
+  Should Not Be Empty    ${response_json}
+  ...    Response array should not be empty
   
-  # Check that each product_id appears in product_patch
-  FOR    ${product_id}    IN    @{product_ids}
-    Dictionary Should Contain Key    ${product_patch}    ${product_id}
-    ...    Product ID ${product_id} should exist in product_patch
-    
-    # Get the product info and validate URL contains correct parameter
-    ${product_info} =    Get From Dictionary    ${product_patch}    ${product_id}
-    Dictionary Should Contain Key    ${product_info}    url
-    ...    Product ${product_id} should have 'url' field
-    
-    ${product_url} =    Get From Dictionary    ${product_info}    url
+  # Check each product in the response
+  FOR    ${product}    IN    @{response_json}
+    ${product_id} =    Get From Dictionary    ${product}    product_id
+    ${product_url} =    Get From Dictionary    ${product}    url
+    ${product_image} =    Get From Dictionary    ${product}    image
     
     # Verify the tracking parameter contains the base64 encoded click_id
     Should Contain    ${product_url}    ${param_name}=${expected_click_id_base64}
     ...    Product URL should contain ${param_name}=${expected_click_id_base64}, but got: ${product_url}
     
-    Log    ✅ Product ${product_id} validation passed - URL contains correct tracking parameter
+    Log    ✅ Product ${product_id} validation passed - URL contains correct tracking parameter: ${param_name}=${expected_click_id_base64}
   END
+  
+  ${product_count} =    Get Length    ${response_json}
+  Log    ✅ All ${product_count} products validated successfully
   
   Log    ✅ All product_ids found in product_patch with correct tracking parameters
