@@ -3,8 +3,9 @@
 Test vendors from yaml configuration
   [Arguments]             ${yaml_content}
   [Documentation]  Automated test for all vendors defined in YAML configuration
-  ...              Tests the /r endpoint with dynamic parameters extracted from YAML
+  ...              Tests the /r endpoint with auto-selected test dimensions
   ...              URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
+  ...              Auto-selects dimensions from: 300x300, 1200x627, 1200x600
   ...              Tests exactly the number of vendors defined in the YAML
 
   # Parse YAML once at the beginning
@@ -23,8 +24,8 @@ Test vendors from yaml configuration
     ${request_url} =        Get From Dictionary     ${vendor_config}    request_url
     ${tracking_url} =       Get From Dictionary     ${vendor_config}    tracking_url
 
-    # Parse dimensions from request_url if available
-    ${dimensions} =         Extract dimensions from request url  ${request_url}
+    # Auto-select test dimensions from predefined sizes: 300x300, 1200x627, 1200x600
+    ${dimensions} =         Auto select test dimensions  ${request_url}
     ${width} =              Get From Dictionary     ${dimensions}       width
     ${height} =             Get From Dictionary     ${dimensions}       height
 

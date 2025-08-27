@@ -278,24 +278,32 @@ Download the video and check the size > 1
 
 
 # Vendor API testing utility keywords #
-Extract dimensions from request url
-  [Arguments]         ${request_url}
-  [Documentation]  Extract width and height from request_url
-  ...              Pattern: size={width}x{height}
+Auto select test dimensions
+  [Arguments]         ${request_url}=${Empty}
+  [Documentation]  Auto-select test dimensions from predefined sizes
+  ...              Returns dimensions dictionary with width and height
+  ...              Available test sizes: 300x300, 1200x627, 1200x600
+  ...              Note: request_url parameter is kept for compatibility but not used
 
-  # Default dimensions
-  &{dimensions} =     Create Dictionary   width=300           height=300
+  # Predefined test dimensions
+  @{test_sizes} =     Create List
+  ...                 300x300
+  ...                 1200x627
+  ...                 1200x600
 
-  # Extract from size parameter pattern: size={width}x{height}
-  ${size_matches} =   Get Regexp Matches  ${request_url}      size=\\{([^}]+)\\}x\\{([^}]+)\\}  1  2
-  IF  ${size_matches}
-    ${width_param} =    Set Variable    ${size_matches[0]}
-    ${height_param} =   Set Variable    ${size_matches[1]}
-    # For patterns like {width} and {height}, use default values
-    IF  '${width_param}' == 'width' and '${height_param}' == 'height'
-      Set To Dictionary   ${dimensions}   width=300   height=300
-    END
-  END
+  # Select a random size from the predefined list for testing
+  ${list_length} =    Get Length    ${test_sizes}
+  ${random_index} =   Evaluate    __import__('random').randint(0, ${list_length}-1)
+  ${selected_size} =  Set Variable    ${test_sizes}[${random_index}]
+  
+  # Parse the selected size
+  ${size_parts} =     Split String    ${selected_size}    x
+  ${width} =          Set Variable    ${size_parts}[0]
+  ${height} =         Set Variable    ${size_parts}[1]
+
+  &{dimensions} =     Create Dictionary   width=${width}      height=${height}
+  
+  Log    📏 Selected test dimensions: ${width}x${height} (from predefined test sizes)
   RETURN              &{dimensions}
 
 
