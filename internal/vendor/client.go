@@ -68,14 +68,14 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		return nil, err
 	}
 
-	cpResp, err := v.respUnmarshalStrategy.UnmarshalResponse(restResp.Body)
+	res, err := v.respUnmarshalStrategy.UnmarshalResponse(restResp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	products := make([]ProductInfo, 0, len(*cpResp))
+	products := make([]ProductInfo, 0, len(*res))
 
-	for _, ele := range *cpResp {
+	for _, ele := range *res {
 		trackParams := tracker.Params{
 			TrackingURL: v.cfg.TrackingURL,
 			ProductURL:  ele.ProductURL,
