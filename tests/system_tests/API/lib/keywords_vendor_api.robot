@@ -152,11 +152,11 @@ Validate product patch contains product ids
   [Documentation]    Validate that each product contains the correct tracking parameter
   ...               with base64 encoded click_id in the URL
   ...               New response format: array of products with product_id, url, image
-  
+
   # Response should be a list/array
   Should Not Be Empty    ${response_json}
   ...    Response array should not be empty
-  
+
   # Check each product in the response
   FOR    ${product}    IN    @{response_json}
     ${product_id} =    Get From Dictionary    ${product}    product_id

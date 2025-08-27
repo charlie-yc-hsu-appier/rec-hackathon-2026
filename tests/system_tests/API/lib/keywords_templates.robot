@@ -39,9 +39,9 @@ Test vendors from yaml configuration
     # Click ID is combination of cid.oid
     ${click_id} =           Set Variable            12aa.12aa
     IF  ${uses_base64}
-      ${click_id_base64} =  Encode Base64  ${click_id}
+      ${click_id_base64} =    Encode Base64   ${click_id}
     ELSE
-      ${click_id_base64} =  Set Variable  ${click_id}
+      ${click_id_base64} =    Set Variable    ${click_id}
     END
 
     # Test the vendor endpoint
@@ -59,27 +59,3 @@ Test vendors from yaml configuration
   END
 
   Log                     ✅ Completed testing ${vendor_count} vendor(s) from YAML configuration
-
-
-# BDD Template For Checking customized vendor Group #
-Check the keeta vendor group
-  [Arguments]             ${sid}          ${df}           ${oid}                  ${expected_url_params}  ${expected_img_domain}
-  [Documentation]  We should use the df="android--com.sankuai.sailor.afooddelivery_2" to verify the Keeta-api group
-
-  Given I have a config_api session
-  ${oid_list} =           I would like to get the not Finished & keeta_api enabled oid list when datafeed_id=android--com.sankuai.sailor.afooddelivery_2
-  Should Not Be Empty     ${oid_list}     @{TEST TAGS} FAIL: Can't get any enabled keeta_api oid list via the ConfigAPI response: ${oid_list}
-
-  # Since Keeta will limit specific range for lat/lon,we need to use the lat=22.2800 lon=114.1600
-  Given I have an ecrec session and domain is "dync-stg.c.appier.net"
-  When I would like to set the session under user2item endpoint with  sid=${sid}  df=${df}  oid=${oid_list[0]}
-  ...                     lat=22.2800     lon=114.1600    _debug_creative=false   idfa=55660000-0000-4C18-AAAA-556624AF0001  cid=RFTEST-Keeta  bidobjid=RFTEST-Keeta
-  ...                     num_items=14    no_cache=true
-
-  Then I would like to check status_code should be "200" within the current session
-  Then In the user2item response payload, the "url" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_url}  (${expected_url_params})
-  Then In the user2item response payload, the "img" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_img_url}  (${expected_img_domain})
-  Then In the user2item response payload, the "custom_label" should not exist
-

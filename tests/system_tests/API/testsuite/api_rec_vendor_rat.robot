@@ -11,7 +11,7 @@ Suite Teardown      Release Test Value
 *** Test Cases ***
 # Automated vendor testing from YAML - Complete automation
 [] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
-  [Tags]              testrailid=  RAT             VENDOR
+  [Tags]              testrailid=     RAT             VENDOR
   [Documentation]  Fully automated vendor testing using YAML configuration
   ...              Tests all vendors in YAML with complete automation:
   ...              - Dynamic endpoint generation: /r/{vendor_name}
@@ -22,7 +22,7 @@ Suite Teardown      Release Test Value
 
   # Complete YAML configuration for testing
   # Note: size={width}x{height} parameters are auto-selected from predefined sizes (300x300, 1200x627, 1200x600)
-  ${yaml_content} =   Catenate            SEPARATOR=\n
+  ${yaml_content} =   Catenate        SEPARATOR=\n
   ...                 vendors:
   ...                 ${SPACE}${SPACE}- name: linkmine
   ...                 ${SPACE}${SPACE}${SPACE}${SPACE}request_url: "https://api.adfork.kr/coupang_sch/?app_code=FAXXi4vdOY&limit=10&type=DNY&adid={user_id}&size={width}x{height}"
