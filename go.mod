@@ -5,11 +5,10 @@ go 1.23.7
 toolchain go1.24.2
 
 require (
-	bitbucket.org/plaxieappier/rec-go-kit/httpkit v1.1.1
-	bitbucket.org/plaxieappier/rec-go-kit/logkit v1.1.0
-	bitbucket.org/plaxieappier/rec-go-kit/tracekit v1.2.0
-	github.com/avast/retry-go/v4 v4.6.1
 	github.com/gin-gonic/gin v1.10.1
+	github.com/plaxieappier/rec-go-kit/httpkit v1.1.1
+	github.com/plaxieappier/rec-go-kit/logkit v1.1.0
+	github.com/plaxieappier/rec-go-kit/tracekit v1.2.0
 	github.com/prometheus/client_golang v1.23.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
@@ -22,6 +21,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/avast/retry-go/v4 v4.6.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect

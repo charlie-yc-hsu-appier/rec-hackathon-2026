@@ -1,9 +1,3 @@
-bitbucket.org/plaxieappier/rec-go-kit/httpkit v1.1.1 h1:UD2Dgk4pQARlk1CTY9lx69dxEb3U/CYDPLviRHt+Fao=
-bitbucket.org/plaxieappier/rec-go-kit/httpkit v1.1.1/go.mod h1:VEuS3dnqWfUyBBesvWu233uuMx4mpUJp6V9oh4a+DIE=
-bitbucket.org/plaxieappier/rec-go-kit/logkit v1.1.0 h1:i5CETseVvFpCQPEfI3JLKbKnqkbV+nmnxAqxyDCCnfM=
-bitbucket.org/plaxieappier/rec-go-kit/logkit v1.1.0/go.mod h1:+Uozy/iFHzmxxlI781UjPYyr/ylpiXJkLpkPq5Rng5U=
-bitbucket.org/plaxieappier/rec-go-kit/tracekit v1.2.0 h1:pS95POfUUpAqjMTbSklWlg2PpzF6mL6+IVyK/SJ5Uy0=
-bitbucket.org/plaxieappier/rec-go-kit/tracekit v1.2.0/go.mod h1:+2/yJV+r1aHsgqDPF55RkHACNpX0iK0MWy0IC29q0Lg=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tNFfI=
@@ -120,6 +114,12 @@ github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNH
 github.com/pelletier/go-toml/v2 v2.2.3/go.mod h1:MfCQTFTvCcUyyvvwm1+G6H/jORL20Xlb6rzQu9GuUkc=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/plaxieappier/rec-go-kit/httpkit v1.1.1 h1:+JVfXofK4/RpI44cR/uES+bGF8aQHud/LQ5+a/meX3g=
+github.com/plaxieappier/rec-go-kit/httpkit v1.1.1/go.mod h1:KGULcybBxP2SureFz9FmIIVvIw/PXM8k37ZrOKEfb9c=
+github.com/plaxieappier/rec-go-kit/logkit v1.1.0 h1:4vN9Gd8ORb0e1NgwskPHZogZqDeLNb53oVlb5+n9fG0=
+github.com/plaxieappier/rec-go-kit/logkit v1.1.0/go.mod h1:NUECfpOW/4FMzFRRSPCUlREn6CLqPocNSqKko2Jg37I=
+github.com/plaxieappier/rec-go-kit/tracekit v1.2.0 h1:alz3iVquK/osvyqn6DjdusQSfeJacXjyZa4s63wkAis=
+github.com/plaxieappier/rec-go-kit/tracekit v1.2.0/go.mod h1:GIYUQqq2LqjsuPdGExjh/g0NGVlclsTI5h9JkfzANY0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_golang v1.23.0 h1:ust4zpdl9r4trLY/gSjlm07PuiBq2ynaXXlptpfy8Uc=

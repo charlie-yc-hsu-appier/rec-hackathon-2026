@@ -26,6 +26,97 @@
                     }
                 }
             }
+        },
+        "/r/{vendor_key}": {
+            "get": {
+                "description": "Returns recommended products for a user from a vendor",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get vendor recommendations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor Key",
+                        "name": "vendor_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Click ID",
+                        "name": "click_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Image Width",
+                        "name": "w",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Image Height",
+                        "name": "h",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vendor.ProductInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "vendor.ProductInfo": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
         }
     }
 }

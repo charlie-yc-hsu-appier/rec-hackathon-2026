@@ -1,39 +1,59 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
+
+	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 type VendorController struct {
-	// TODO
+	vendorRegistry map[string]vendor.Client
 }
 
-// TODO: add swagger documentation
-func NewVendorController() *VendorController {
-	return &VendorController{}
+func NewVendorController(vendorRegistry map[string]vendor.Client) *VendorController {
+	return &VendorController{
+		vendorRegistry: vendorRegistry,
+	}
 }
 
-type RecommendQuery struct {
-	VendorKey string `form:"vendor_key" binding:"required"`
-	UserID    string `form:"user_id" binding:"required"`
-	ClickID   string `form:"click_id"`
-	ImgWidth  int    `form:"w" binding:"required"`
-	ImgHeight int    `form:"h" binding:"required"`
-}
-
+// Recommend godoc
+// @Summary      Get vendor recommendations
+// @Description  Returns recommended products for a user from a vendor
+// @Produce      json
+// @Param        vendor_key  path  string true  "Vendor Key"
+// @Param        user_id     query string true  "User ID"
+// @Param        click_id    query string true  "Click ID"
+// @Param        w           query int    true  "Image Width"
+// @Param        h           query int    true  "Image Height"
+// @Success      200 {object} []vendor.ProductInfo
+// @Failure      400 {object} map[string]string "Bad Request"
+// @Failure      500 {object} map[string]string "Internal Error"
+// @Router       /r/{vendor_key} [get]
 func (c *VendorController) Recommend(ctx *gin.Context) {
-	var req RecommendQuery
+	var req vendor.Request
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("fail to bind query parameter, uri: %s", ctx.Request.RequestURI)
 		handleBadRequest(ctx, err)
 		return
 	}
 
-	// TODO:
-	// response, err := vendorClient.GetRecommendationItems(ctx.Request.Context(), serviceReq)
+	vendorKey := ctx.Param("vendor_key")
+	vendorClient := c.vendorRegistry[vendorKey]
+	if vendorClient == nil {
+		log.WithContext(ctx).Errorf("Invalid vendor key: %s", vendorKey)
+		handleBadRequest(ctx, fmt.Errorf("Vendor key '%s' not supported", vendorKey))
+		return
+	}
 
-	ctx.JSON(http.StatusOK, "message: success")
+	response, err := vendorClient.GetUserRecommendationItems(ctx.Request.Context(), req)
+	if err != nil {
+		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
+		handleInternalServerError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response)
 }

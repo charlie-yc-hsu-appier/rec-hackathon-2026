@@ -3,8 +3,8 @@ package config
 import (
 	"time"
 
-	"bitbucket.org/plaxieappier/rec-go-kit/logkit"
-	"bitbucket.org/plaxieappier/rec-go-kit/tracekit"
+	"github.com/plaxieappier/rec-go-kit/logkit"
+	"github.com/plaxieappier/rec-go-kit/tracekit"
 )
 
 type Config struct {
