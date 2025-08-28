@@ -21,6 +21,6 @@ vendor_config:
   timeout: 1s
   vendors:
     - name: linkmine
-      request_url: "https://api.adfork.kr/coupang_sch/?app_code=FAXXi4vdOY&limit=10&type=DNY&adid={user_id}&size={width}x{height}"
+      request_url: "https://api.adfork.kr/coupang_sch/?app_code=FAXXi4vdOY&limit=10&type=DNY&adid={user_id_lower}&size={width}x{height}"
       tracking_url: "{product_url}&param1={click_id_base64}"
       with_proxy: true
