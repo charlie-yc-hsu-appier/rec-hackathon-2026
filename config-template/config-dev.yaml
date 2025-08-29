@@ -21,6 +21,6 @@ vendor_config:
   timeout: 1s
   vendors:
     - name: linkmine
-      request_url: "https://api.adfork.kr/coupang_sch/?app_code=FAXXi4vdOY&limit=10&type=DNY&adid={user_id_lower}&size={width}x{height}"
+      request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code=FAXXi4vdOY&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&app_bundleId=com.cashwalk.cashwalk&imp_adType=3"
       tracking_url: "{product_url}&param1={click_id_base64}"
       with_proxy: true
