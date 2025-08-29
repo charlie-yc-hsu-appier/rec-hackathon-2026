@@ -1,76 +1,61 @@
 *** Keywords ***
-# BDD Template For Checking Coupang vendor Group #
-Check the Coupang vendor group
-  [Arguments]
-  ...                 ${oid}
-  ...                 ${group_id}
-  ...                 ${layout_id}
-  ...                 ${expected_group_name}
-  ...                 ${expected_url_params}
-  ...                 ${expected_img_domain}
-  ...                 ${expected_layout_code}=${Empty}
-  ...                 ${with_fix_click_id}=${Empty}
+# Automated YAML-driven vendor testing keywords #
+Test vendors from yaml configuration
+  [Arguments]             ${yaml_content}
+  [Documentation]  Automated test for all vendors defined in YAML configuration
+  ...              Tests the /r endpoint with auto-selected test dimensions
+  ...              URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
+  ...              Auto-selects dimensions from: 300x300, 1200x627, 1200x600
+  ...              Tests exactly the number of vendors defined in the YAML
 
-  Given Get an actived datafeed id from sid  android--com.coupang.mobile_s2s_v3
-  Given I have an ecrec session and domain is "dync-stg.c.appier.net"
+  # Parse YAML once at the beginning
+  ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
+  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
 
-  IF  '${with_fix_click_id}' != '${Empty}'
-    Set Local Variable  ${_cid}         RFTEST
-    Set Local Variable  ${_bidobjid}    RFTEST
-  ELSE
-    Set Local Variable  ${_cid}         ${Empty}
-    Set Local Variable  ${_bidobjid}    ${Empty}
+  ${vendor_count} =       Get Length              ${vendors}
+  Log                     Found ${vendor_count} vendor(s) in YAML configuration
+
+  # Test each vendor defined in YAML
+  FOR  ${vendor_config}  IN  @{vendors}
+    ${vendor_name} =        Get From Dictionary     ${vendor_config}    name
+    Log                     Testing vendor: ${vendor_name}
+
+    # Extract parameters from vendor configuration
+    ${request_url} =        Get From Dictionary     ${vendor_config}    request_url
+    ${tracking_url} =       Get From Dictionary     ${vendor_config}    tracking_url
+
+    # Auto-select test dimensions from predefined sizes: 300x300, 1200x627, 1200x600
+    ${dimensions} =         Auto select test dimensions  ${request_url}
+    ${width} =              Get From Dictionary     ${dimensions}       width
+    ${height} =             Get From Dictionary     ${dimensions}       height
+
+    # Parse tracking URL to get parameter info
+    ${tracking_config} =    Parse yaml tracking url template  ${tracking_url}
+    ${param_name} =         Get From Dictionary     ${tracking_config}  param_name
+    ${uses_base64} =        Get From Dictionary     ${tracking_config}  uses_base64
+
+    # Generate test data
+    ${user_id} =            Generate UUID4
+    # Click ID is combination of cid.oid
+    ${click_id} =           Set Variable            12aa.12aa
+    IF  ${uses_base64}
+      ${click_id_base64} =    Encode Base64   ${click_id}
+    ELSE
+      ${click_id_base64} =    Set Variable    ${click_id}
+    END
+
+    # Test the vendor endpoint
+    Given I have an vendor session
+    When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}
+
+    # Verify response
+    Then I would like to check status_code should be "200" within the current session
+
+    # Validate response structure and content
+    Validate vendor response structure  ${resp_json}
+    Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}
+
+    Log                     ✅ Vendor ${vendor_name} test PASSED
   END
 
-  # When the vendor is from linkmine, we don't need the i_group param
-  IF  '${group_id}' != '${Empty}'
-    When I would like to set the session under user2item endpoint with  sid=android--com.coupang.mobile_s2s_v3  df=${extracted_df}  oid=${oid}
-    ...     _debug_creative=false   i_group=${group_id}     idfa=55660000-0000-4C18-AAAA-556624AF0000  cid=${_cid}  bidobjid=${_bidobjid}
-    ...     num_items=1             no_cache=true           layout_id=${layout_id}
-  # When the vendor is from replace (oid = ig6jGmNbQvqiqpQ0XDqNpw), we'll use the xst to decide the layout
-  ELSE IF  '${oid}' == 'ig6jGmNbQvqiqpQ0XDqNpw'
-    When I would like to set the session under user2item endpoint with  sid=android--com.coupang.mobile_s2s_v3  df=${extracted_df}  oid=${oid}
-    ...     _debug_creative=false   idfa=55660000-0000-4C18-AAAA-556624AF0000  cid=${_cid}  bidobjid=${_bidobjid}
-    ...     num_items=1             no_cache=true   xst=${layout_id}
-  ELSE
-    When I would like to set the session under user2item endpoint with  sid=android--com.coupang.mobile_s2s_v3  df=${extracted_df}  oid=${oid}
-    ...     _debug_creative=false   idfa=55660000-0000-4C18-AAAA-556624AF0000  cid=${_cid}  bidobjid=${_bidobjid}
-    ...     num_items=1             no_cache=true   layout_id=${layout_id}
-  END
-
-  Then I would like to check status_code should be "200" within the current session
-  Then In the user2item response payload, there is no duplicated SKU item in the response
-  Then In the user2item response payload, the "url" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_url}  (${expected_group_name})
-  Then Check the regex pattern in the given list  ${extracted_url}  (${expected_url_params})
-  # When the vendor is from INL, we will base on the group to check the layout code
-  IF  '${group_id}' != '${Empty}'
-    Then Check the regex pattern in the given list  ${extracted_url}  (${expected_layout_code})
-  END
-  Then In the user2item response payload, the "img" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_img_url}  (${expected_img_domain})
-  Then In the user2item response payload, the "custom_label" should not exist
-
-
-# BDD Template For Checking customized vendor Group #
-Check the keeta vendor group
-  [Arguments]         ${sid}        ${df}          ${oid}          ${expected_url_params}  ${expected_img_domain}
-  [Documentation]     We should use the df="android--com.sankuai.sailor.afooddelivery_2" to verify the Keeta-api group
-
-  Given I have a config_api session
-  ${oid_list} =  I would like to get the not Finished & keeta_api enabled oid list when datafeed_id=android--com.sankuai.sailor.afooddelivery_2
-  Should Not Be Empty   ${oid_list}  @{TEST TAGS} FAIL: Can't get any enabled keeta_api oid list via the ConfigAPI response: ${oid_list}
-
-  # Since Keeta will limit specific range for lat/lon,we need to use the lat=22.2800 lon=114.1600
-  Given I have an ecrec session and domain is "dync-stg.c.appier.net"
-  When I would like to set the session under user2item endpoint with  sid=${sid}  df=${df}  oid=${oid_list[0]}
-  ...            lat=22.2800    lon=114.1600   _debug_creative=false   idfa=55660000-0000-4C18-AAAA-556624AF0001  cid=RFTEST-Keeta  bidobjid=RFTEST-Keeta
-  ...            num_items=14   no_cache=true
-
-  Then I would like to check status_code should be "200" within the current session
-  Then In the user2item response payload, the "url" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_url}  (${expected_url_params})
-  Then In the user2item response payload, the "img" should exist (EC-REC Common Value)
-  Then Check the regex pattern in the given list  ${extracted_img_url}  (${expected_img_domain})
-  Then In the user2item response payload, the "custom_label" should not exist
-
+  Log                     ✅ Completed testing ${vendor_count} vendor(s) from YAML configuration

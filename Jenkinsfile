@@ -262,6 +262,28 @@ pipeline {
       }
     }
 
+    stage('QA prepare environment') {
+      when {
+        branch 'staging'
+      }
+      steps {
+        container('deploy-kit') {
+          sh '''
+            vault-login.sh
+
+            # APP credential
+            vault-decrypt-v2.sh config-template/config-$BUILD_ENV.yaml $CHART_DIR/secrets/config.yaml
+
+            # SA credential
+            vault kv get --field=data secret/project/_gcp/iam/appier-ai-recommendation/rec-jenkins-cicd > $CICD_GCLOUD_JSON_FILE
+
+            vault kv get --field=private_key secret/project/recommendation/ssh_key/ai-rec-common > $REC_COMMON_LIB_KEY
+            chmod 600 $REC_COMMON_LIB_KEY
+          '''
+        }
+      }
+    }
+
     stage('QA system tests') {
       when {
         branch 'staging'
