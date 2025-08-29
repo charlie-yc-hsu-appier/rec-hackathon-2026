@@ -12,6 +12,7 @@ import (
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
 	"rec-vendor-api/internal/telemetry"
+	"rec-vendor-api/internal/vendor"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -29,7 +30,7 @@ import (
 // @basePath /
 // @schemes https
 //
-//go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs
+//go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 func main() {
 	var cf = flag.String("c", "", "config file")
@@ -61,9 +62,13 @@ func main() {
 		r.Use(gin.Recovery())
 	}
 
-	vendorController := controller.NewVendorController()
+	vendorRegistry, err := vendor.BuildRegistry(cfg.VendorConfig)
+	if err != nil {
+		log.Fatalf("Failed to build vendor registry, err: %v", err)
+	}
+	vendorController := controller.NewVendorController(vendorRegistry)
 
-	r.GET("/r", vendorController.Recommend)
+	r.GET("/r/:vendor_key", vendorController.Recommend)
 	r.GET("/healthz", controller.HealthCheck)
 	r.GET("/metrics", telemetry.PromHandler())
 
