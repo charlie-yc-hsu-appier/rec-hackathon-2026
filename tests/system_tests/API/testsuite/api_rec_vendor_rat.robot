@@ -10,8 +10,8 @@ Suite Teardown      Release Test Value
 
 *** Test Cases ***
 # Automated vendor testing from YAML - Complete automation
-[] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
-  [Tags]              testrailid=     RAT             VENDOR
+[C4983449] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
+  [Tags]              testrailid=4983449     RAT             VENDOR
   [Documentation]  Fully automated vendor testing using actual config.yaml file
   ...              Loads vendor configuration from deploy/rec-vendor-api/secrets/config.yaml
   ...              Tests all vendors in config with complete automation:
