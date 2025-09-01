@@ -51,3 +51,40 @@ func (mr *MockStrategyMockRecorder) GenerateHeaders(params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHeaders", reflect.TypeOf((*MockStrategy)(nil).GenerateHeaders), params)
 }
+
+// MockClock is a mock of Clock interface.
+type MockClock struct {
+	ctrl     *gomock.Controller
+	recorder *MockClockMockRecorder
+}
+
+// MockClockMockRecorder is the mock recorder for MockClock.
+type MockClockMockRecorder struct {
+	mock *MockClock
+}
+
+// NewMockClock creates a new mock instance.
+func NewMockClock(ctrl *gomock.Controller) *MockClock {
+	mock := &MockClock{ctrl: ctrl}
+	mock.recorder = &MockClockMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockClock) EXPECT() *MockClockMockRecorder {
+	return m.recorder
+}
+
+// getDatetimeGMT mocks base method.
+func (m *MockClock) getDatetimeGMT() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "getDatetimeGMT")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// getDatetimeGMT indicates an expected call of getDatetimeGMT.
+func (mr *MockClockMockRecorder) getDatetimeGMT() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getDatetimeGMT", reflect.TypeOf((*MockClock)(nil).getDatetimeGMT))
+}

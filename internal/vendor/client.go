@@ -53,7 +53,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	url := v.requestURLStrategy.GenerateRequestURL(reqParams)
 	restReq := httpkit.NewRequest(url)
 
-	headerParams := header.Params{}
+	headerParams := header.Params{RequestURL: url}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 
@@ -79,6 +79,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 			TrackingURL: v.cfg.TrackingURL,
 			ProductURL:  ele.ProductURL,
 			ClickID:     req.ClickID,
+			UserID:      req.UserID,
 		}
 		productUrl := v.trackingURLStrategy.GenerateTrackingURL(trackParams)
 

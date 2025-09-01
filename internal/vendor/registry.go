@@ -30,7 +30,7 @@ func BuildRegistry(config config.VendorConfig) (map[string]Client, error) {
 			v,
 			httpClients[v.WithProxy],
 			config.Timeout,
-			strategy.BuildHeader(v.Name),
+			strategy.BuildHeader(v.Name, v.AccessKey, v.SecretKey),
 			strategy.BuildRequester(v.Name),
 			strategy.BuildUnmarshaler(v.Name),
 			strategy.BuildTracker(v.Name))

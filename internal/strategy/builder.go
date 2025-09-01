@@ -7,8 +7,10 @@ import (
 	"rec-vendor-api/internal/strategy/unmarshaler"
 )
 
-func BuildHeader(name string) header.Strategy {
+func BuildHeader(name, accessKey, secretKey string) header.Strategy {
 	switch name {
+	case "replace":
+		return &header.HmacHeader{AccessKey: accessKey, SecretKey: secretKey, Clock: &header.ClockImpl{}}
 	default:
 		return &header.NoHeader{}
 	}
@@ -23,6 +25,8 @@ func BuildRequester(name string) requester.Strategy {
 
 func BuildUnmarshaler(name string) unmarshaler.Strategy {
 	switch name {
+	case "replace":
+		return &unmarshaler.WrappedCoupangPartner{}
 	default:
 		return &unmarshaler.CoupangPartner{}
 	}
