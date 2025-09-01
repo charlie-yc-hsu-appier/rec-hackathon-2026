@@ -20,11 +20,11 @@ func TestDefault(t *testing.T) {
 				ImgWidth:   200,
 				ImgHeight:  100,
 				ClickID:    "test-id",
-				WebHost:    "example.com",
+				WebHost:    "http://example.com/query?param1=123&param2=456",
 				BundleID:   "com.example.app",
 				AdType:     1,
 			},
-			want: "https://example.com/image?size=200x100&user=testuser&click_id=dGVzdC1pZA&site_domain=example.com&app_bundleId=com.example.app&imp_adType=1",
+			want: "https://example.com/image?size=200x100&user=testuser&click_id=dGVzdC1pZA&site_domain=http%3A%2F%2Fexample.com%2Fquery%3Fparam1%3D123%26param2%3D456&app_bundleId=com.example.app&imp_adType=1",
 		},
 		{
 			name: "GIVEN missing placeholders THEN return the expected URL",
