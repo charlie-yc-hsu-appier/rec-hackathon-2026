@@ -21,7 +21,7 @@ vendor_config:
   timeout: 1s
   vendors:
     - name: linkmine
-      request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code=FAXXi4vdOY&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&app_bundleId=com.cashwalk.cashwalk&imp_adType=3"
+      request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code=FAXXi4vdOY&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&site_domain={web_host}&app_bundleId={bundle_id}&imp_adType={adtype}"
       tracking_url: "{product_url}&param1={click_id_base64}"
       with_proxy: true
     - name: replace

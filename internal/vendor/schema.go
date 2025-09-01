@@ -5,6 +5,9 @@ type Request struct {
 	ClickID   string `form:"click_id" binding:"required"`
 	ImgWidth  int    `form:"w" binding:"required"`
 	ImgHeight int    `form:"h" binding:"required"`
+	WebHost   string `form:"web_host"`
+	BundleID  string `form:"bundle_id"`
+	AdType    int    `form:"adtype"`
 }
 
 type ProductInfo struct {
