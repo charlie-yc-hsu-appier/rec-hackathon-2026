@@ -477,8 +477,9 @@ Get active vendor_inl_corp campaign ids from config api
     END
   END
 
+  ${campaign_count} =     Get Length              ${active_campaign_ids}
   Set Test Message        \n                      append=yes
-  Set Test Message        Found ${active_campaign_ids.__len__()} active vendor_inl_corp campaigns: ${active_campaign_ids}  append=yes
+  Set Test Message        Found ${campaign_count} active vendor_inl_corp campaigns: ${active_campaign_ids}  append=yes
   
   # Log detailed information about each active campaign
   FOR  ${campaign_id}  IN  @{active_campaign_ids}
@@ -495,19 +496,172 @@ Get active vendor_inl_corp campaign ids from config api
   RETURN                  ${result}
 
 
-Get active vendor_inl_corp campaign ids only
-  [Documentation]    Convenience keyword that returns only the list of active campaign IDs (for backward compatibility)
-  [Arguments]        ${site_id}=android--com.coupang.mobile_s2s_v3    ${service_type_id}=crossx_recommend
+Get vendor inl_corp indices for yaml configuration
+  [Documentation]    Get all active vendor inl_corp indices from config api for yaml configuration testing
+  ...                This keyword collects all active_indices from vendor_inl_corp campaigns and merges them
+  ...                to create a comprehensive list of vendor indices (inl_corp_0, inl_corp_1, etc.)
+  ...                IMPORTANT: This only affects inl_corp vendor types, other vendor types are preserved
+  ...                Returns: Dictionary with indices, vendor names, and validation info for safe YAML configuration
+  [Arguments]        ${site_id}=android--com.coupang.mobile_s2s_v3    ${service_type_id}=crossx_recommend    ${validate_yaml_safety}=${True}
   
-  ${result} =             Get active vendor_inl_corp campaign ids from config api    ${site_id}    ${service_type_id}
-  RETURN                  ${result}[campaign_ids]
+  # Get all active vendor_inl_corp campaign information
+  ${campaign_result} =    Get active vendor_inl_corp campaign ids from config api    ${site_id}    ${service_type_id}
+  ${campaigns_info} =     Set Variable    ${campaign_result}[campaigns_info]
+  
+  # Collect all active indices from all campaigns
+  @{all_active_indices} =  Create List
+  FOR  ${campaign_id}  IN  @{campaign_result}[campaign_ids]
+    ${campaign_info} =    Get From Dictionary     ${campaigns_info}    ${campaign_id}
+    ${active_indices} =   Set Variable            ${campaign_info}[active_indices]
+    
+    # Add each active index to the master list
+    FOR  ${index}  IN  @{active_indices}
+      Append To List      ${all_active_indices}    ${index}
+      Log                 Added index ${index} from campaign ${campaign_id}
+    END
+  END
+  
+  # Remove duplicates and sort the indices
+  ${unique_indices} =     Remove Duplicates       ${all_active_indices}
+  ${sorted_indices} =     Evaluate                sorted([int(x) for x in $unique_indices])
+  
+  # Create vendor mapping for logging
+  @{vendor_names} =       Create List
+  @{yaml_vendor_entries} =  Create List
+  FOR  ${index}  IN  @{sorted_indices}
+    ${vendor_name} =      Set Variable            inl_corp_${index}
+    ${yaml_entry} =       Set Variable            ${SPACE*2}${vendor_name}:
+    Append To List        ${vendor_names}         ${vendor_name}
+    Append To List        ${yaml_vendor_entries}  ${yaml_entry}
+  END
+  
+  # Generate safe YAML configuration snippet
+  ${yaml_snippet} =       Catenate                SEPARATOR=\n
+  ...                     vendors:
+  ...                     # Auto-generated inl_corp vendors from Config API
+  ...                     # Only affects inl_corp_* entries, other vendors are preserved
+  FOR  ${entry}  IN  @{yaml_vendor_entries}
+    ${yaml_snippet} =     Catenate                SEPARATOR=\n    ${yaml_snippet}    ${entry}
+  END
+  ${yaml_snippet} =       Catenate                SEPARATOR=\n    ${yaml_snippet}
+  ...                     # End of auto-generated inl_corp vendors
+  
+  # Validation warnings for YAML safety
+  @{safety_warnings} =    Create List
+  ${max_index} =          Evaluate                max($sorted_indices) if $sorted_indices else -1
+  IF  ${max_index} > 10
+    Append To List        ${safety_warnings}      High index detected (${max_index}). Consider reviewing vendor allocation.
+  END
+  
+  ${vendor_count} =       Get Length              ${sorted_indices}
+  IF  ${vendor_count} == 0
+    Append To List        ${safety_warnings}      No active inl_corp vendors found. YAML configuration may be unnecessary.
+  END
+  
+  Set Test Message        \n                      append=yes
+  Set Test Message        === YAML Configuration Safety Report ===  append=yes
+  Set Test Message        Active vendor indices for YAML configuration: ${sorted_indices}  append=yes
+  Set Test Message        Corresponding vendor names: ${vendor_names}  append=yes
+  Set Test Message        Total active vendors: ${vendor_count}  append=yes
+  Set Test Message        Index range: 0-${max_index}  append=yes
+  
+  IF  ${safety_warnings}
+    Set Test Message      \n⚠️  Safety Warnings:  append=yes
+    FOR  ${warning}  IN  @{safety_warnings}
+      Set Test Message    - ${warning}  append=yes
+    END
+  ELSE
+    Set Test Message      ✅ No safety concerns detected  append=yes
+  END
+  
+  Set Test Message        \nSuggested YAML snippet:  append=yes
+  Set Test Message        ${yaml_snippet}  append=yes
+  Set Test Message        === End of Safety Report ===\n  append=yes
+  
+  Set Test Variable       ${extracted_vendor_indices_for_yaml}    ${sorted_indices}
+  Set Test Variable       ${extracted_vendor_names_for_yaml}      ${vendor_names}
+  Set Test Variable       ${extracted_yaml_snippet_for_vendors}   ${yaml_snippet}
+  
+  # Return comprehensive result for safe YAML configuration
+  &{result} =             Create Dictionary       
+  ...                     indices=${sorted_indices}    
+  ...                     vendor_names=${vendor_names}
+  ...                     yaml_snippet=${yaml_snippet}
+  ...                     safety_warnings=${safety_warnings}
+  ...                     max_index=${max_index}
+  ...                     vendor_count=${vendor_count}
+  RETURN                  ${result}
 
 
-Get vendor_inl_corp campaign with active indices
-  [Documentation]    Get detailed information about vendor_inl_corp campaigns including active inl_rec_api_group_ratio indices
-  ...                Returns: Dictionary with campaign_id as key and campaign info (status, active_indices) as value
-  [Arguments]        ${site_id}=android--com.coupang.mobile_s2s_v3    ${service_type_id}=crossx_recommend
+Validate and generate safe vendor yaml configuration
+  [Documentation]    Backward compatible YAML configuration validation
+  ...                Non-inl vendors: Keep as-is
+  ...                Inl vendors: Use Config API to filter only active inl_corp_X for testing
+  [Arguments]        ${original_yaml_content}
   
-  ${result} =             Get active vendor_inl_corp campaign ids from config api    ${site_id}    ${service_type_id}
-  RETURN                  ${result}[campaigns_info]
+  # Parse original YAML
+  ${yaml_data} =          Evaluate                yaml.safe_load('''${original_yaml_content}''')  yaml
+  ${original_vendors} =   Get From Dictionary     ${yaml_data}    vendors
+  
+  # Check if any vendor contains "inl" 
+  ${has_inl} =            Set Variable            ${False}
+  FOR  ${vendor}  IN  @{original_vendors}
+    ${vendor_name} =      Get From Dictionary     ${vendor}    name
+    ${contains_inl} =     Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
+    IF  ${contains_inl}
+      ${has_inl} =        Set Variable            ${True}
+      BREAK
+    END
+  END
+  
+  Set Test Message        Check if YAML contains inl vendors: ${has_inl}    append=yes
+  
+  # If no inl vendors found, return original YAML (backward compatibility)
+  IF  not ${has_inl}
+    Set Test Message      ✅ No inl vendors found, using original configuration    append=yes
+    RETURN                ${original_yaml_content}
+  END
+  
+  # Get active inl_corp indices from Config API
+  Set Test Message        🔍 Found inl vendors, getting active indices from Config API...    append=yes
+  ${config_result} =      Get vendor inl_corp indices for yaml configuration
+  ${active_indices} =     Set Variable            ${config_result}[indices]
+  
+  # Filter vendors: keep all non-inl vendors + only active inl vendors
+  @{filtered_vendors} =   Create List
+  
+  FOR  ${vendor}  IN  @{original_vendors}
+    ${vendor_name} =      Get From Dictionary     ${vendor}    name
+    ${contains_inl} =     Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
+    
+    IF  not ${contains_inl}
+      # Keep all non-inl vendors
+      Append To List      ${filtered_vendors}     ${vendor}
+      Set Test Message    ✅ Kept: ${vendor_name}    append=yes
+    ELSE
+      # For inl vendors, check if index is active
+      ${vendor_index} =   Get Regexp Matches      ${vendor_name}    inl_corp_(\\d+)    1
+      IF  ${vendor_index}
+        ${index} =        Convert To Integer      ${vendor_index}[0]
+        ${is_active} =    Run Keyword And Return Status    List Should Contain Value    ${active_indices}    ${index}
+        IF  ${is_active}
+          Append To List  ${filtered_vendors}     ${vendor}
+          Set Test Message    ✅ Kept active: ${vendor_name} (index ${index})    append=yes
+        ELSE
+          Set Test Message    ❌ Filtered out inactive: ${vendor_name} (index ${index})    append=yes
+        END
+      ELSE
+        Set Test Message    ⚠️  Unknown inl vendor format: ${vendor_name}    append=yes
+      END
+    END
+  END
+  
+  # Rebuild YAML with filtered vendors
+  Set To Dictionary       ${yaml_data}            vendors=${filtered_vendors}
+  ${filtered_yaml} =      Evaluate                yaml.dump($yaml_data, default_flow_style=False)    yaml
+  
+  ${total_count} =        Get Length              ${filtered_vendors}
+  Set Test Message        📊 Final configuration: ${total_count} vendors (active indices: ${active_indices})    append=yes
+  
+  RETURN                  ${filtered_yaml}
 

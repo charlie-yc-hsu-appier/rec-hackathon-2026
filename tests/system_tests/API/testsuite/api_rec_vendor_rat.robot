@@ -26,8 +26,14 @@ Suite Teardown      Release Test Value
   ${config_path} =        Set Variable    ${CURDIR}/../../../../deploy/rec-vendor-api/secrets/config.yaml
   ${yaml_content} =       Load vendor config from file    ${config_path}
 
-  # Run complete automated testing for all vendors in YAML
-  Test vendors from yaml configuration  ${yaml_content}
+  # YAML maintains complete vendor configurations
+  # Config API dynamically determines which inl_corp_X to test
+  # Backward compatible, non-inl vendors unaffected
+  # Only tests actually active inl vendors
+  ${safe_vendor_config} = Validate and generate safe vendor yaml configuration    ${yaml_content}
+  
+  # Run complete automated testing for all vendors in YAML (with validated safe configuration)
+  Test vendors from yaml configuration  ${safe_vendor_config}
 
 
 # Basic vendor API healthz test
