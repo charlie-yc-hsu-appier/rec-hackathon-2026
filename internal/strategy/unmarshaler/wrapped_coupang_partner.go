@@ -2,7 +2,6 @@ package unmarshaler
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -21,7 +20,7 @@ func (s *WrappedCoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, e
 	rResp := &wrappedResp{}
 	if err := json.Unmarshal(body, rResp); err != nil {
 		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
-		return nil, errors.New("invalid format")
+		return nil, ErrInvalidFormat
 	}
 
 	if rResp.RCode != "0" {

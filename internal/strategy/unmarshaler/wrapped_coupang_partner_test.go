@@ -22,7 +22,7 @@ func TestWrappedCoupangPartner(t *testing.T) {
 		{
 			name:        "GIVEN invalid JSON THEN return an error",
 			input:       []byte("invalid json"),
-			wantedError: errors.New("invalid format"),
+			wantedError: ErrInvalidFormat,
 		},
 		{
 			name:        "GIVEN error code in JSON THEN return an error",
