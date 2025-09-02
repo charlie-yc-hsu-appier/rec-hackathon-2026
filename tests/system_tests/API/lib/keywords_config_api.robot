@@ -4,14 +4,7 @@ I have a config_api session
   [Tags]          robot:flatten
 
   # Basic Auth for Config API
-  IF  '${SERVER_ENV}' == 'stag' or '${SERVER_ENV}' == 'dev'
-    &{HEADERS} =    Create Dictionary       Content-Type=application/json  Authorization=Basic cmVjLXFhOmlsb3JmZ3Bva3J3aGl1bWtwb2FzZGZva2hwcWV3eWhi
-  ELSE IF  '${SERVER_ENV}' == 'prod'
-    &{HEADERS} =    Create Dictionary       Content-Type=application/json  Authorization=Basic cmVjLXFhOkZ6VUVyVGRSTTI2d2RoMlIyMk5lbktmeXlya2t2VGhR
-  ELSE
-    Fail    No SERVER_ENV params
-  END
-
+  &{HEADERS} =    Create Dictionary       Content-Type=application/json  Authorization=Basic cmVjLXFhOmlsb3JmZ3Bva3J3aGl1bWtwb2FzZGZva2hwcWV3eWhi
   Create Session  ConfigAPISession        url=https://${CONFIG_API_HOST}  headers=&{HEADERS}  disable_warnings=1  retry_status_list=[500,502,503,504]  timeout=5
 
 
