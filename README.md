@@ -64,11 +64,12 @@ We use macros (placeholders) in our URL templates for dynamic replacement. At ru
 
 ### Supported Request URL Macros
 
-| Macro             | Description                          | Example Replacement                    |
-|-------------------|--------------------------------------|----------------------------------------|
-| `{width}`         | Image width (integer)                | `1200`                                 |
-| `{height}`        | Image height (integer)               | `600`                                  |
-| `{user_id_lower}` | User ID in lowercase                 | `57846b41-0290-40c5-9e96-88d17f59eac5` |
+| Macro               | Description                          | Example Replacement                    |
+|---------------------|--------------------------------------|----------------------------------------|
+| `{width}`           | Image width (integer)                | `1200`                                 |
+| `{height}`          | Image height (integer)               | `600`                                  |
+| `{user_id_lower}`   | User ID in lowercase                 | `57846b41-0290-40c5-9e96-88d17f59eac5` |
+| `{click_id_base64}` | Click ID encoded in base64           | `Y2xpY2tJRA`                           |
 
 ### Supported Tracking URL Macros
 

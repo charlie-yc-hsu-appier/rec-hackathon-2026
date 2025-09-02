@@ -15,12 +15,13 @@ func TestDefault(t *testing.T) {
 		{
 			name: "GIVEN valid parameters THEN return the expected URL",
 			params: Params{
-				RequestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}",
+				RequestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}&click_id={click_id_base64}",
 				UserID:     "TestUser",
 				ImgWidth:   200,
 				ImgHeight:  100,
+				ClickID:    "test-id",
 			},
-			want: "https://example.com/image?size=200x100&user=testuser",
+			want: "https://example.com/image?size=200x100&user=testuser&click_id=dGVzdC1pZA",
 		},
 		{
 			name: "GIVEN missing placeholders THEN return the expected URL",
@@ -37,7 +38,8 @@ func TestDefault(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			strategy := &Default{}
-			got := strategy.GenerateRequestURL(tc.params)
+			got, err := strategy.GenerateRequestURL(tc.params)
+			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
 		})
 	}
