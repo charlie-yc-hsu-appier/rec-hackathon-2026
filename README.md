@@ -70,6 +70,9 @@ We use macros (placeholders) in our URL templates for dynamic replacement. At ru
 | `{height}`          | Image height (integer)               | `600`                                  |
 | `{user_id_lower}`   | User ID in lowercase                 | `57846b41-0290-40c5-9e96-88d17f59eac5` |
 | `{click_id_base64}` | Click ID encoded in base64           | `Y2xpY2tJRA`                           |
+| `{web_host}`        | Site domain for web or empty for app | `testabc.com`                          |
+| `{bundle_id}`       | App bundle ID or empty for web       | `com.coupang.mobile`                   |
+| `{adtype}`          | The impression ad type               | `value=2(banner) and 3(native)`        |
 
 ### Supported Tracking URL Macros
 
