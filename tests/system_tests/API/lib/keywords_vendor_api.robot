@@ -148,10 +148,11 @@ Validate vendor response structure
 
 
 Validate product patch contains product ids
-  [Arguments]    ${response_json}    ${param_name}    ${expected_click_id_base64}
+  [Arguments]    ${response_json}    ${param_name}    ${expected_click_id_base64}    ${vendor_name}=${Empty}
   [Documentation]    Validate that each product contains the correct tracking parameter
   ...               with base64 encoded click_id in the URL
   ...               New response format: array of products with product_id, url, image
+  ...               Special handling for INL vendors with URL encoded parameters
 
   # Response should be a list/array
   Should Not Be Empty    ${response_json}
@@ -163,11 +164,38 @@ Validate product patch contains product ids
     ${product_url} =    Get From Dictionary    ${product}    url
     ${product_image} =    Get From Dictionary    ${product}    image
     
-    # Verify the tracking parameter contains the base64 encoded click_id
-    Should Contain    ${product_url}    ${param_name}=${expected_click_id_base64}
-    ...    Product URL should contain ${param_name}=${expected_click_id_base64}, but got: ${product_url}
+    # Check if this is an INL vendor
+    ${is_inl_vendor} =    Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
+    Log    Debug - vendor_name: ${vendor_name}, param_name: ${param_name}, is_inl_vendor: ${is_inl_vendor}
     
-    Log    ✅ Product ${product_id} validation passed - URL contains correct tracking parameter: ${param_name}=${expected_click_id_base64}
+    IF    ${is_inl_vendor} and '${param_name}' == 'subparam'
+      # Special handling for inl_corp_5 vendor
+      ${is_inl_corp_5} =    Run Keyword And Return Status    Should Contain    ${vendor_name}    inl_corp_5
+      
+      IF    ${is_inl_corp_5}
+        # For inl_corp_5: subParam=pier (P is uppercase, fixed value)
+        ${encoded_param} =    Set Variable    %26subParam%3Dpier
+        ${search_pattern} =    Set Variable    ${encoded_param}
+        Log    INL_CORP_5 vendor detected - searching for fixed parameter: ${search_pattern}
+      ELSE
+        # For other INL vendors, the parameter appears URL encoded in the land parameter
+        # Format: %26subparam%3DMTJhYS4xMmFh (URL encoded &subparam=base64)
+        # We need to encode both the & and = characters
+        ${encoded_param} =    Evaluate    "%26" + urllib.parse.quote("${param_name}") + "%3D" + "${expected_click_id_base64}"    urllib.parse
+        ${search_pattern} =    Set Variable    ${encoded_param}
+        Log    INL vendor detected - searching for URL encoded parameter: ${search_pattern}
+      END
+    ELSE
+      # For non-INL vendors, use standard format
+      ${search_pattern} =    Set Variable    ${param_name}=${expected_click_id_base64}
+      Log    Standard vendor - searching for parameter: ${search_pattern}
+    END
+    
+    # Verify the tracking parameter contains the base64 encoded click_id
+    Should Contain    ${product_url}    ${search_pattern}
+    ...    Product URL should contain ${search_pattern}, but got: ${product_url}
+    
+    Log    ✅ Product ${product_id} validation passed - URL contains correct tracking parameter: ${search_pattern}
   END
   
   ${product_count} =    Get Length    ${response_json}

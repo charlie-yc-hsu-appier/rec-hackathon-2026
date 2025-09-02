@@ -30,8 +30,8 @@ Suite Teardown      Release Test Value
   # Config API dynamically determines which inl_corp_X to test
   # Backward compatible, non-inl vendors unaffected
   # Only tests actually active inl vendors
-  ${safe_vendor_config} = Validate and generate safe vendor yaml configuration    ${yaml_content}
-  
+  ${safe_vendor_config} =  Validate and generate safe vendor yaml configuration    ${yaml_content}
+
   # Run complete automated testing for all vendors in YAML (with validated safe configuration)
   Test vendors from yaml configuration  ${safe_vendor_config}
 

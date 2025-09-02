@@ -30,7 +30,7 @@ Test vendors from yaml configuration
     ${height} =             Get From Dictionary     ${dimensions}       height
 
     # Parse tracking URL to get parameter info
-    ${tracking_config} =    Parse yaml tracking url template  ${tracking_url}
+    ${tracking_config} =    Parse yaml tracking url template  ${tracking_url}  ${vendor_name}
     ${param_name} =         Get From Dictionary     ${tracking_config}  param_name
     ${uses_base64} =        Get From Dictionary     ${tracking_config}  uses_base64
 
@@ -53,7 +53,7 @@ Test vendors from yaml configuration
 
     # Validate response structure and content
     Validate vendor response structure  ${resp_json}
-    Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}
+    Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}  ${vendor_name}
 
     Log                     ✅ Vendor ${vendor_name} test PASSED
   END
