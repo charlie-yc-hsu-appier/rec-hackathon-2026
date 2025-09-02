@@ -19,8 +19,10 @@ func BuildHeader(v config.Vendor) header.Strategy {
 
 func BuildRequester(v config.Vendor) requester.Strategy {
 	switch v.Name {
+	case "inl_corp_0", "inl_corp_1", "inl_corp_2", "inl_corp_3", "inl_corp_4", "inl_corp_5":
+		return &requester.InlCorp{SizeCodes: v.SizeCodes}
 	default:
-		return &requester.Default{SizeCodes: v.SizeCodes}
+		return &requester.Default{}
 	}
 }
 
