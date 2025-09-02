@@ -39,11 +39,12 @@ func (m *MockStrategy) EXPECT() *MockStrategyMockRecorder {
 }
 
 // GenerateRequestURL mocks base method.
-func (m *MockStrategy) GenerateRequestURL(params Params) string {
+func (m *MockStrategy) GenerateRequestURL(params Params) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateRequestURL", params)
 	ret0, _ := ret[0].(string)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GenerateRequestURL indicates an expected call of GenerateRequestURL.
