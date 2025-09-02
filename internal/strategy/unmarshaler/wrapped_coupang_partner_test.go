@@ -1,12 +1,13 @@
 package unmarshaler
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestCoupangPartner(t *testing.T) {
+func TestWrappedCoupangPartner(t *testing.T) {
 	tt := []struct {
 		name        string
 		input       []byte
@@ -15,7 +16,7 @@ func TestCoupangPartner(t *testing.T) {
 	}{
 		{
 			name:  "GIVEN valid JSON THEN return the expected struct",
-			input: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"},{"productId":2,"productUrl":"url2","productImage":"img2"}]`),
+			input: []byte(`{"rCode":"0","rMessage":"success","data":[{"productId":1,"productUrl":"url1","productImage":"img1"},{"productId":2,"productUrl":"url2","productImage":"img2"}]}`),
 			want:  []PartnerResp{{ProductID: "1", ProductImage: "img1", ProductURL: "url1"}, {ProductID: "2", ProductImage: "img2", ProductURL: "url2"}},
 		},
 		{
@@ -23,14 +24,18 @@ func TestCoupangPartner(t *testing.T) {
 			input:       []byte("invalid json"),
 			wantedError: ErrInvalidFormat,
 		},
+		{
+			name:        "GIVEN error code in JSON THEN return an error",
+			input:       []byte(`{"rCode":"1","rMessage":"error","data":[]}`),
+			wantedError: errors.New("resp code invalid. code: 1, msg: error"),
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			strategy := &CoupangPartner{}
+			strategy := &WrappedCoupangPartner{}
 			got, err := strategy.UnmarshalResponse(tc.input)
 			if tc.wantedError != nil {
-				require.Error(t, err)
 				require.Equal(t, tc.wantedError.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
