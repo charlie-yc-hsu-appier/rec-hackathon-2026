@@ -1,7 +1,7 @@
 package unmarshaler
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,7 +22,7 @@ func TestCoupangPartner(t *testing.T) {
 		{
 			name:        "GIVEN invalid JSON THEN return an error",
 			input:       []byte("invalid json"),
-			wantedError: fmt.Errorf("invalid format. body: %v", "invalid json"),
+			wantedError: errors.New("invalid format"),
 		},
 	}
 

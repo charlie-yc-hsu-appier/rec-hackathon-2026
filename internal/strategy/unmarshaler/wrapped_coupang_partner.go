@@ -2,8 +2,11 @@ package unmarshaler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type wrappedResp struct {
@@ -17,7 +20,8 @@ type WrappedCoupangPartner struct{}
 func (s *WrappedCoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
 	rResp := &wrappedResp{}
 	if err := json.Unmarshal(body, rResp); err != nil {
-		return nil, fmt.Errorf("invalid format. body: %v", string(body))
+		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
+		return nil, errors.New("invalid format")
 	}
 
 	if rResp.RCode != "0" {

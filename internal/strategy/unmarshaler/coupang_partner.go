@@ -2,8 +2,10 @@ package unmarshaler
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type coupangResp struct {
@@ -17,7 +19,8 @@ type CoupangPartner struct{}
 func (s *CoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
 	var resp []coupangResp
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("invalid format. body: %v", string(body))
+		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
+		return nil, errors.New("invalid format")
 	}
 	res := make([]PartnerResp, 0, len(resp))
 	for _, item := range resp {
