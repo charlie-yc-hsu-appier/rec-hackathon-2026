@@ -6,9 +6,7 @@ import (
 	"strings"
 )
 
-type Default struct {
-	SizeCodeMap map[string]string
-}
+type Default struct{}
 
 func (s *Default) GenerateRequestURL(params Params) (string, error) {
 	url := params.RequestURL
