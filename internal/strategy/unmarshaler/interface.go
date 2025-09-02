@@ -1,5 +1,13 @@
 package unmarshaler
 
+import (
+	"errors"
+)
+
+var (
+	ErrInvalidFormat = errors.New("invalid format")
+)
+
 type PartnerResp struct {
 	ProductID    string
 	ProductURL   string

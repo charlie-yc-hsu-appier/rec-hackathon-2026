@@ -24,3 +24,11 @@ vendor_config:
       request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code=FAXXi4vdOY&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&app_bundleId=com.cashwalk.cashwalk&imp_adType=3"
       tracking_url: "{product_url}&param1={click_id_base64}"
       with_proxy: true
+    - name: replace
+      request_url: "https://api-gateway.coupang.com/v2/providers/affiliate_open_api/apis/openapi/v1/products/reco?deviceId={user_id_lower}&imageSize={width}x{height}&subId=KRpartner01"
+      tracking_url: "https://click.adshot.network/trk?click_id={click_id_base64}&adid={user_id_lower}&land_url={encoded_product_url}"
+      {{- with secret "secret/project/recommendation/rec-serving/replace" }}
+      access_key: {{ .Data.data.access_key }}
+      secret_key: {{ .Data.data.secret_key }}
+      {{- end }}
+      with_proxy: true

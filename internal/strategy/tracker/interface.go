@@ -4,6 +4,7 @@ type Params struct {
 	TrackingURL string
 	ProductURL  string
 	ClickID     string
+	UserID      string
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=tracker
