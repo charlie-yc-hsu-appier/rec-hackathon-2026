@@ -26,7 +26,7 @@ I would like to set the session under vendor endpoint with
 
   # Handle optional parameters - Method 2: Direct dictionary filtering
   ${query_params} =         Create Dictionary
-  @{param_names} =          Create List  vendor_key  user_id  click_id  w  h
+  @{param_names} =          Create List  vendor_key  user_id  click_id  w  h  web_host  bundle_id  adtype
   
   FOR  ${param}  IN  @{param_names}
     ${param_exists} =       Run Keyword And Return Status

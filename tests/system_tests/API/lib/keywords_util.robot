@@ -157,10 +157,11 @@ Download the video and check the size > 1
 
 # Vendor API testing utility keywords #
 Auto select test dimensions
-  [Arguments]         ${request_url}=${Empty}
+  [Arguments]         ${request_url}=${Empty}    ${vendor_name}=${Empty}
   [Documentation]  Auto-select test dimensions from predefined sizes
-  ...              Returns dimensions dictionary with width and height
+  ...              Returns dimensions dictionary with width, height, and additional vendor parameters
   ...              Available test sizes: 300x300, 1200x627, 1200x600
+  ...              For linkmine vendor: Also generates site_domain (web domain), app_bundleId (app store ID), imp_adType (2 or 3)
   ...              Note: request_url parameter is kept for compatibility but not used
 
   # Predefined test dimensions
@@ -179,9 +180,33 @@ Auto select test dimensions
   ${width} =          Set Variable        ${size_parts}[0]
   ${height} =         Set Variable        ${size_parts}[1]
 
-  &{dimensions} =     Create Dictionary   width=${width}      height=${height}
+  # Base dimensions dictionary
+  &{dimensions} =     Create Dictionary
+  ...                 width=${width}
+  ...                 height=${height}
 
-  Log                 📏 Selected test dimensions: ${width}x${height} (from predefined test sizes)
+  Log                 📏 Selected test dimensions: ${width}x${height}
+
+  # Generate additional vendor parameters only for linkmine
+  ${is_linkmine} =    Run Keyword And Return Status    Should Be Equal    ${vendor_name}    linkmine
+  
+  IF    ${is_linkmine}
+    # Linkmine-specific parameters with predefined options
+    @{domains} =        Create List    coupang.com    gmarket.co.kr    11st.co.kr    auction.co.kr
+    @{bundles} =        Create List    com.coupang.mobile    kr.co.gmarket.mobile    com.elevenst    com.auction.mobile
+    @{ad_types} =       Create List    2    3
+
+    # Random selection
+    ${web_host} =       Evaluate    __import__('random').choice($domains)
+    ${bundle_id} =      Evaluate    __import__('random').choice($bundles)
+    ${adtype} =         Evaluate    __import__('random').choice($ad_types)
+
+    # Add to dimensions dictionary
+    Set To Dictionary   ${dimensions}    web_host=${web_host}    bundle_id=${bundle_id}    adtype=${adtype}
+
+    Log    Linkmine params - web_host: ${web_host}, bundle_id: ${bundle_id}, adtype: ${adtype}
+  END
+
   RETURN              &{dimensions}
 
 
