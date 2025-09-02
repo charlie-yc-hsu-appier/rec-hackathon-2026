@@ -10,7 +10,7 @@ RUN mkdir -pm 0600 /root/.ssh \
     && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6 \
-    && go install go.uber.org/mock/mockgen@v0.4.0  
+    && go install go.uber.org/mock/mockgen@v0.4.0
 
 COPY .gitconfig /root/.gitconfig
 COPY go.* ./
