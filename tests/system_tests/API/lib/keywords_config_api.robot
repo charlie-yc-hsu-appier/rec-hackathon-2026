@@ -179,6 +179,15 @@ Get vendor inl_corp indices for yaml configuration
     Log                   Warnings: ${safety_warnings}
   END
 
+  # Generate formatted YAML Config Report for test output
+  Set Test Message        \n=== YAML Config Report ===  append=yes
+  Set Test Message        Active vendors: ${vendor_count} (${vendor_names})  append=yes
+  Set Test Message        Indices: ${sorted_indices}  append=yes
+  IF  ${safety_warnings}
+    Set Test Message      ⚠️  Warnings: ${safety_warnings}  append=yes
+  END
+  Set Test Message        === End Report ===\n  append=yes
+
   Set Test Variable       ${extracted_vendor_indices_for_yaml}    ${sorted_indices}
   Set Test Variable       ${extracted_vendor_names_for_yaml}      ${vendor_names}
   Set Test Variable       ${extracted_yaml_snippet_for_vendors}   ${yaml_snippet}
@@ -234,6 +243,7 @@ Validate and generate safe vendor yaml configuration
       # Keep all non-inl vendors
       Append To List      ${filtered_vendors}     ${vendor}
       Log                 Kept: ${vendor_name}
+      Set Test Message    ✅ Kept: ${vendor_name}  append=yes
     ELSE
       # For inl vendors, check if index is active
       ${vendor_index} =   Get Regexp Matches      ${vendor_name}    inl_corp_(\\d+)    1
@@ -243,11 +253,14 @@ Validate and generate safe vendor yaml configuration
         IF  ${is_active}
           Append To List  ${filtered_vendors}     ${vendor}
           Log             Kept active: ${vendor_name} (index ${index})
+          Set Test Message    ✅ Kept active: ${vendor_name} (index ${index})  append=yes
         ELSE
           Log             Filtered out inactive: ${vendor_name} (index ${index})
+          Set Test Message    ❌ Filtered out inactive: ${vendor_name} (index ${index})  append=yes
         END
       ELSE
         Log               Unknown inl vendor format: ${vendor_name}
+        Set Test Message    ⚠️  Unknown inl vendor format: ${vendor_name}  append=yes
       END
     END
   END
@@ -258,6 +271,7 @@ Validate and generate safe vendor yaml configuration
   
   ${total_count} =        Get Length              ${filtered_vendors}
   Log                     Final configuration: ${total_count} vendors (active indices: ${active_indices})
+  Set Test Message        📊 Final configuration: ${total_count} vendors (active indices: ${active_indices})  append=yes
   
   RETURN                  ${filtered_yaml}
 
