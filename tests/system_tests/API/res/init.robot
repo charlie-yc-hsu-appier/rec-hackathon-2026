@@ -22,5 +22,6 @@ Library     ../lib/image.py
 Resource    ../lib/keywords_init.robot
 Resource    ../lib/keywords_util.robot
 Resource    ../lib/keywords_vendor_api.robot
+Resource    ../lib/keywords_config_api.robot
 Resource    ../lib/keywords_templates.robot
 

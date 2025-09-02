@@ -199,26 +199,41 @@ Encode Base64
 
 
 Parse yaml tracking url template
-  [Arguments]         ${tracking_url}
+  [Arguments]         ${tracking_url}    ${vendor_name}=${Empty}
   [Documentation]  Parse YAML tracking_url to extract parameter configuration
   ...              Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
+  ...              Special handling for INL vendors: if tracking_url is "{product_url}" only,
+  ...              automatically adds subparam={click_id_base64} for compatibility
+  ...              Note: INL vendors use 'subparam' parameter in the tracking template
 
-  # Extract parameter name using regex
-  ${param_matches} =  Get Regexp Matches  ${tracking_url}     [&?]([^=]+)=            1
-  ${param_name} =     Set Variable If     ${param_matches}    ${param_matches[0]}     unknown
+  # Special handling for INL vendors
+  ${is_inl_vendor} =  Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
+  ${modified_tracking_url} =  Set Variable    ${tracking_url}
+  ${final_param_name} =  Set Variable    unknown
+  
+  IF  ${is_inl_vendor} and '${tracking_url}' == '{product_url}'
+    Log    INL vendor detected with simple tracking_url, adding subparam base64 parameter for compatibility
+    ${modified_tracking_url} =  Set Variable    {product_url}&subparam={click_id_base64}
+    ${final_param_name} =  Set Variable    subparam
+  ELSE
+    # Extract parameter name using regex for non-INL vendors
+    ${param_matches} =  Get Regexp Matches  ${modified_tracking_url}     [&?]([^=]+)=            1
+    ${final_param_name} =  Set Variable If     ${param_matches}    ${param_matches[0]}     unknown
+  END
 
   # Check if uses base64 encoding
   ${uses_base64} =    Run Keyword And Return Status
-  ...                 Should Contain      ${tracking_url}     base64
+  ...                 Should Contain      ${modified_tracking_url}     base64
 
   # Check if requires group_id (typically for INL vendors)
-  ${has_group_id} =   Set Variable If     '${param_name}' == 'subparam'  ${TRUE}  ${FALSE}
+  ${has_group_id} =   Set Variable If     '${final_param_name}' == 'subparam'  ${TRUE}  ${FALSE}
 
   # Create config dictionary
   &{config} =         Create Dictionary
-  ...                 param_name=${param_name}
+  ...                 param_name=${final_param_name}
   ...                 uses_base64=${uses_base64}
   ...                 has_group_id=${has_group_id}
+  ...                 modified_tracking_url=${modified_tracking_url}
 
   RETURN              &{config}
 
