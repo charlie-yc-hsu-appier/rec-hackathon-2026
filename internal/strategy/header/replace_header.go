@@ -8,13 +8,13 @@ import (
 	"net/url"
 )
 
-type HmacHeader struct {
+type ReplaceHeader struct {
 	AccessKey string
 	SecretKey string
 	Clock     Clock
 }
 
-func (h *HmacHeader) GenerateHeaders(params Params) map[string]string {
+func (h *ReplaceHeader) GenerateHeaders(params Params) map[string]string {
 	datetimeGMT := h.Clock.getDatetimeGMT()
 	parsedURL, _ := url.Parse(params.RequestURL)
 

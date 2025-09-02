@@ -8,24 +8,24 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-type hmacHeaderTestSuite struct {
+type replaceHeaderTestSuite struct {
 	suite.Suite
 	mockClock *MockClock
 }
 
-func (ts *hmacHeaderTestSuite) SetupTest() {
+func (ts *replaceHeaderTestSuite) SetupTest() {
 	ts.mockClock = NewMockClock(gomock.NewController(ts.T()))
 }
 
-func TestHmacHeaderTestSuite(t *testing.T) {
+func TestReplaceHeaderTestSuite(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, &hmacHeaderTestSuite{})
+	suite.Run(t, &replaceHeaderTestSuite{})
 }
 
-func (s *hmacHeaderTestSuite) TestGenerateHeaders() {
+func (s *replaceHeaderTestSuite) TestGenerateHeaders() {
 	s.mockClock.EXPECT().getDatetimeGMT().Return("250707T103117Z")
 
-	header := &HmacHeader{
+	header := &ReplaceHeader{
 		SecretKey: "secret_key",
 		AccessKey: "access_key",
 		Clock:     s.mockClock,

@@ -11,7 +11,7 @@ import (
 func BuildHeader(v config.Vendor) header.Strategy {
 	switch v.Name {
 	case "replace":
-		return &header.HmacHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
+		return &header.ReplaceHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
 	default:
 		return &header.NoHeader{}
 	}
