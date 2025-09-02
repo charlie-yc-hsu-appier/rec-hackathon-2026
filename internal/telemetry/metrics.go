@@ -20,6 +20,7 @@ var (
 type PromMetrics struct {
 	RestApiDurationSeconds *prometheus.HistogramVec
 	RestApiErrorTotal      *prometheus.CounterVec
+	RestApiAnomalyTotal    *prometheus.CounterVec
 }
 
 func NewPromMetrics() PromMetrics {
@@ -38,6 +39,13 @@ func NewPromMetrics() PromMetrics {
 			Name:      "rest_api_error_total",
 			Help:      "Error count when calling Rest API",
 		}, []string{"vendor"},
+	)
+	m.RestApiAnomalyTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Subsystem: systemName,
+			Name:      "rest_api_anomaly_total",
+			Help:      "Anomaly count when calling Rest API",
+		}, []string{"vendor", "reason"},
 	)
 	return m
 }
