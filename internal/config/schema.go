@@ -27,5 +27,5 @@ type Vendor struct {
 	WithProxy   bool              `mapstructure:"with_proxy"`
 	AccessKey   string            `mapstructure:"access_key"`
 	SecretKey   string            `mapstructure:"secret_key"`
-	SizeCodes   map[string]string `mapstructure:"size_codes"`
+	SizeCodeMap map[string]string `mapstructure:"size_code_map"`
 }

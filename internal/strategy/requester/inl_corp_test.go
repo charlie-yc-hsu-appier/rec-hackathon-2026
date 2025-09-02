@@ -7,20 +7,20 @@ import (
 )
 
 func TestInlCorp(t *testing.T) {
-	SizeCodes := map[string]string{
+	SizeCodeMap := map[string]string{
 		"300x300":  "code-300",
 		"1200x627": "code-1200-627",
 	}
 	tt := []struct {
-		name      string
-		SizeCodes map[string]string
-		params    Params
-		want      string
-		wantErr   bool
+		name        string
+		SizeCodeMap map[string]string
+		params      Params
+		want        string
+		wantErr     bool
 	}{
 		{
-			name:      "GIVEN valid size and size_code macro THEN expect URL with correct size code",
-			SizeCodes: SizeCodes,
+			name:        "GIVEN valid size and size_code macro THEN expect URL with correct size code",
+			SizeCodeMap: SizeCodeMap,
 			params: Params{
 				RequestURL: "https://example.com/image?code={size_code}&user={user_id_lower}&click_id={click_id_base64}",
 				UserID:     "TestUser",
@@ -31,8 +31,8 @@ func TestInlCorp(t *testing.T) {
 			want: "https://example.com/image?code=code-300&user=testuser&click_id=dGVzdC1pZA",
 		},
 		{
-			name:      "GIVEN invalid size and size_code macro THEN expect error",
-			SizeCodes: SizeCodes,
+			name:        "GIVEN invalid size and size_code macro THEN expect error",
+			SizeCodeMap: SizeCodeMap,
 			params: Params{
 				RequestURL: "https://example.com/image?code={size_code}&user={user_id_lower}&click_id={click_id_base64}",
 				UserID:     "TestUser",
@@ -43,8 +43,8 @@ func TestInlCorp(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:      "GIVEN width and height macro THEN expect URL with correct size",
-			SizeCodes: nil,
+			name:        "GIVEN width and height macro THEN expect URL with correct size",
+			SizeCodeMap: nil,
 			params: Params{
 				RequestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}&click_id={click_id_base64}",
 				UserID:     "TestUser",
@@ -58,7 +58,7 @@ func TestInlCorp(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			strategy := &InlCorp{SizeCodes: tc.SizeCodes}
+			strategy := &InlCorp{SizeCodeMap: tc.SizeCodeMap}
 			got, err := strategy.GenerateRequestURL(tc.params)
 			if tc.wantErr {
 				require.Error(t, err)

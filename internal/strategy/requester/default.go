@@ -7,7 +7,7 @@ import (
 )
 
 type Default struct {
-	SizeCodes map[string]string
+	SizeCodeMap map[string]string
 }
 
 func (s *Default) GenerateRequestURL(params Params) (string, error) {

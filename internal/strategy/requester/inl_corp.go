@@ -6,7 +6,7 @@ import (
 )
 
 type InlCorp struct {
-	SizeCodes map[string]string
+	SizeCodeMap map[string]string
 }
 
 func (s *InlCorp) GenerateRequestURL(params Params) (string, error) {
@@ -16,7 +16,7 @@ func (s *InlCorp) GenerateRequestURL(params Params) (string, error) {
 		return "", err
 	}
 
-	if s.SizeCodes != nil {
+	if s.SizeCodeMap != nil {
 		sizeCode, err := s.getSizeCode(params.ImgWidth, params.ImgHeight)
 		if err != nil {
 			return "", err
@@ -29,7 +29,7 @@ func (s *InlCorp) GenerateRequestURL(params Params) (string, error) {
 
 func (s *InlCorp) getSizeCode(width, height int) (string, error) {
 	size := fmt.Sprintf("%dx%d", width, height)
-	if c, ok := s.SizeCodes[size]; ok {
+	if c, ok := s.SizeCodeMap[size]; ok {
 		return c, nil
 	}
 	return "", fmt.Errorf("not supported size: %dx%d", width, height)
