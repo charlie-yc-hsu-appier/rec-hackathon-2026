@@ -1,30 +1,31 @@
 package strategy
 
 import (
+	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/strategy/header"
 	"rec-vendor-api/internal/strategy/requester"
 	"rec-vendor-api/internal/strategy/tracker"
 	"rec-vendor-api/internal/strategy/unmarshaler"
 )
 
-func BuildHeader(name, accessKey, secretKey string) header.Strategy {
-	switch name {
+func BuildHeader(v config.Vendor) header.Strategy {
+	switch v.Name {
 	case "replace":
-		return &header.HmacHeader{AccessKey: accessKey, SecretKey: secretKey, Clock: &header.ClockImpl{}}
+		return &header.HmacHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
 	default:
 		return &header.NoHeader{}
 	}
 }
 
-func BuildRequester(name string) requester.Strategy {
-	switch name {
+func BuildRequester(v config.Vendor) requester.Strategy {
+	switch v.Name {
 	default:
 		return &requester.Default{}
 	}
 }
 
-func BuildUnmarshaler(name string) unmarshaler.Strategy {
-	switch name {
+func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
+	switch v.Name {
 	case "replace":
 		return &unmarshaler.WrappedCoupangPartner{}
 	default:
@@ -32,8 +33,8 @@ func BuildUnmarshaler(name string) unmarshaler.Strategy {
 	}
 }
 
-func BuildTracker(name string) tracker.Strategy {
-	switch name {
+func BuildTracker(v config.Vendor) tracker.Strategy {
+	switch v.Name {
 	default:
 		return &tracker.Default{}
 	}
