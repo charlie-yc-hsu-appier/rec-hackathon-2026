@@ -21,10 +21,11 @@ type VendorConfig struct {
 }
 
 type Vendor struct {
-	Name        string `mapstructure:"name"`
-	RequestURL  string `mapstructure:"request_url"`
-	TrackingURL string `mapstructure:"tracking_url"`
-	WithProxy   bool   `mapstructure:"with_proxy"`
-	AccessKey   string `mapstructure:"access_key"`
-	SecretKey   string `mapstructure:"secret_key"`
+	Name        string            `mapstructure:"name"`
+	RequestURL  string            `mapstructure:"request_url"`
+	TrackingURL string            `mapstructure:"tracking_url"`
+	WithProxy   bool              `mapstructure:"with_proxy"`
+	AccessKey   string            `mapstructure:"access_key"`
+	SecretKey   string            `mapstructure:"secret_key"`
+	SizeCodes   map[string]string `mapstructure:"size_codes"`
 }

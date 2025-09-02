@@ -3,6 +3,7 @@ package requester
 type Params struct {
 	RequestURL string
 	UserID     string
+	ClickID    string
 	ImgWidth   int
 	ImgHeight  int
 }

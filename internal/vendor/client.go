@@ -47,6 +47,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	reqParams := requester.Params{
 		RequestURL: v.cfg.RequestURL,
 		UserID:     req.UserID,
+		ClickID:    req.ClickID,
 		ImgWidth:   req.ImgWidth,
 		ImgHeight:  req.ImgHeight,
 	}

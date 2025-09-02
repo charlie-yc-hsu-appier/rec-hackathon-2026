@@ -20,7 +20,7 @@ func BuildHeader(v config.Vendor) header.Strategy {
 func BuildRequester(v config.Vendor) requester.Strategy {
 	switch v.Name {
 	default:
-		return &requester.Default{}
+		return &requester.Default{SizeCodes: v.SizeCodes}
 	}
 }
 
