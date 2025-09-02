@@ -47,10 +47,14 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	reqParams := requester.Params{
 		RequestURL: v.cfg.RequestURL,
 		UserID:     req.UserID,
+		ClickID:    req.ClickID,
 		ImgWidth:   req.ImgWidth,
 		ImgHeight:  req.ImgHeight,
 	}
-	url := v.requestURLStrategy.GenerateRequestURL(reqParams)
+	url, err := v.requestURLStrategy.GenerateRequestURL(reqParams)
+	if err != nil {
+		return nil, err
+	}
 	restReq := httpkit.NewRequest(url)
 
 	headerParams := header.Params{RequestURL: url}
