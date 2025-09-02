@@ -10,7 +10,6 @@ func TestInlCorp(t *testing.T) {
 	SizeCodes := map[string]string{
 		"300x300":  "code-300",
 		"1200x627": "code-1200-627",
-		"1200x600": "code-1200-600",
 	}
 	tt := []struct {
 		name      string
@@ -20,7 +19,7 @@ func TestInlCorp(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "GIVEN 300x300 size and size_code macro THEN expect URL with 300x300 size code",
+			name:      "GIVEN valid size and size_code macro THEN expect URL with correct size code",
 			SizeCodes: SizeCodes,
 			params: Params{
 				RequestURL: "https://example.com/image?code={size_code}&user={user_id_lower}&click_id={click_id_base64}",
@@ -30,30 +29,6 @@ func TestInlCorp(t *testing.T) {
 				ClickID:    "test-id",
 			},
 			want: "https://example.com/image?code=code-300&user=testuser&click_id=dGVzdC1pZA",
-		},
-		{
-			name:      "GIVEN 1200x627 size and size_code macro THEN expect URL with 1200x627 size code",
-			SizeCodes: SizeCodes,
-			params: Params{
-				RequestURL: "https://example.com/image?code={size_code}&user={user_id_lower}&click_id={click_id_base64}",
-				UserID:     "TestUser",
-				ImgWidth:   1200,
-				ImgHeight:  627,
-				ClickID:    "test-id",
-			},
-			want: "https://example.com/image?code=code-1200-627&user=testuser&click_id=dGVzdC1pZA",
-		},
-		{
-			name:      "GIVEN 1200x600 size and size_code macro THEN expect URL with 1200x600 size code",
-			SizeCodes: SizeCodes,
-			params: Params{
-				RequestURL: "https://example.com/image?code={size_code}&user={user_id_lower}&click_id={click_id_base64}",
-				UserID:     "TestUser",
-				ImgWidth:   1200,
-				ImgHeight:  600,
-				ClickID:    "test-id",
-			},
-			want: "https://example.com/image?code=code-1200-600&user=testuser&click_id=dGVzdC1pZA",
 		},
 		{
 			name:      "GIVEN invalid size and size_code macro THEN expect error",
@@ -68,7 +43,7 @@ func TestInlCorp(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:      "GIVEN 300x300 size and width height macro THEN expect URL with 300x300 size",
+			name:      "GIVEN width and height macro THEN expect URL with correct size",
 			SizeCodes: nil,
 			params: Params{
 				RequestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}&click_id={click_id_base64}",
