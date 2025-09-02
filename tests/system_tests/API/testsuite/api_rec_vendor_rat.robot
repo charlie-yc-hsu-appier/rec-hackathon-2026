@@ -11,7 +11,7 @@ Suite Teardown      Release Test Value
 *** Test Cases ***
 # Automated vendor testing from YAML - Complete automation
 [C4983449] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
-  [Tags]              testrailid=4983449     RAT             VENDOR
+  [Tags]              testrailid=4983449  RAT     VENDOR
   [Documentation]  Fully automated vendor testing using actual config.yaml file with Config API integration
   ...              Loads vendor configuration from deploy/rec-vendor-api/secrets/config.yaml
   ...              Integrates with Config API to filter only active inl_corp vendors for testing
@@ -19,10 +19,10 @@ Suite Teardown      Release Test Value
   ...              - Dynamic endpoint generation: /r/{vendor_name}
   ...              - Auto-selected test dimensions: 300x300, 1200x627, 1200x600
   ...              - Vendor-specific parameter handling:
-  ...                * Standard vendors: user_id, click_id, w, h
-  ...                * Linkmine vendor: adds web_host, bundle_id, adtype
-  ...                * INL vendors: URL-encoded subparam with base64 encoding
-  ...                * INL_corp_5: Special handling with subParam=pier
+  ...              * Standard vendors: user_id, click_id, w, h
+  ...              * Linkmine vendor: adds web_host, bundle_id, adtype
+  ...              * INL vendors: URL-encoded subparam with base64 encoding
+  ...              * INL_corp_5: Special handling with subParam=pier
   ...              - Base64 encoding validation for click_id parameters
   ...              - Response structure validation (array of products)
   ...              - Product patch verification with tracking parameters
@@ -31,14 +31,14 @@ Suite Teardown      Release Test Value
 
   # Load YAML configuration from actual config file
   # Note: size={width}x{height} parameters are auto-selected from predefined sizes (300x300, 1200x627, 1200x600)
-  ${config_path} =        Set Variable    ${CURDIR}/../../../../deploy/rec-vendor-api/secrets/config.yaml
-  ${yaml_content} =       Load vendor config from file    ${config_path}
+  ${config_path} =    Set Variable        ${CURDIR}/../../../../deploy/rec-vendor-api/secrets/config.yaml
+  ${yaml_content} =   Load vendor config from file  ${config_path}
 
   # YAML maintains complete vendor configurations
   # Config API dynamically determines which inl_corp_X to test
   # Backward compatible, non-inl vendors unaffected
   # Only tests actually active inl vendors
-  ${safe_vendor_config} =  Validate and generate safe vendor yaml configuration    ${yaml_content}
+  ${safe_vendor_config} =  Validate and generate safe vendor yaml configuration  ${yaml_content}
 
   # Run complete automated testing for all vendors in YAML (with validated safe configuration)
   Test vendors from yaml configuration  ${safe_vendor_config}

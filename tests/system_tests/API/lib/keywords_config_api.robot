@@ -16,9 +16,9 @@ I have a config_api session
 
 
 I would like to get campaign_ids with group vendor_inl_corp
-  [Documentation]    Get campaign IDs that have group "vendor_inl_corp" from experiments endpoint
-  [Arguments]        ${site_id}    ${service_type_id}
-  
+  [Documentation]  Get campaign IDs that have group "vendor_inl_corp" from experiments endpoint
+  [Arguments]             ${site_id}              ${service_type_id}
+
   # Get experiments data
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
 
@@ -28,13 +28,13 @@ I would like to get campaign_ids with group vendor_inl_corp
   Should Not Be Empty     ${resp.json()}          Experiments API returned empty response for ${site_id}
 
   # Extract campaign_ids where any bucket has group "vendor_inl_corp"
-  @{vendor_inl_corp_campaigns} =  Get Value From Json     ${resp.json()}    $.experiments[*].distributions[?(@.buckets[*].group == 'vendor_inl_corp')].campaign_id
-  
+  @{vendor_inl_corp_campaigns} =  Get Value From Json  ${resp.json()}  $.experiments[*].distributions[?(@.buckets[*].group == 'vendor_inl_corp')].campaign_id
+
   # Filter out empty campaign_ids
   @{filtered_campaigns} =  Create List
   FOR  ${campaign_id}  IN  @{vendor_inl_corp_campaigns}
     IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
-      Append To List      ${filtered_campaigns}    ${campaign_id}
+      Append To List  ${filtered_campaigns}   ${campaign_id}
     END
   END
 
@@ -43,202 +43,190 @@ I would like to get campaign_ids with group vendor_inl_corp
 
 
 I would like to check campaign status
-  [Documentation]    Check campaign status and extract active inl_rec_api_group_ratio indices
-  [Arguments]        ${campaign_id}
-  
+  [Documentation]  Check campaign status and extract active inl_rec_api_group_ratio indices
+  [Arguments]             ${campaign_id}
+
   # Get campaign details
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
-  
+
   # Validate response
   ${resp.status_code} =   Convert To String       ${resp.status_code}
   Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Campaign ${campaign_id} API error: ${resp.status_code} - ${resp.content}
   Should Not Be Empty     ${resp.json()}          Campaign ${campaign_id} returned empty response
-  
+
   # Extract campaign status
-  ${campaign_status} =    Get Value From Json     ${resp.json()}    $.campaign.status_code
-  
+  ${campaign_status} =    Get Value From Json     ${resp.json()}          $.campaign.status_code
+
   # Extract active inl_rec_api_group_ratio indices
   @{active_indices} =     Create List
   ${has_inl_ratio} =      Run Keyword And Return Status
-  ...                     Should Have Value In Json    ${resp.json()}    $.campaign.configs.inl_rec_api_group_ratio
-  
+  ...                     Should Have Value In Json  ${resp.json()}  $.campaign.configs.inl_rec_api_group_ratio
+
   IF  ${has_inl_ratio}
-    ${inl_ratios} =       Get Value From Json     ${resp.json()}    $.campaign.configs.inl_rec_api_group_ratio
-    ${ratio_list} =       Set Variable            ${inl_ratios}[0]
-    
+    ${inl_ratios} =     Get Value From Json     ${resp.json()}      $.campaign.configs.inl_rec_api_group_ratio
+    ${ratio_list} =     Set Variable            ${inl_ratios}[0]
+
     FOR  ${index}  ${ratio}  IN ENUMERATE  @{ratio_list}
-      ${ratio_float} =    Convert To Number       ${ratio}
+      ${ratio_float} =    Convert To Number   ${ratio}
       IF  ${ratio_float} != 0.0
-        Append To List    ${active_indices}       ${index}
+        Append To List  ${active_indices}   ${index}
       END
     END
   END
-  
+
   Log                     Campaign ${campaign_id}: status=${campaign_status}[0], active_indices=${active_indices}
 
-  &{result} =             Create Dictionary       status=${campaign_status}[0]    active_indices=${active_indices}
+  &{result} =             Create Dictionary       status=${campaign_status}[0]  active_indices=${active_indices}
   RETURN                  ${result}
 
 
 Get active vendor_inl_corp campaign ids from config api
-  [Documentation]    Get vendor_inl_corp campaign IDs that are not in "Finished" status with their active inl_rec_api_group_ratio indices
-  [Arguments]        ${site_id}=android--com.coupang.mobile_s2s_v3    ${service_type_id}=crossx_recommend
-  
+  [Documentation]  Get vendor_inl_corp campaign IDs that are not in "Finished" status with their active inl_rec_api_group_ratio indices
+  [Arguments]             ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
+
   I have a config_api session
-  
+
   # Get all vendor_inl_corp campaign IDs from experiments
-  ${all_campaign_ids} =   I would like to get campaign_ids with group vendor_inl_corp    ${site_id}    ${service_type_id}
-  
+  ${all_campaign_ids} =   I would like to get campaign_ids with group vendor_inl_corp  ${site_id}  ${service_type_id}
+
   # Check each campaign's status and filter out "Finished" ones
   &{active_campaigns_info} =  Create Dictionary
-  @{active_campaign_ids} =    Create List
-  
+  @{active_campaign_ids} =  Create List
+
   FOR  ${campaign_id}  IN  @{all_campaign_ids}
     IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
-      ${campaign_info} =      I would like to check campaign status    ${campaign_id}
-      ${campaign_status} =    Set Variable    ${campaign_info}[status]
-      ${active_indices} =     Set Variable    ${campaign_info}[active_indices]
-      
+      ${campaign_info} =      I would like to check campaign status  ${campaign_id}
+      ${campaign_status} =    Set Variable            ${campaign_info}[status]
+      ${active_indices} =     Set Variable            ${campaign_info}[active_indices]
+
       IF  '${campaign_status}' != 'Finished'
-        Append To List        ${active_campaign_ids}    ${campaign_id}
-        Set To Dictionary     ${active_campaigns_info}    ${campaign_id}=${campaign_info}
-        Log                   Campaign ${campaign_id} is active (status: ${campaign_status}, active indices: ${active_indices})
+        Append To List      ${active_campaign_ids}  ${campaign_id}
+        Set To Dictionary   ${active_campaigns_info}  ${campaign_id}=${campaign_info}
+        Log                 Campaign ${campaign_id} is active (status: ${campaign_status}, active indices: ${active_indices})
       ELSE
-        Log                   Campaign ${campaign_id} is finished, skipping
+        Log     Campaign ${campaign_id} is finished, skipping
       END
     END
   END
 
   ${campaign_count} =     Get Length              ${active_campaign_ids}
   Log                     Found ${campaign_count} active vendor_inl_corp campaigns: ${active_campaign_ids}
-  
-  Set Test Variable       ${extracted_active_vendor_inl_corp_campaigns}      ${active_campaign_ids}
-  Set Test Variable       ${extracted_vendor_inl_corp_campaigns_info}        ${active_campaigns_info}
-  
-  &{result} =             Create Dictionary       campaign_ids=${active_campaign_ids}    campaigns_info=${active_campaigns_info}
+
+  Set Test Variable       ${extracted_active_vendor_inl_corp_campaigns}  ${active_campaign_ids}
+  Set Test Variable       ${extracted_vendor_inl_corp_campaigns_info}  ${active_campaigns_info}
+
+  &{result} =             Create Dictionary       campaign_ids=${active_campaign_ids}  campaigns_info=${active_campaigns_info}
   RETURN                  ${result}
 
 
 Get vendor inl_corp indices for yaml configuration
-  [Documentation]    Get all active vendor inl_corp indices from config api for yaml configuration testing
-  [Arguments]        ${site_id}=android--com.coupang.mobile_s2s_v3    ${service_type_id}=crossx_recommend    ${validate_yaml_safety}=${True}
-  
+  [Documentation]  Get all active vendor inl_corp indices from config api for yaml configuration testing
+  [Arguments]             ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend  ${validate_yaml_safety}=${True}
+
   # Get all active vendor_inl_corp campaign information
-  ${campaign_result} =    Get active vendor_inl_corp campaign ids from config api    ${site_id}    ${service_type_id}
-  ${campaigns_info} =     Set Variable    ${campaign_result}[campaigns_info]
-  
+  ${campaign_result} =    Get active vendor_inl_corp campaign ids from config api  ${site_id}  ${service_type_id}
+  ${campaigns_info} =     Set Variable            ${campaign_result}[campaigns_info]
+
   # Collect all active indices from all campaigns
   @{all_active_indices} =  Create List
   FOR  ${campaign_id}  IN  @{campaign_result}[campaign_ids]
-    ${campaign_info} =    Get From Dictionary     ${campaigns_info}    ${campaign_id}
-    ${active_indices} =   Set Variable            ${campaign_info}[active_indices]
-    
+    ${campaign_info} =      Get From Dictionary     ${campaigns_info}   ${campaign_id}
+    ${active_indices} =     Set Variable            ${campaign_info}[active_indices]
+
     FOR  ${index}  IN  @{active_indices}
-      Append To List      ${all_active_indices}    ${index}
+      Append To List  ${all_active_indices}   ${index}
     END
   END
-  
+
   # Remove duplicates and sort the indices
   ${unique_indices} =     Remove Duplicates       ${all_active_indices}
   ${sorted_indices} =     Evaluate                sorted([int(x) for x in $unique_indices])
-  
+
   # Create vendor mapping
   @{vendor_names} =       Create List
   @{yaml_vendor_entries} =  Create List
   FOR  ${index}  IN  @{sorted_indices}
-    ${vendor_name} =      Set Variable            inl_corp_${index}
-    ${yaml_entry} =       Set Variable            ${SPACE*2}${vendor_name}:
-    Append To List        ${vendor_names}         ${vendor_name}
-    Append To List        ${yaml_vendor_entries}  ${yaml_entry}
+    ${vendor_name} =    Set Variable            inl_corp_${index}
+    ${yaml_entry} =     Set Variable            ${SPACE*2}${vendor_name}:
+    Append To List      ${vendor_names}         ${vendor_name}
+    Append To List      ${yaml_vendor_entries}  ${yaml_entry}
   END
 
   # Generate YAML configuration snippet
   ${yaml_snippet} =       Catenate                SEPARATOR=\n
   ...                     vendors:
-  ...                     # Auto-generated inl_corp vendors from Config API
+  ...                       # Auto-generated inl_corp vendors from Config API
   FOR  ${entry}  IN  @{yaml_vendor_entries}
-    ${yaml_snippet} =     Catenate                SEPARATOR=\n    ${yaml_snippet}    ${entry}
+    ${yaml_snippet} =   Catenate    SEPARATOR=\n    ${yaml_snippet}     ${entry}
   END
-  ${yaml_snippet} =       Catenate                SEPARATOR=\n    ${yaml_snippet}
-  ...                     # End of auto-generated inl_corp vendors
+  ${yaml_snippet} =       Catenate                SEPARATOR=\n            ${yaml_snippet}
+  ...                       # End of auto-generated inl_corp vendors
 
   # Validation warnings
   @{safety_warnings} =    Create List
   ${max_index} =          Evaluate                max($sorted_indices) if $sorted_indices else -1
   ${vendor_count} =       Get Length              ${sorted_indices}
 
-  IF  ${max_index} > 10
-    Append To List        ${safety_warnings}      High index detected (${max_index}). Consider reviewing vendor allocation.
-  END
-  IF  ${vendor_count} == 0
-    Append To List        ${safety_warnings}      No active inl_corp vendors found. YAML configuration may be unnecessary.
-  END
-
   Log                     Active vendors: ${vendor_count} (${vendor_names}), indices: ${sorted_indices}
-  IF  ${safety_warnings}
-    Log                   Warnings: ${safety_warnings}
-  END
 
   # Generate formatted YAML Config Report for test output
   Set Test Message        \n=== YAML Config Report ===  append=yes
   Set Test Message        Active vendors: ${vendor_count} (${vendor_names})  append=yes
   Set Test Message        Indices: ${sorted_indices}  append=yes
-  IF  ${safety_warnings}
-    Set Test Message      ⚠️  Warnings: ${safety_warnings}  append=yes
-  END
-  Set Test Message        === End Report ===\n  append=yes
+  Set Test Message        === End Report ===\n    append=yes
 
-  Set Test Variable       ${extracted_vendor_indices_for_yaml}    ${sorted_indices}
-  Set Test Variable       ${extracted_vendor_names_for_yaml}      ${vendor_names}
-  Set Test Variable       ${extracted_yaml_snippet_for_vendors}   ${yaml_snippet}
+  Set Test Variable       ${extracted_vendor_indices_for_yaml}  ${sorted_indices}
+  Set Test Variable       ${extracted_vendor_names_for_yaml}  ${vendor_names}
+  Set Test Variable       ${extracted_yaml_snippet_for_vendors}  ${yaml_snippet}
 
-  &{result} =             Create Dictionary       
-  ...                     indices=${sorted_indices}    
+  &{result} =             Create Dictionary
+  ...                     indices=${sorted_indices}
   ...                     vendor_names=${vendor_names}
   ...                     yaml_snippet=${yaml_snippet}
-  ...                     safety_warnings=${safety_warnings}
   ...                     max_index=${max_index}
   ...                     vendor_count=${vendor_count}
   RETURN                  ${result}
 
 
 Validate and generate safe vendor yaml configuration
-  [Documentation]    Backward compatible YAML configuration validation - filters only active inl_corp vendors
-  [Arguments]        ${original_yaml_content}
+  [Documentation]  Backward compatible YAML configuration validation - filters only active inl_corp vendors
+  [Arguments]             ${original_yaml_content}
 
   # Parse original YAML
   ${yaml_data} =          Evaluate                yaml.safe_load('''${original_yaml_content}''')  yaml
-  ${original_vendors} =   Get From Dictionary     ${yaml_data}    vendors
+  ${original_vendors} =   Get From Dictionary     ${yaml_data}            vendors
 
   # Check if any vendor contains "inl"
   ${has_inl} =            Set Variable            ${False}
   FOR  ${vendor}  IN  @{original_vendors}
-    ${vendor_name} =      Get From Dictionary     ${vendor}    name
-    ${contains_inl} =     Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
+    ${vendor_name} =    Get From Dictionary     ${vendor}       name
+    ${contains_inl} =   Run Keyword And Return Status
+    ...                 Should Contain          ${vendor_name}  inl
     IF  ${contains_inl}
-      ${has_inl} =        Set Variable            ${True}
+      ${has_inl} =    Set Variable    ${True}
       BREAK
     END
   END
 
   # If no inl vendors found, return original YAML (backward compatibility)
   IF  not ${has_inl}
-    Log                   No inl vendors found, using original configuration
-    RETURN                ${original_yaml_content}
+    Log     No inl vendors found, using original configuration
+    RETURN  ${original_yaml_content}
   END
-  
+
   # Get active inl_corp indices from Config API
   Log                     Found inl vendors, getting active indices from Config API...
   ${config_result} =      Get vendor inl_corp indices for yaml configuration
   ${active_indices} =     Set Variable            ${config_result}[indices]
-  
+
   # Filter vendors: keep all non-inl vendors + only active inl vendors
   @{filtered_vendors} =   Create List
-  
+
   FOR  ${vendor}  IN  @{original_vendors}
-    ${vendor_name} =      Get From Dictionary     ${vendor}    name
-    ${contains_inl} =     Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
-    
+    ${vendor_name} =    Get From Dictionary     ${vendor}           name
+    ${contains_inl} =   Run Keyword And Return Status
+    ...                 Should Contain          ${vendor_name}      inl
+
     IF  not ${contains_inl}
       # Keep all non-inl vendors
       Append To List      ${filtered_vendors}     ${vendor}
@@ -246,32 +234,32 @@ Validate and generate safe vendor yaml configuration
       Set Test Message    ✅ Kept: ${vendor_name}  append=yes
     ELSE
       # For inl vendors, check if index is active
-      ${vendor_index} =   Get Regexp Matches      ${vendor_name}    inl_corp_(\\d+)    1
+      ${vendor_index} =   Get Regexp Matches      ${vendor_name}      inl_corp_(\\d+)     1
       IF  ${vendor_index}
-        ${index} =        Convert To Integer      ${vendor_index}[0]
-        ${is_active} =    Run Keyword And Return Status    List Should Contain Value    ${active_indices}    ${index}
+        ${index} =          Convert To Integer      ${vendor_index}[0]
+        ${is_active} =      Run Keyword And Return Status
+        ...                 List Should Contain Value  ${active_indices}  ${index}
         IF  ${is_active}
-          Append To List  ${filtered_vendors}     ${vendor}
-          Log             Kept active: ${vendor_name} (index ${index})
+          Append To List      ${filtered_vendors}     ${vendor}
+          Log                 Kept active: ${vendor_name} (index ${index})
           Set Test Message    ✅ Kept active: ${vendor_name} (index ${index})  append=yes
         ELSE
-          Log             Filtered out inactive: ${vendor_name} (index ${index})
+          Log                 Filtered out inactive: ${vendor_name} (index ${index})
           Set Test Message    ❌ Filtered out inactive: ${vendor_name} (index ${index})  append=yes
         END
       ELSE
-        Log               Unknown inl vendor format: ${vendor_name}
+        Log                 Unknown inl vendor format: ${vendor_name}
         Set Test Message    ⚠️  Unknown inl vendor format: ${vendor_name}  append=yes
       END
     END
   END
-  
+
   # Rebuild YAML with filtered vendors
   Set To Dictionary       ${yaml_data}            vendors=${filtered_vendors}
-  ${filtered_yaml} =      Evaluate                yaml.dump($yaml_data, default_flow_style=False)    yaml
-  
+  ${filtered_yaml} =      Evaluate                yaml.dump($yaml_data, default_flow_style=False)  yaml
+
   ${total_count} =        Get Length              ${filtered_vendors}
   Log                     Final configuration: ${total_count} vendors (active indices: ${active_indices})
   Set Test Message        📊 Final configuration: ${total_count} vendors (active indices: ${active_indices})  append=yes
-  
-  RETURN                  ${filtered_yaml}
 
+  RETURN                  ${filtered_yaml}

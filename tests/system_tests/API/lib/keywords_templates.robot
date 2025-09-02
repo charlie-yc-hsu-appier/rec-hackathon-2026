@@ -31,13 +31,14 @@ Test vendors from yaml configuration
     ${dimensions} =         Auto select test dimensions  ${request_url}  ${vendor_name}
     ${width} =              Get From Dictionary     ${dimensions}       width
     ${height} =             Get From Dictionary     ${dimensions}       height
-    
+
     # Extract linkmine-specific parameters if available
-    ${has_web_host} =       Run Keyword And Return Status    Dictionary Should Contain Key    ${dimensions}    web_host
-    IF    ${has_web_host}
-      ${web_host} =           Get From Dictionary     ${dimensions}       web_host
-      ${bundle_id} =          Get From Dictionary     ${dimensions}       bundle_id
-      ${adtype} =             Get From Dictionary     ${dimensions}       adtype
+    ${has_web_host} =       Run Keyword And Return Status
+    ...                     Dictionary Should Contain Key  ${dimensions}  web_host
+    IF  ${has_web_host}
+      ${web_host} =   Get From Dictionary     ${dimensions}   web_host
+      ${bundle_id} =  Get From Dictionary     ${dimensions}   bundle_id
+      ${adtype} =     Get From Dictionary     ${dimensions}   adtype
     END
 
     # Parse tracking URL to get parameter info
@@ -57,12 +58,14 @@ Test vendors from yaml configuration
 
     # Test the vendor endpoint
     Given I have an vendor session
-    
+
     # Check if this is linkmine vendor to include additional parameters
-    ${is_linkmine} =    Run Keyword And Return Status    Should Be Equal    ${vendor_name}    linkmine
-    
-    IF    ${is_linkmine}
-      When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}  web_host=${web_host}  bundle_id=${bundle_id}  adtype=${adtype}
+    ${is_linkmine} =        Run Keyword And Return Status
+    ...                     Should Be Equal         ${vendor_name}      linkmine
+
+    IF  ${is_linkmine}
+      When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}  web_host=${web_host}  bundle_id=${bundle_id}
+      ...                                                              adtype=${adtype}
     ELSE
       When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}
     END
