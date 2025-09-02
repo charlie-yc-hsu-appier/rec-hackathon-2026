@@ -12,13 +12,21 @@ Suite Teardown      Release Test Value
 # Automated vendor testing from YAML - Complete automation
 [C4983449] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
   [Tags]              testrailid=4983449     RAT             VENDOR
-  [Documentation]  Fully automated vendor testing using actual config.yaml file
+  [Documentation]  Fully automated vendor testing using actual config.yaml file with Config API integration
   ...              Loads vendor configuration from deploy/rec-vendor-api/secrets/config.yaml
+  ...              Integrates with Config API to filter only active inl_corp vendors for testing
   ...              Tests all vendors in config with complete automation:
   ...              - Dynamic endpoint generation: /r/{vendor_name}
   ...              - Auto-selected test dimensions: 300x300, 1200x627, 1200x600
+  ...              - Vendor-specific parameter handling:
+  ...                * Standard vendors: user_id, click_id, w, h
+  ...                * Linkmine vendor: adds web_host, bundle_id, adtype
+  ...                * INL vendors: URL-encoded subparam with base64 encoding
+  ...                * INL_corp_5: Special handling with subParam=pier
   ...              - Base64 encoding validation for click_id parameters
   ...              - Response structure validation (array of products)
+  ...              - Product patch verification with tracking parameters
+  ...              - Config API integration: Only tests active inl_corp_X vendors (backward compatible)
   ...              - Product patch verification with tracking parameters
 
   # Load YAML configuration from actual config file
