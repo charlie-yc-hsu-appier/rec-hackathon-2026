@@ -39,20 +39,26 @@ func (ts *VendorClientTestSuite) SetupTest() {
 }
 
 func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
+	req := httpkit.NewRequest("http://test-url")
+	req = req.PatchHeaders(map[string]string{"Authorization": "Bearer test"})
+	req = req.SetMetrics(
+		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor"),
+		telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor"),
+	)
+
 	tt := []struct {
 		name         string
-		mockResp     *httpkit.Response
-		mockRespErr  error
 		mockStrategy func()
 		wantErr      bool
 		want         []ProductInfo
 	}{
 		{
-			name:     "GIVEN valid response THEN expect success",
-			mockResp: &httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)},
+			name: "GIVEN valid response THEN expect success",
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url")
+				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url", nil)
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
+					Return(&httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
 				ts.mockTracker.EXPECT().GenerateTrackingURL(gomock.Any()).Return("http://tracking-url")
 
@@ -60,26 +66,34 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			want: []ProductInfo{{ProductID: "1", Url: "http://tracking-url", Image: "img1"}},
 		},
 		{
-			name:        "GIVEN network error THEN expect error",
-			mockRespErr: errors.New("network error"),
+			name: "GIVEN network error THEN expect error",
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url")
+				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url", nil)
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
+					Return(nil, errors.New("network error"))
 
 			},
 			wantErr: true,
-			want:    nil,
 		},
 		{
-			name:     "GIVEN unmarshal error THEN expect error",
-			mockResp: &httpkit.Response{Body: []byte("invalid json")},
+			name: "GIVEN unmarshal error THEN expect error",
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url")
+				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url", nil)
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
+					Return(&httpkit.Response{Body: []byte("invalid json")}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
+
 			},
 			wantErr: true,
-			want:    nil,
+		},
+		{
+			name: "GIVEN request URL generation error THEN expect error",
+			mockStrategy: func() {
+				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("", fmt.Errorf("failed to generate request URL"))
+			},
+			wantErr: true,
 		},
 	}
 	for _, tc := range tt {
@@ -95,14 +109,6 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			)
 
 			tc.mockStrategy()
-			req := httpkit.NewRequest("http://test-url")
-			req = req.PatchHeaders(map[string]string{"Authorization": "Bearer test"})
-			req = req.SetMetrics(
-				telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor"),
-				telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor"),
-			)
-			ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).Return(tc.mockResp, tc.mockRespErr)
-
 			got, err := vc.GetUserRecommendationItems(context.Background(), Request{UserID: "u1"})
 			require.Equal(t, tc.want, got)
 			if tc.wantErr {
