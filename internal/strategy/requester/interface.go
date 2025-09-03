@@ -6,6 +6,9 @@ type Params struct {
 	ClickID    string
 	ImgWidth   int
 	ImgHeight  int
+	WebHost    string
+	BundleID   string
+	AdType     int
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=requester

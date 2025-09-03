@@ -50,6 +50,9 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		ClickID:    req.ClickID,
 		ImgWidth:   req.ImgWidth,
 		ImgHeight:  req.ImgHeight,
+		WebHost:    req.WebHost,
+		BundleID:   req.BundleID,
+		AdType:     req.AdType,
 	}
 	url, err := v.requestURLStrategy.GenerateRequestURL(reqParams)
 	if err != nil {
