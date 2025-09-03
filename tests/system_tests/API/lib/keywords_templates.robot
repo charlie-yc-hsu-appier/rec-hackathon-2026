@@ -3,8 +3,9 @@
 Test vendors from yaml configuration
   [Arguments]             ${yaml_content}
   [Documentation]  Automated test for all vendors defined in YAML configuration
-  ...              Tests the /r endpoint with auto-selected test dimensions
-  ...              URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
+  ...              Tests the /r endpoint with auto-selected test dimensions and vendor-specific parameters
+  ...              Standard URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
+  ...              Linkmine URL format: adds &web_host={domain}&bundle_id={app_id}&adtype={2|3}
   ...              Auto-selects dimensions from: 300x300, 1200x627, 1200x600
   ...              Tests exactly the number of vendors defined in the YAML
 
@@ -24,10 +25,21 @@ Test vendors from yaml configuration
     ${request_url} =        Get From Dictionary     ${vendor_config}    request_url
     ${tracking_url} =       Get From Dictionary     ${vendor_config}    tracking_url
 
-    # Auto-select test dimensions from predefined sizes: 300x300, 1200x627, 1200x600
-    ${dimensions} =         Auto select test dimensions  ${request_url}
+    # Auto-select test dimensions and vendor-specific parameters
+    # Sizes: 300x300, 1200x627, 1200x600
+    # For linkmine: also generates web_host, bundle_id, adtype
+    ${dimensions} =         Auto select test dimensions  ${request_url}  ${vendor_name}
     ${width} =              Get From Dictionary     ${dimensions}       width
     ${height} =             Get From Dictionary     ${dimensions}       height
+
+    # Extract linkmine-specific parameters if available
+    ${has_web_host} =       Run Keyword And Return Status
+    ...                     Dictionary Should Contain Key  ${dimensions}  web_host
+    IF  ${has_web_host}
+      ${web_host} =   Get From Dictionary     ${dimensions}   web_host
+      ${bundle_id} =  Get From Dictionary     ${dimensions}   bundle_id
+      ${adtype} =     Get From Dictionary     ${dimensions}   adtype
+    END
 
     # Parse tracking URL to get parameter info
     ${tracking_config} =    Parse yaml tracking url template  ${tracking_url}  ${vendor_name}
@@ -46,7 +58,17 @@ Test vendors from yaml configuration
 
     # Test the vendor endpoint
     Given I have an vendor session
-    When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}
+
+    # Check if this is linkmine vendor to include additional parameters
+    ${is_linkmine} =        Run Keyword And Return Status
+    ...                     Should Be Equal         ${vendor_name}      linkmine
+
+    IF  ${is_linkmine}
+      When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}  web_host=${web_host}  bundle_id=${bundle_id}
+      ...                                                              adtype=${adtype}
+    ELSE
+      When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}
+    END
 
     # Verify response
     Then I would like to check status_code should be "200" within the current session

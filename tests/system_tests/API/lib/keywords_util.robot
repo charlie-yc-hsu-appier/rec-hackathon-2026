@@ -1,166 +1,11 @@
 *** Keywords ***
-# Utility #
-Replacing the special characters
-  [Tags]              robot:flatten
-  [Arguments]         ${string}
-  ${temp_string} =    Replace String  ${temp_string}  @   %40
-  ${temp_string} =    Replace String  ${temp_string}  &   %26
-  ${temp_string} =    Replace String  ${temp_string}  $   %24
-  ${temp_string} =    Replace String  ${temp_string}  '   %27
-  ${temp_string} =    Replace String  ${temp_string}  "   %22
-  Set Test Variable   ${temp_string}  ${temp_string}
-
-
-Replacing the robotframework reserved words
-  [Tags]              robot:flatten
-  [Arguments]         ${string}
-  Set Test Variable   ${temp_string}      ${string}
-
-  # When is none = TRUE, then Replacing the special characters
-  ${is none} =        Run Keyword And Return Status
-  ...                 Should Be Equal     ${string}   ${None}
-  IF  ${is none} != ${TRUE}
-    Replacing the special characters  ${string}
-  END
-  RETURN              ${temp_string}
-
-
-# These legacy functions are kept for potential future use with recommendation system testing
-Check "${expected_item}" value in each JSON response items
-  [Arguments]             ${layout_id}=${Empty}
-  Log                     Start checking "${expected_item}" in the JSON response items.  level=DEBUG
-
-  # Get the test tags
-  ${is_psid_case} =       Run Keyword And Return Status
-  ...                     List Should Contain Value  ${TEST TAGS}  psid
-
-  Variable Should Exist   ${resp_json['value']}
-  ${resp_json_value} =    Set Variable            ${resp_json['value']}
-  Should Not Be Empty     ${resp_json_value}      @{TEST TAGS} The value[] is empty, Request:${request.url}, R_Header:${request.headers}
-
-  @{list_get_item} =      Create List
-  log                     ${Check_IAB_With_partner_id}
-
-  FOR  ${item}  IN  @{resp_json_value}
-    Log                     ${item}             level=DEBUG
-    Dictionary Should Contain Key  ${item}  ${expected_item}
-    ...                     @{TEST TAGS} No '${expected_item}' Key within the response, Request:${request.url}, R_Header:${request.headers}
-
-    Set Test Variable       ${get_item}         ${item}[${expected_item}]
-    # The "&", "@", "$" will let robot become confused and treat it as a dictionary, list or var
-    # replacing the string to solve it
-    ${get_item} =           Replacing the robotframework reserved words  ${get_item}
-
-    # Check the category of each sku via the Produt API when ${check_IAB_with_partner_id} is not Empty
-    IF  '${check_IAB_with_partner_id}' != '${Empty}' and '${expected_item}' == 'sku'
-      Check the IAB rule with product API  ${extracted_df}  ${get_item}  ${check_IAB_with_partner_id}
-    ELSE IF  ${is_psid_case} and '${expected_item}' == 'sku'
-      Check the PSID with product API  ${extracted_df}  ${get_item}  ${extracted_an_actived_psid}
-    END
-
-    Variable Should Exist   ${get_item}         No value within the Key "${expected_item}"
-    Append To List          ${list_get_item}    ${get_item}
-  END
-
-  # Log message
-  IF  '${check_IAB_with_partner_id}' != '${Empty}' and '${expected_item}' == 'sku'
-    No Operation
-  ELSE
-    Log     ${list_get_item}    level=DEBUG
-  END
-
-  # Check the kakao_kr_v2 path
-  IF  '${expected_item}' == 'custom_dna_layout' or '${expected_item}' == 'video_link'
-    ${with_layout_id} =     Run Keyword And Return Status
-    ...                     Variable Should Exist   ${layout_id}
-
-    IF  ${with_layout_id}
-      Check the regex pattern in the given list  ${list_get_item}  (${layout_id})
-    ELSE
-      Fail    Please provide the valid layout_id for verify the value of path within the custom_dna_layout
-    END
-  END
-
-  # Download and check the size of each imgs and set the ${extracted_img_url}
-  IF  '${expected_item}' == 'img' or '${expected_item}' == 'custom_dna_layout' or '${expected_item}' == 'ImageDNA_1200x627'
-    Download the image and check the size > 1  ${list_get_item}
-    Set Test Variable   ${extracted_img_url}    ${list_get_item}
-  ELSE IF  '${expected_item}' == 'video_link'
-    Download the video and check the size > 1  ${list_get_item}[0]
-    Set Test Variable   ${extracted_video_url}  ${list_get_item}[0]
-  END
-
-  # Set the ${extracted_url} for the following assertion
-  IF  '${expected_item}' == 'url'
-    Set Test Variable   ${extracted_url}    ${list_get_item}
-  END
-
-  # Set the ${extracted_sku} for the following assertion
-  IF  '${expected_item}' == 'sku'
-    Set Test Variable   ${extracted_sku}    ${list_get_item}
-  END
-
-
-Check the regex pattern in the given list
-  [Arguments]             ${given_list}   ${regex}
-  Log                     Start checking if the regex pattern: ${regex} exists in the given list: ${given_list}  level=DEBUG
-
-  FOR  ${item}  IN  @{given_list}
-    Should Match Regexp     ${item}         ${regex}    @{TEST TAGS} Can't get the regex:${regex} from list:${item}, Request:${request.url}, R_Header:${request.headers}
-    ...                     values=false
-  END
-
-
-Download the image and check the size > 1
-  [Arguments]         ${list_get_item}
-
-  FOR  ${item}  IN  @{list_get_item}
-    IF  '${item}' != 'novalue'
-      Create Session      ImageSession            ${item}         disable_warnings=1
-      ${image_resp} =     Get On Session          ImageSession    ${Empty}
-      ${picture_info} =   Convert Binary To Image  ${image_resp.content}
-
-      # picture_info = ['RGB', (1200, 627), 'JPEG', image_size]
-      # log  ${picture_info}[1][0]  --> h
-      # log  ${picture_info}[1][1]  --> W
-      # log  ${picture_info}[3]
-      Should Be True      ${picture_info}[3] > 1  @{TEST TAGS} The size of '${item}' is empty
-    ELSE
-      FAIL    @{TEST TAGS} We could not get the image since the path is missing
-    END
-  END
-
-
-Download the video and check the size > 1
-  [Arguments]             ${video_download_path}
-
-  IF  '${video_download_path}' != '${Empty}'
-    Create Session          VideoSession            ${video_download_path}  disable_warnings=1
-    ${video_resp} =         Get On Session          VideoSession            ${Empty}
-    Save Video              ${video_resp.content}   ${work_dir}/testsuite/output.mp4
-    Wait Until Created      ${work_dir}/testsuite/output.mp4  timeout=15 seconds
-    ${video_info} =         Get Video Info          ${work_dir}/testsuite/output.mp4
-
-    # video_info = [1280, 720, 911, 233216]
-    # log  ${video_info}[0]  --> width
-    # log  ${video_info}[1]  --> height
-    # log  ${video_info}[2]  --> num_frames
-    # log  ${video_info}[3]  --> duration_ts
-    # log  ${video_info}[4]  --> codec_long_name // H.265
-    Should Be True          ${video_info}[3] > 1    @{TEST TAGS} The size of '${video_download_path}' is empty
-    Should Match Regexp     ${video_info}[4]        (H.265)                 @{TEST TAGS} The codec_long_name isn't H265, what we get is ${video_info}[4]
-    Log                     width: ${video_info}[0], height:${video_info}[1], size:${video_info}[3], codec_long_name:${video_info}[4]  level=DEBUG
-  ELSE
-    FAIL    @{TEST TAGS} We could not get the video since the path is missing
-  END
-
-
 # Vendor API testing utility keywords #
 Auto select test dimensions
-  [Arguments]         ${request_url}=${Empty}
+  [Arguments]         ${request_url}=${Empty}  ${vendor_name}=${Empty}
   [Documentation]  Auto-select test dimensions from predefined sizes
-  ...              Returns dimensions dictionary with width and height
+  ...              Returns dimensions dictionary with width, height, and additional vendor parameters
   ...              Available test sizes: 300x300, 1200x627, 1200x600
+  ...              For linkmine vendor: Also generates site_domain (web domain), app_bundleId (app store ID), imp_adType (2 or 3)
   ...              Note: request_url parameter is kept for compatibility but not used
 
   # Predefined test dimensions
@@ -175,13 +20,38 @@ Auto select test dimensions
   ${selected_size} =  Set Variable        ${test_sizes}[${random_index}]
 
   # Parse the selected size
-  ${size_parts} =     Split String        ${selected_size}    x
+  ${size_parts} =     Split String        ${selected_size}        x
   ${width} =          Set Variable        ${size_parts}[0]
   ${height} =         Set Variable        ${size_parts}[1]
 
-  &{dimensions} =     Create Dictionary   width=${width}      height=${height}
+  # Base dimensions dictionary
+  &{dimensions} =     Create Dictionary
+  ...                 width=${width}
+  ...                 height=${height}
 
-  Log                 📏 Selected test dimensions: ${width}x${height} (from predefined test sizes)
+  Log                 📏 Selected test dimensions: ${width}x${height}
+
+  # Generate additional vendor parameters only for linkmine
+  ${is_linkmine} =    Run Keyword And Return Status
+  ...                 Should Be Equal     ${vendor_name}          linkmine
+
+  IF  ${is_linkmine}
+    # Linkmine-specific parameters with predefined options
+    @{domains} =        Create List     coupang.com             gmarket.co.kr           11st.co.kr          auction.co.kr
+    @{bundles} =        Create List     com.coupang.mobile      kr.co.gmarket.mobile    com.elevenst        com.auction.mobile
+    @{ad_types} =       Create List     2                       3
+
+    # Random selection
+    ${web_host} =       Evaluate        __import__('random').choice($domains)
+    ${bundle_id} =      Evaluate        __import__('random').choice($bundles)
+    ${adtype} =         Evaluate        __import__('random').choice($ad_types)
+
+    # Add to dimensions dictionary
+    Set To Dictionary   ${dimensions}   web_host=${web_host}    bundle_id=${bundle_id}  adtype=${adtype}
+
+    Log                 Linkmine params - web_host: ${web_host}, bundle_id: ${bundle_id}, adtype: ${adtype}
+  END
+
   RETURN              &{dimensions}
 
 
@@ -199,7 +69,7 @@ Encode Base64
 
 
 Parse yaml tracking url template
-  [Arguments]         ${tracking_url}    ${vendor_name}=${Empty}
+  [Arguments]             ${tracking_url}     ${vendor_name}=${Empty}
   [Documentation]  Parse YAML tracking_url to extract parameter configuration
   ...              Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
   ...              Special handling for INL vendors: if tracking_url is "{product_url}" only,
@@ -207,35 +77,36 @@ Parse yaml tracking url template
   ...              Note: INL vendors use 'subparam' parameter in the tracking template
 
   # Special handling for INL vendors
-  ${is_inl_vendor} =  Run Keyword And Return Status    Should Contain    ${vendor_name}    inl
-  ${modified_tracking_url} =  Set Variable    ${tracking_url}
-  ${final_param_name} =  Set Variable    unknown
-  
+  ${is_inl_vendor} =      Run Keyword And Return Status
+  ...                     Should Contain      ${vendor_name}      inl
+  ${modified_tracking_url} =  Set Variable  ${tracking_url}
+  ${final_param_name} =   Set Variable        unknown
+
   IF  ${is_inl_vendor} and '${tracking_url}' == '{product_url}'
-    Log    INL vendor detected with simple tracking_url, adding subparam base64 parameter for compatibility
-    ${modified_tracking_url} =  Set Variable    {product_url}&subparam={click_id_base64}
-    ${final_param_name} =  Set Variable    subparam
+    Log                     INL vendor detected with simple tracking_url, adding subparam base64 parameter for compatibility
+    ${modified_tracking_url} =  Set Variable  {product_url}&subparam={click_id_base64}
+    ${final_param_name} =   Set Variable        subparam
   ELSE
     # Extract parameter name using regex for non-INL vendors
-    ${param_matches} =  Get Regexp Matches  ${modified_tracking_url}     [&?]([^=]+)=            1
-    ${final_param_name} =  Set Variable If     ${param_matches}    ${param_matches[0]}     unknown
+    ${param_matches} =      Get Regexp Matches  ${modified_tracking_url}  [&?]([^=]+)=  1
+    ${final_param_name} =   Set Variable If     ${param_matches}    ${param_matches[0]}     unknown
   END
 
   # Check if uses base64 encoding
-  ${uses_base64} =    Run Keyword And Return Status
-  ...                 Should Contain      ${modified_tracking_url}     base64
+  ${uses_base64} =        Run Keyword And Return Status
+  ...                     Should Contain      ${modified_tracking_url}  base64
 
   # Check if requires group_id (typically for INL vendors)
-  ${has_group_id} =   Set Variable If     '${final_param_name}' == 'subparam'  ${TRUE}  ${FALSE}
+  ${has_group_id} =       Set Variable If     '${final_param_name}' == 'subparam'  ${TRUE}  ${FALSE}
 
   # Create config dictionary
-  &{config} =         Create Dictionary
-  ...                 param_name=${final_param_name}
-  ...                 uses_base64=${uses_base64}
-  ...                 has_group_id=${has_group_id}
-  ...                 modified_tracking_url=${modified_tracking_url}
+  &{config} =             Create Dictionary
+  ...                     param_name=${final_param_name}
+  ...                     uses_base64=${uses_base64}
+  ...                     has_group_id=${has_group_id}
+  ...                     modified_tracking_url=${modified_tracking_url}
 
-  RETURN              &{config}
+  RETURN                  &{config}
 
 
 Load vendor config from file
@@ -247,19 +118,19 @@ Load vendor config from file
   # Calculate default config file path if not provided
   IF  '${config_file_path}' == '${Empty}'
     # From keywords_util.robot location: lib -> API -> system_tests -> tests -> project_root
-    ${project_root} =     Set Variable    ${CURDIR}/../../../../..
-    ${config_file_path} = Set Variable    ${project_root}/deploy/rec-vendor-api/secrets/config.yaml
+    ${project_root} =   Set Variable    ${CURDIR}/../../../../..
+    ${config_file_path} = Set Variable  ${project_root}/deploy/rec-vendor-api/secrets/config.yaml
   END
 
   # Read the configuration file
-  ${yaml_content} =       Get File    ${config_file_path}
-  
+  ${yaml_content} =   Get File                ${config_file_path}
+
   # Parse the YAML to extract only vendor_config section
-  ${config_data} =        Evaluate        yaml.safe_load('''${yaml_content}''')  yaml
-  ${vendor_config} =      Get From Dictionary    ${config_data}    vendor_config
-  
+  ${config_data} =    Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
+  ${vendor_config} =  Get From Dictionary     ${config_data}          vendor_config
+
   # Convert vendor_config back to YAML string for testing framework
-  ${vendor_yaml} =        Evaluate        yaml.dump($vendor_config)  yaml
-  
-  Log    📄 Loaded vendor config from: ${config_file_path}
+  ${vendor_yaml} =    Evaluate                yaml.dump($vendor_config)  yaml
+
+  Log                 📄 Loaded vendor config from: ${config_file_path}
   RETURN              ${vendor_yaml}
