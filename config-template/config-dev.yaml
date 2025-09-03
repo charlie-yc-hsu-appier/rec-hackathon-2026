@@ -81,3 +81,7 @@ vendor_config:
       tracking_url: "{product_url}&subparam={click_id_base64}"
       with_proxy: true
       user_agent: tzyu.net
+    - name: adpacker
+      request_url: "https://ad.n-bridge.io/reco/103947SA?ssp_click_id={click_id_base64}&nbr_sub_media={partner_id}&nbr_gaid={user_id_lower}&nbr_width={width}&nbr_height={height}&nbr_ad_type=3&nbr_lmt=0"
+      tracking_url: "{product_url}"
+      with_proxy: true

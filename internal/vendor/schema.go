@@ -8,6 +8,7 @@ type Request struct {
 	WebHost   string `form:"web_host"`
 	BundleID  string `form:"bundle_id"`
 	AdType    int    `form:"adtype"`
+	PartnerID string `form:"partner_id"`
 }
 
 type ProductInfo struct {

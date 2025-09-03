@@ -29,6 +29,10 @@ func NewVendorController(vendorRegistry map[string]vendor.Client) *VendorControl
 // @Param        click_id    query string true  "Click ID"
 // @Param        w           query int    true  "Image Width"
 // @Param        h           query int    true  "Image Height"
+// @Param        web_host    query string false "Web host domain"
+// @Param        bundle_id   query string false "App bundle ID"
+// @Param        adtype      query int    false "Ad Type (native → 3, else → 2)"
+// @Param        partner_id  query string false "Partner ID"
 // @Success      200 {object} []vendor.ProductInfo
 // @Failure      400 {object} map[string]string "Bad Request"
 // @Failure      500 {object} map[string]string "Internal Error"

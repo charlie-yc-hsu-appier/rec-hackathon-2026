@@ -19,5 +19,6 @@ func (s *Default) GenerateRequestURL(params Params) (string, error) {
 	url = strings.Replace(url, "{web_host}", urlpkg.QueryEscape(params.WebHost), 1)
 	url = strings.Replace(url, "{bundle_id}", urlpkg.QueryEscape(params.BundleID), 1)
 	url = strings.Replace(url, "{adtype}", strconv.Itoa(params.AdType), 1)
+	url = strings.Replace(url, "{partner_id}", params.PartnerID, 1)
 	return url, nil
 }
