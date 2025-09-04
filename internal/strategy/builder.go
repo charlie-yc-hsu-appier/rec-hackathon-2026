@@ -12,6 +12,8 @@ func BuildHeader(v config.Vendor) header.Strategy {
 	switch v.Name {
 	case "replace":
 		return &header.ReplaceHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
+	case "adpopcorn":
+		return &header.AdPopcornHeader{UserAgent: v.UserAgent}
 	default:
 		return &header.NoHeader{}
 	}
@@ -28,7 +30,7 @@ func BuildRequester(v config.Vendor) requester.Strategy {
 
 func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 	switch v.Name {
-	case "replace":
+	case "replace", "adpopcorn":
 		return &unmarshaler.WrappedCoupangPartner{}
 	default:
 		return &unmarshaler.CoupangPartner{}

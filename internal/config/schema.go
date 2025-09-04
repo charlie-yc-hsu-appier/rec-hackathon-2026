@@ -28,4 +28,5 @@ type Vendor struct {
 	AccessKey   string            `mapstructure:"access_key"`
 	SecretKey   string            `mapstructure:"secret_key"`
 	SizeCodeMap map[string]string `mapstructure:"size_code_map"`
+	UserAgent   string            `mapstructure:"user_agent"`
 }
