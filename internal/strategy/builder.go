@@ -25,6 +25,8 @@ func BuildRequester(v config.Vendor) requester.Strategy {
 	switch v.Name {
 	case "inl_corp_0", "inl_corp_1", "inl_corp_2", "inl_corp_3", "inl_corp_4", "inl_corp_5":
 		return &requester.InlCorp{SizeCodeMap: v.SizeCodeMap}
+	case "keeta":
+		return &requester.Keeta{SceneType: v.SceneType, Ver: v.Ver, ChannelToken: v.ChannelToken}
 	default:
 		return &requester.Default{}
 	}
