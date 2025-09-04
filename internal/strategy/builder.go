@@ -13,7 +13,9 @@ func BuildHeader(v config.Vendor) header.Strategy {
 	case "replace":
 		return &header.ReplaceHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
 	case "adpopcorn":
-		return &header.AdpopcornHeader{UserAgent: v.UserAgent}
+		return &header.AdPopcornHeader{UserAgent: v.UserAgent}
+	case "keeta":
+		return &header.KeetaHeader{SCaApp: v.SCaApp, SCaSecret: v.SCaSecret, Clock: &header.ClockImpl{}}
 	default:
 		return &header.NoHeader{}
 	}

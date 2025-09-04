@@ -19,6 +19,7 @@ import (
 type MockStrategy struct {
 	ctrl     *gomock.Controller
 	recorder *MockStrategyMockRecorder
+	isgomock struct{}
 }
 
 // MockStrategyMockRecorder is the mock recorder for MockStrategy.
@@ -56,6 +57,7 @@ func (mr *MockStrategyMockRecorder) GenerateHeaders(params any) *gomock.Call {
 type MockClock struct {
 	ctrl     *gomock.Controller
 	recorder *MockClockMockRecorder
+	isgomock struct{}
 }
 
 // MockClockMockRecorder is the mock recorder for MockClock.
@@ -73,6 +75,20 @@ func NewMockClock(ctrl *gomock.Controller) *MockClock {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClock) EXPECT() *MockClockMockRecorder {
 	return m.recorder
+}
+
+// getCurrentMilliTimestamp mocks base method.
+func (m *MockClock) getCurrentMilliTimestamp() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "getCurrentMilliTimestamp")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// getCurrentMilliTimestamp indicates an expected call of getCurrentMilliTimestamp.
+func (mr *MockClockMockRecorder) getCurrentMilliTimestamp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getCurrentMilliTimestamp", reflect.TypeOf((*MockClock)(nil).getCurrentMilliTimestamp))
 }
 
 // getDatetimeGMT mocks base method.
