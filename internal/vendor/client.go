@@ -96,6 +96,9 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 			ProductID: ele.ProductID,
 			Url:       productUrl,
 			Image:     ele.ProductImage,
+			Price: 	   ele.ProductPrice,
+			SalePrice: ele.ProductSalePrice,
+			Currency:  ele.ProductCurrency,
 		})
 	}
 

@@ -12,7 +12,10 @@ type Request struct {
 }
 
 type ProductInfo struct {
-	ProductID string `json:"product_id"`
-	Url       string `json:"url"`
-	Image     string `json:"image"`
+	ProductID string  `json:"product_id"`
+	Url       string  `json:"url"`
+	Image     string  `json:"image"`
+	Price     string `json:"price"`
+	SalePrice string `json:"sale_price"`
+	Currency  string  `json:"currency"`
 }
