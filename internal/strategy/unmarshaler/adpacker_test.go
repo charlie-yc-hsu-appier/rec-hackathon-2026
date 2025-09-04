@@ -23,6 +23,11 @@ func TestAdpacker(t *testing.T) {
 			input:       []byte("invalid json"),
 			wantedError: ErrInvalidFormat,
 		},
+		{
+			name:        "GIVEN empty data array THEN return an error",
+			input:       []byte(`{"data":[]}`),
+			wantedError: ErrNoProducts,
+		},
 	}
 
 	for _, tc := range tt {
