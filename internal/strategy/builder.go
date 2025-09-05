@@ -13,7 +13,7 @@ func BuildHeader(v config.Vendor) header.Strategy {
 	case "replace":
 		return &header.ReplaceHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
 	case "adpopcorn":
-		return &header.AdPopcornHeader{UserAgent: v.UserAgent}
+		return &header.AdpopcornHeader{UserAgent: v.UserAgent}
 	default:
 		return &header.NoHeader{}
 	}
