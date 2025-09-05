@@ -24,9 +24,9 @@ func (s *Keeta) GenerateRequestURL(params Params) (string, error) {
 		"campaignId":   urlpkg.QueryEscape(params.KeetaCampaignID),
 		"lat":          urlpkg.QueryEscape(params.Latitude),
 		"lon":          urlpkg.QueryEscape(params.Longitude),
-		"SceneType":    s.SceneType,
-		"Ver":          s.Ver,
-		"ChannelToken": s.ChannelToken,
+		"sceneType":    s.SceneType,
+		"ver":          s.Ver,
+		"channelToken": s.ChannelToken,
 		"bizType":      "bType",
 	}
 

@@ -44,24 +44,13 @@ func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
 }
 
 func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error) {
-	reqParams := requester.Params{
-		RequestURL: v.cfg.RequestURL,
-		UserID:     req.UserID,
-		ClickID:    req.ClickID,
-		ImgWidth:   req.ImgWidth,
-		ImgHeight:  req.ImgHeight,
-		WebHost:    req.WebHost,
-		BundleID:   req.BundleID,
-		AdType:     req.AdType,
-		PartnerID:  req.PartnerID,
-	}
-	url, err := v.requestURLStrategy.GenerateRequestURL(reqParams)
+	url, err := v.requestURLStrategy.GenerateRequestURL(req.toRequesterParams(v.cfg.RequestURL))
 	if err != nil {
 		return nil, err
 	}
 	restReq := httpkit.NewRequest(url)
 
-	headerParams := header.Params{RequestURL: url}
+	headerParams := header.Params{RequestURL: url, UserID: req.UserID}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 
@@ -96,7 +85,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 			ProductID: ele.ProductID,
 			Url:       productUrl,
 			Image:     ele.ProductImage,
-			Price: 	   ele.ProductPrice,
+			Price:     ele.ProductPrice,
 			SalePrice: ele.ProductSalePrice,
 			Currency:  ele.ProductCurrency,
 		})

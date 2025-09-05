@@ -44,6 +44,7 @@ func (c *VendorController) Recommend(ctx *gin.Context) {
 		handleBadRequest(ctx, err)
 		return
 	}
+	req.ClientIP = ctx.ClientIP()
 
 	vendorKey := ctx.Param("vendor_key")
 	vendorClient := c.vendorRegistry[vendorKey]
