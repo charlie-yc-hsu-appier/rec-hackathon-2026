@@ -74,15 +74,23 @@ Parse yaml tracking url template
   ...              Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
   ...              Special handling for INL vendors: if tracking_url is "{product_url}" only,
   ...              automatically adds subparam={click_id_base64} for compatibility
+  ...              Special handling for adpacker: uses ssp_click_id parameter name
   ...              Note: INL vendors use 'subparam' parameter in the tracking template
 
+  # Special handling for adpacker vendor
+  ${is_adpacker_vendor} =  Run Keyword And Return Status
+  ...                      Should Be Equal     ${vendor_name}      adpacker
+  
   # Special handling for INL vendors
   ${is_inl_vendor} =      Run Keyword And Return Status
   ...                     Should Contain      ${vendor_name}      inl
   ${modified_tracking_url} =  Set Variable  ${tracking_url}
   ${final_param_name} =   Set Variable        unknown
 
-  IF  ${is_inl_vendor} and '${tracking_url}' == '{product_url}'
+  IF  ${is_adpacker_vendor}
+    Log                     Adpacker vendor detected, using ssp_click_id parameter for validation
+    ${final_param_name} =   Set Variable        ssp_click_id
+  ELSE IF  ${is_inl_vendor} and '${tracking_url}' == '{product_url}'
     Log                     INL vendor detected with simple tracking_url, adding subparam base64 parameter for compatibility
     ${modified_tracking_url} =  Set Variable  {product_url}&subparam={click_id_base64}
     ${final_param_name} =   Set Variable        subparam
@@ -93,8 +101,13 @@ Parse yaml tracking url template
   END
 
   # Check if uses base64 encoding
-  ${uses_base64} =        Run Keyword And Return Status
-  ...                     Should Contain      ${modified_tracking_url}  base64
+  IF  ${is_adpacker_vendor}
+    # Adpacker uses base64 encoding for ssp_click_id parameter
+    ${uses_base64} =        Set Variable        ${TRUE}
+  ELSE
+    ${uses_base64} =        Run Keyword And Return Status
+    ...                     Should Contain      ${modified_tracking_url}  base64
+  END
 
   # Check if requires group_id (typically for INL vendors)
   ${has_group_id} =       Set Variable If     '${final_param_name}' == 'subparam'  ${TRUE}  ${FALSE}
