@@ -6,6 +6,7 @@ import (
 
 var (
 	ErrInvalidFormat = errors.New("invalid format")
+	ErrNoProducts    = errors.New("no products were returned")
 )
 
 type PartnerResp struct {

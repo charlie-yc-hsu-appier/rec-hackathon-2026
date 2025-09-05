@@ -9,6 +9,7 @@ type Params struct {
 	WebHost    string
 	BundleID   string
 	AdType     int
+	PartnerID  string
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=requester

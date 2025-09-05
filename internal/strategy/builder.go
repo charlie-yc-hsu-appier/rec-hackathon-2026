@@ -32,6 +32,8 @@ func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 	switch v.Name {
 	case "replace", "adpopcorn":
 		return &unmarshaler.WrappedCoupangPartner{}
+	case "adpacker":
+		return &unmarshaler.Adpacker{}
 	default:
 		return &unmarshaler.CoupangPartner{}
 	}
