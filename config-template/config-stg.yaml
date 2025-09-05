@@ -85,3 +85,14 @@ vendor_config:
       request_url: "https://ad.n-bridge.io/reco/103947SA?ssp_click_id={click_id_base64}&nbr_sub_media={partner_id}&nbr_gaid={user_id_lower}&nbr_width={width}&nbr_height={height}&nbr_ad_type=3&nbr_lmt=0"
       tracking_url: "{product_url}"
       with_proxy: true
+    - name: keeta
+      # query parameters handled in code to support keeta's auth mechanism
+      request_url: "https://adgrowth.mykeeta.com/api/rl-recommend"
+      tracking_url: "{product_url}"
+      {{- with secret "secret/project/recommendation/rec-serving/keeta" }}
+      scene_type: {{ .Data.data.scene_type }}
+      ver: {{ .Data.data.ver }}
+      channel_token: {{ .Data.data.channel_token }}
+      s_ca_app: {{ .Data.data.s_ca_app }}
+      s_ca_secret: {{ .Data.data.s_ca_secret }}
+      {{- end }}
