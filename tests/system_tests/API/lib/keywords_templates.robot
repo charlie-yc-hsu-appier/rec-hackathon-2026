@@ -18,7 +18,7 @@ Test vendors from yaml configuration
   Log                     Found ${vendor_count} vendor(s) in YAML configuration
 
   # Get subid mapping for all vendors from Config API
-  ${vendor_subid_mapping} = Get vendor subids from config api  ${yaml_content}
+  ${vendor_subid_mapping} =  Get vendor subids from config api  ${yaml_content}
 
   # Test each vendor defined in YAML
   FOR  ${vendor_config}  IN  @{vendors}
