@@ -102,7 +102,7 @@ Test vendors from yaml configuration
 
     # Validate response structure and content
     Validate vendor response structure  ${resp_json}
-    Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}  ${vendor_name}
+    Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}  ${vendor_name}  ${vendor_subid}
 
     Log                     ✅ Vendor ${vendor_name} test PASSED
   END
