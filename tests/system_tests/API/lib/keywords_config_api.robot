@@ -198,28 +198,36 @@ Get vendor subids from config api
   
   # Get all campaign IDs (not just inl_corp ones)
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
+  ${resp.status_code} =   Convert To String       ${resp.status_code}
   Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Experiments API error: ${resp.status_code} - ${resp.content}
   
   # Extract all campaign IDs from all distributions
   @{all_campaign_ids} =   Get Value From Json     ${resp.json()}          $.experiments[*].distributions[*].campaign_id
   
   # Remove duplicates
-  ${unique_campaign_ids} = Remove Duplicates      ${all_campaign_ids}
+  ${unique_campaign_ids} =  Remove Duplicates      ${all_campaign_ids}
+  
+  # Debug: Log campaign information
+  ${campaign_count} =     Get Length              ${unique_campaign_ids}
+  Log                     [DEBUG] Found ${campaign_count} unique campaign IDs: ${unique_campaign_ids}
   
   # Create vendor subid mapping
-  &{vendor_subid_mapping} = Create Dictionary
+  &{vendor_subid_mapping} =  Create Dictionary
   
   # For each vendor in YAML, try to find its subid in campaigns
   FOR  ${vendor_config}  IN  @{vendors}
     ${vendor_name} =      Get From Dictionary     ${vendor_config}    name
     ${vendor_subid} =     Set Variable            ${EMPTY}
     
+    Log                   [DEBUG] Searching subid for vendor: ${vendor_name}
+    
     # Search through all campaigns for this vendor's subid
     FOR  ${campaign_id}  IN  @{unique_campaign_ids}
       IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
+        Log               [DEBUG] Checking campaign: ${campaign_id}
         ${subid_result} =   Get vendor subid from campaign  ${campaign_id}  ${vendor_name}
         IF  '${subid_result}' != '${EMPTY}'
-          ${vendor_subid} = Set Variable          ${subid_result}
+          ${vendor_subid} =  Set Variable          ${subid_result}
           Log               Found subid for ${vendor_name}: ${vendor_subid} (from campaign ${campaign_id})
           BREAK
         END
@@ -229,8 +237,7 @@ Get vendor subids from config api
     Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
     
     IF  '${vendor_subid}' == '${EMPTY}'
-      Log                 Warning: No subid found for vendor ${vendor_name}
-      Set Test Message    ⚠️  No subid found for vendor: ${vendor_name}  append=yes
+      Set Test Message    ⚠️ No subid found for vendor: ${vendor_name}  append=yes
     ELSE
       Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
     END
@@ -254,22 +261,55 @@ Get vendor subid from campaign
 
   # Extract subids from campaign configs
   ${has_subids} =         Run Keyword And Return Status
-  ...                     Should Have Value In Json  ${resp.json()}  $.campaigns[0].configs.subids
+  ...                     Should Have Value In Json  ${resp.json()}  $.campaign.configs.subids
 
   ${subid} =              Set Variable            ${EMPTY}
   IF  ${has_subids}
-    ${subids_obj} =       Get Value From Json     ${resp.json()}      $.campaigns[0].configs.subids
+    ${subids_obj} =       Get Value From Json     ${resp.json()}      $.campaign.configs.subids
     ${subids_dict} =      Set Variable            ${subids_obj}[0]
     
-    # Check if vendor_name exists in subids
-    ${has_vendor_subid} = Run Keyword And Return Status
+    # Debug: Log the actual subids structure
+    Log                   [DEBUG] Campaign ${campaign_id} subids structure: ${subids_dict}
+    Log                   [DEBUG] Looking for vendor: ${vendor_name}
+    
+    # Check if vendor_name exists in subids (exact match)
+    ${has_vendor_subid} =  Run Keyword And Return Status
     ...                   Dictionary Should Contain Key  ${subids_dict}  ${vendor_name}
     
     IF  ${has_vendor_subid}
-      ${subid} =          Get From Dictionary     ${subids_dict}      ${vendor_name}
-      Log                 Found subid for ${vendor_name}: ${subid}
+      # Get the subid array for this vendor
+      ${vendor_subid_array} =  Get From Dictionary  ${subids_dict}      ${vendor_name}
+      # Extract the first subID from the array
+      IF  ${vendor_subid_array}
+        ${subid} =        Get Value From Json     ${vendor_subid_array}  $[0].subID
+        ${subid} =        Set Variable            ${subid}[0]
+        Log               Found subID for ${vendor_name}: ${subid} (from campaign ${campaign_id})
+      ELSE
+        Log               Empty subid array for vendor ${vendor_name} in campaign ${campaign_id}
+      END
     ELSE
-      Log                 No subid found for vendor ${vendor_name} in campaign ${campaign_id}
+      # Debug: Try to find partial matches (e.g., inl_corp_1 in inl_corp_1_1200x600)
+      ${subids_keys} =    Get Dictionary Keys      ${subids_dict}
+      Log                 [DEBUG] Available subids keys: ${subids_keys}
+      
+      # Check if any key starts with vendor_name
+      FOR  ${key}  IN  @{subids_keys}
+        ${is_match} =     Run Keyword And Return Status
+        ...               Should Start With         ${key}              ${vendor_name}
+        IF  ${is_match}
+          ${vendor_subid_array} =  Get From Dictionary  ${subids_dict}  ${key}
+          IF  ${vendor_subid_array}
+            ${subid} =    Get Value From Json     ${vendor_subid_array}  $[0].subID
+            ${subid} =    Set Variable            ${subid}[0]
+            Log           Found subID for ${vendor_name} using key ${key}: ${subid} (from campaign ${campaign_id})
+            BREAK
+          END
+        END
+      END
+      
+      IF  '${subid}' == '${EMPTY}'
+        Log               No subid found for vendor ${vendor_name} in campaign ${campaign_id}
+      END
     END
   ELSE
     Log                   No subids configuration found in campaign ${campaign_id}
