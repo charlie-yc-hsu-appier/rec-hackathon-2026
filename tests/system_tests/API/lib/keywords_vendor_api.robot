@@ -9,9 +9,10 @@ I would like to set the session under vendor endpoint with
   ...              Available parameters:
   ...              endpoint - The endpoint path (default: /healthz)
   ...              For /r endpoint format: endpoint=r/{vendor_name}
+  ...              Supported parameters: user_id, click_id, w, h, web_host, bundle_id, adtype, subid
   ...              For example:
   ...              Given I would like to set the session under vendor endpoint with  endpoint=/healthz
-  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300
+  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300  subid=vendor_subid
   [Arguments]             &{args}
 
   # Set default endpoint if not provided
@@ -25,7 +26,7 @@ I would like to set the session under vendor endpoint with
 
   # Handle optional parameters - Method 2: Direct dictionary filtering
   ${query_params} =       Create Dictionary
-  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   web_host    bundle_id   adtype
+  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   web_host    bundle_id   adtype    subid
 
   FOR  ${param}  IN  @{param_names}
     ${param_exists} =   Run Keyword And Return Status
