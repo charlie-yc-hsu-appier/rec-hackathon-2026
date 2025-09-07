@@ -36,42 +36,7 @@ I would like to get campaign_ids with group vendor_inl_corp
   RETURN                  ${filtered_campaigns}
 
 
-Get vendor subid from campaign
-  [Documentation]  Get subid for a specific vendor from campaign configs
-  [Arguments]             ${campaign_id}          ${vendor_name}
 
-  # Get campaign details
-  ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
-
-  # Validate response
-  ${resp.status_code} =   Convert To String       ${resp.status_code}
-  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Campaign ${campaign_id} API error: ${resp.status_code} - ${resp.content}
-  Should Not Be Empty     ${resp.json()}          Campaign ${campaign_id} returned empty response
-
-  # Extract subids from campaign configs
-  ${has_subids} =         Run Keyword And Return Status
-  ...                     Should Have Value In Json  ${resp.json()}  $.campaigns[0].configs.subids
-
-  ${subid} =              Set Variable            ${EMPTY}
-  IF  ${has_subids}
-    ${subids_obj} =       Get Value From Json     ${resp.json()}      $.campaigns[0].configs.subids
-    ${subids_dict} =      Set Variable            ${subids_obj}[0]
-    
-    # Check if vendor_name exists in subids
-    ${has_vendor_subid} = Run Keyword And Return Status
-    ...                   Dictionary Should Contain Key  ${subids_dict}  ${vendor_name}
-    
-    IF  ${has_vendor_subid}
-      ${subid} =          Get From Dictionary     ${subids_dict}      ${vendor_name}
-      Log                 Found subid for ${vendor_name}: ${subid}
-    ELSE
-      Log                 No subid found for vendor ${vendor_name} in campaign ${campaign_id}
-    END
-  ELSE
-    Log                   No subids configuration found in campaign ${campaign_id}
-  END
-
-  RETURN                  ${subid}
 
 
 I would like to check campaign status
@@ -220,6 +185,99 @@ Get vendor inl_corp indices for yaml configuration
   RETURN                  ${result}
 
 
+Get vendor subids from config api
+  [Documentation]  Get subid mapping for all vendors from Config API campaigns
+  ...              Returns a dictionary with vendor_name as key and subid as value
+  [Arguments]             ${yaml_content}         ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
+
+  I have a config_api session
+
+  # Parse YAML to get vendor names
+  ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
+  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
+  
+  # Get all campaign IDs (not just inl_corp ones)
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
+  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Experiments API error: ${resp.status_code} - ${resp.content}
+  
+  # Extract all campaign IDs from all distributions
+  @{all_campaign_ids} =   Get Value From Json     ${resp.json()}          $.experiments[*].distributions[*].campaign_id
+  
+  # Remove duplicates
+  ${unique_campaign_ids} = Remove Duplicates      ${all_campaign_ids}
+  
+  # Create vendor subid mapping
+  &{vendor_subid_mapping} = Create Dictionary
+  
+  # For each vendor in YAML, try to find its subid in campaigns
+  FOR  ${vendor_config}  IN  @{vendors}
+    ${vendor_name} =      Get From Dictionary     ${vendor_config}    name
+    ${vendor_subid} =     Set Variable            ${EMPTY}
+    
+    # Search through all campaigns for this vendor's subid
+    FOR  ${campaign_id}  IN  @{unique_campaign_ids}
+      IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
+        ${subid_result} =   Get vendor subid from campaign  ${campaign_id}  ${vendor_name}
+        IF  '${subid_result}' != '${EMPTY}'
+          ${vendor_subid} = Set Variable          ${subid_result}
+          Log               Found subid for ${vendor_name}: ${vendor_subid} (from campaign ${campaign_id})
+          BREAK
+        END
+      END
+    END
+    
+    Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
+    
+    IF  '${vendor_subid}' == '${EMPTY}'
+      Log                 Warning: No subid found for vendor ${vendor_name}
+      Set Test Message    ⚠️  No subid found for vendor: ${vendor_name}  append=yes
+    ELSE
+      Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
+    END
+  END
+  
+  Log                     Vendor subid mapping: ${vendor_subid_mapping}
+  RETURN                  ${vendor_subid_mapping}
+
+
+Get vendor subid from campaign
+  [Documentation]  Get subid for a specific vendor from campaign configs
+  [Arguments]             ${campaign_id}          ${vendor_name}
+
+  # Get campaign details
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
+
+  # Validate response
+  ${resp.status_code} =   Convert To String       ${resp.status_code}
+  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Campaign ${campaign_id} API error: ${resp.status_code} - ${resp.content}
+  Should Not Be Empty     ${resp.json()}          Campaign ${campaign_id} returned empty response
+
+  # Extract subids from campaign configs
+  ${has_subids} =         Run Keyword And Return Status
+  ...                     Should Have Value In Json  ${resp.json()}  $.campaigns[0].configs.subids
+
+  ${subid} =              Set Variable            ${EMPTY}
+  IF  ${has_subids}
+    ${subids_obj} =       Get Value From Json     ${resp.json()}      $.campaigns[0].configs.subids
+    ${subids_dict} =      Set Variable            ${subids_obj}[0]
+    
+    # Check if vendor_name exists in subids
+    ${has_vendor_subid} = Run Keyword And Return Status
+    ...                   Dictionary Should Contain Key  ${subids_dict}  ${vendor_name}
+    
+    IF  ${has_vendor_subid}
+      ${subid} =          Get From Dictionary     ${subids_dict}      ${vendor_name}
+      Log                 Found subid for ${vendor_name}: ${subid}
+    ELSE
+      Log                 No subid found for vendor ${vendor_name} in campaign ${campaign_id}
+    END
+  ELSE
+    Log                   No subids configuration found in campaign ${campaign_id}
+  END
+
+  RETURN                  ${subid}
+
+
 Validate and generate safe vendor yaml configuration
   [Documentation]  Backward compatible YAML configuration validation - filters only active inl_corp vendors
   [Arguments]             ${original_yaml_content}
@@ -295,58 +353,3 @@ Validate and generate safe vendor yaml configuration
   Set Test Message        📊 Final configuration: ${total_count} vendors (active indices: ${active_indices})  append=yes
 
   RETURN                  ${filtered_yaml}
-
-
-Get vendor subids from config api
-  [Documentation]  Get subid mapping for all vendors from Config API campaigns
-  ...              Returns a dictionary with vendor_name as key and subid as value
-  [Arguments]             ${yaml_content}         ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
-
-  I have a config_api session
-
-  # Parse YAML to get vendor names
-  ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
-  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
-  
-  # Get all campaign IDs (not just inl_corp ones)
-  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
-  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Experiments API error: ${resp.status_code} - ${resp.content}
-  
-  # Extract all campaign IDs from all distributions
-  @{all_campaign_ids} =   Get Value From Json     ${resp.json()}          $.experiments[*].distributions[*].campaign_id
-  
-  # Remove duplicates
-  ${unique_campaign_ids} = Remove Duplicates      ${all_campaign_ids}
-  
-  # Create vendor subid mapping
-  &{vendor_subid_mapping} = Create Dictionary
-  
-  # For each vendor in YAML, try to find its subid in campaigns
-  FOR  ${vendor_config}  IN  @{vendors}
-    ${vendor_name} =      Get From Dictionary     ${vendor_config}    name
-    ${vendor_subid} =     Set Variable            ${EMPTY}
-    
-    # Search through all campaigns for this vendor's subid
-    FOR  ${campaign_id}  IN  @{unique_campaign_ids}
-      IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
-        ${subid_result} =   Get vendor subid from campaign  ${campaign_id}  ${vendor_name}
-        IF  '${subid_result}' != '${EMPTY}'
-          ${vendor_subid} = Set Variable          ${subid_result}
-          Log               Found subid for ${vendor_name}: ${vendor_subid} (from campaign ${campaign_id})
-          BREAK
-        END
-      END
-    END
-    
-    Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
-    
-    IF  '${vendor_subid}' == '${EMPTY}'
-      Log                 Warning: No subid found for vendor ${vendor_name}
-      Set Test Message    ⚠️  No subid found for vendor: ${vendor_name}  append=yes
-    ELSE
-      Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
-    END
-  END
-  
-  Log                     Vendor subid mapping: ${vendor_subid_mapping}
-  RETURN                  ${vendor_subid_mapping}
