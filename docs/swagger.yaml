@@ -19,7 +19,6 @@ info:
   contact:
     email: ai-rec-sys@appier.com
   description: Vendor API service for recommendation ecosystem
-  license: {}
   title: Vendor API service
   version: "1.0"
 paths:
