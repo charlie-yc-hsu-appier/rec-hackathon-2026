@@ -54,7 +54,7 @@ func TestRequestInfo(t *testing.T) {
 				c.JSON(http.StatusOK, gin.H{"status": "ok"})
 			})
 
-			req, _ := http.NewRequest("GET", "/test", nil)
+			req, _ := http.NewRequest(http.MethodGet, "/test", nil)
 			for key, value := range tc.headers {
 				req.Header.Set(key, value)
 			}
