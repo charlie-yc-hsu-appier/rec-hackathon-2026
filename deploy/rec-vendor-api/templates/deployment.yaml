@@ -26,7 +26,6 @@ spec:
       imagePullSecrets:
       - name: appier-ai-recommendation.asia.gcr.io
       containers:
-        # TODO: config your containers
         - name: rec-vendor-api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -53,6 +52,37 @@ spec:
             - name: secrets
               mountPath: /etc/secrets
               readOnly: true
+
+        - name: nginx
+          image: {{ .Values.nginx.image }}
+          imagePullPolicy: IfNotPresent
+          resources:
+            {{- toYaml .Values.nginx.resources | nindent 12 }}
+          ports:
+            - name: nginx-proxy
+              containerPort: 80
+            - name: nginx-metrics
+              containerPort: 9200
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: nginx-proxy
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: nginx-proxy
+            failureThreshold: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/usr/local/openresty/nginx/sbin/nginx", "-s", "quit"]
+          volumeMounts:
+            - name: secrets
+              subPath: nginx.conf
+              mountPath: /etc/nginx/conf.d/nginx.conf
+              readOnly: true
+
       volumes:
         - name: secrets
           secret:

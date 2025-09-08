@@ -46,6 +46,8 @@ config-dev:
 	mkdir -p $(CHART_DIR)/secrets
 	vault kv get -address $(VAULT_ADDR) --field=private_key secret/project/recommendation/ssh_key/ai-rec-common > secrets/ai-rec-common-key && chmod 600 secrets/ai-rec-common-key
 
+	cp ./config-template/nginx.conf $(CHART_DIR)/secrets/
+
 	consul-template -once -vault-addr $(VAULT_ADDR) \
 			-template "./config-template/config-dev.yaml:$(CHART_DIR)/secrets/config.yaml"
 
