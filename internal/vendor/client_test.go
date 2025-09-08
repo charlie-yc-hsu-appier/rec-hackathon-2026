@@ -42,8 +42,8 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 	req := httpkit.NewRequest("http://test-url")
 	req = req.PatchHeaders(map[string]string{"Authorization": "Bearer test"})
 	req = req.SetMetrics(
-		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor"),
-		telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor"),
+		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor", "test-site", "test-oid"),
+		telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor", "test-site", "test-oid"),
 	)
 
 	tt := []struct {
@@ -109,7 +109,11 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			)
 
 			tc.mockStrategy()
-			got, err := vc.GetUserRecommendationItems(context.Background(), Request{UserID: "u1"})
+			ctx := telemetry.RequestInfoToContext(context.Background(), telemetry.RequestInfo{
+				SiteID: "test-site",
+				OID:    "test-oid",
+			})
+			got, err := vc.GetUserRecommendationItems(ctx, Request{UserID: "u1"})
 			require.Equal(t, tc.want, got)
 			if tc.wantErr {
 				require.Error(t, err)
