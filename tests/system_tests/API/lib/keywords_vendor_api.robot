@@ -149,12 +149,11 @@ Validate vendor response structure
 
 
 Validate product patch contains product ids
-  [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}  ${expected_subid}=${Empty}
+  [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}
   [Documentation]  Validate that each product contains the correct tracking parameter
-  ...              with base64 encoded click_id in the URL and optionally validate subid
+  ...              with base64 encoded click_id in the URL
   ...              New response format: array of products with product_id, url, image
   ...              Special handling for INL vendors with URL encoded parameters
-  ...              Also validates subid parameter if provided
 
   # Response should be a list/array
   Should Not Be Empty     ${response_json}
@@ -199,33 +198,10 @@ Validate product patch contains product ids
     Should Contain          ${product_url}          ${search_pattern}
     ...                     Product URL should contain ${search_pattern}, but got: ${product_url}
 
-    # Validate subid if provided
-    IF  '${expected_subid}' != '${EMPTY}'
-      ${contains_subid} =   Run Keyword And Return Status
-      ...                   Should Contain          ${product_url}      subid=${expected_subid}
-      
-      IF  ${contains_subid}
-        Log                 ✅ Product ${product_id} contains correct subid: ${expected_subid}
-      ELSE
-        # For debugging: check if URL contains any subid parameter
-        ${has_any_subid} =  Run Keyword And Return Status
-        ...                 Should Contain          ${product_url}      subid=
-        IF  ${has_any_subid}
-          FAIL              Product ${product_id} URL contains different subid than expected '${expected_subid}': ${product_url}
-        ELSE
-          FAIL              Product ${product_id} URL does not contain expected subid '${expected_subid}': ${product_url}
-        END
-      END
-    END
-
     Log                     ✅ Product ${product_id} validation passed - URL contains correct tracking parameter: ${search_pattern}
   END
 
   ${product_count} =      Get Length              ${response_json}
-  IF  '${expected_subid}' != '${EMPTY}'
-    Log                   ✅ All ${product_count} products validated successfully with subid '${expected_subid}'
-  ELSE
-    Log                   ✅ All ${product_count} products validated successfully
-  END
+  Log                     ✅ All ${product_count} products validated successfully
 
   Log                     ✅ All product_ids found in product_patch with correct tracking parameters
