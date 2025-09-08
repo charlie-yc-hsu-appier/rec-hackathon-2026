@@ -1,10 +1,10 @@
 package header
 
-type AdPopcornHeader struct {
+type AdpopcornHeader struct {
 	UserAgent string
 }
 
-func (h *AdPopcornHeader) GenerateHeaders(_ Params) map[string]string {
+func (h *AdpopcornHeader) GenerateHeaders(_ Params) map[string]string {
 	headers := map[string]string{
 		"User-Agent": h.UserAgent,
 	}
