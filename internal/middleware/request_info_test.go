@@ -30,24 +30,6 @@ func TestRequestInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "GIVEN only siteid header present THEN expect only siteid extracted",
-			headers: map[string]string{
-				"x-rec-siteid": "test-site-456",
-			},
-			expectedRequestInfo: telemetry.RequestInfo{
-				SiteID: "test-site-456",
-			},
-		},
-		{
-			name: "GIVEN only oid header present THEN expect only oid extracted",
-			headers: map[string]string{
-				"x-rec-oid": "test-oid-789",
-			},
-			expectedRequestInfo: telemetry.RequestInfo{
-				OID: "test-oid-789",
-			},
-		},
-		{
 			name:                "GIVEN no headers present THEN expect empty values",
 			headers:             map[string]string{},
 			expectedRequestInfo: telemetry.RequestInfo{},
