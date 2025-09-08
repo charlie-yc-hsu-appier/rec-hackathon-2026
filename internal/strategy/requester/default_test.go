@@ -15,7 +15,7 @@ func TestDefault(t *testing.T) {
 		{
 			name: "GIVEN valid parameters THEN return the expected URL",
 			params: Params{
-				RequestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}&click_id={click_id_base64}&site_domain={web_host}&app_bundleId={bundle_id}&imp_adType={adtype}",
+				RequestURL: "https://example.com/image?size={width}x{height}&user={user_id_lower}&click_id={click_id_base64}&site_domain={web_host}&app_bundleId={bundle_id}&imp_adType={adtype}&partner_id={partner_id}",
 				UserID:     "TestUser",
 				ImgWidth:   200,
 				ImgHeight:  100,
@@ -23,8 +23,9 @@ func TestDefault(t *testing.T) {
 				WebHost:    "http://example.com/query?param1=123&param2=456",
 				BundleID:   "com.example.app",
 				AdType:     1,
+				PartnerID:  "kakao_kr",
 			},
-			want: "https://example.com/image?size=200x100&user=testuser&click_id=dGVzdC1pZA&site_domain=http%3A%2F%2Fexample.com%2Fquery%3Fparam1%3D123%26param2%3D456&app_bundleId=com.example.app&imp_adType=1",
+			want: "https://example.com/image?size=200x100&user=testuser&click_id=dGVzdC1pZA&site_domain=http%3A%2F%2Fexample.com%2Fquery%3Fparam1%3D123%26param2%3D456&app_bundleId=com.example.app&imp_adType=1&partner_id=kakao_kr",
 		},
 		{
 			name: "GIVEN missing placeholders THEN return the expected URL",

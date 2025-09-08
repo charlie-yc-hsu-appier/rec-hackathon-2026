@@ -73,6 +73,7 @@ We use macros (placeholders) in our URL templates for dynamic replacement. At ru
 | `{web_host}`        | Site domain for web or empty for app | `testabc.com`                          |
 | `{bundle_id}`       | App bundle ID or empty for web       | `com.coupang.mobile`                   |
 | `{adtype}`          | The impression ad type               | `value=2(banner) and 3(native)`        |
+| `{partner_id}`      | Partner ID                           | `kakao_kr`                             |
 
 ### Supported Tracking URL Macros
 
