@@ -33,10 +33,7 @@ func (s *KeetaHeader) GenerateHeaders(params Params) map[string]string {
 	}
 
 	parsedURL, _ := url.Parse(params.RequestURL)
-	pathWithQuery := parsedURL.Path
-	if parsedURL.RawQuery != "" {
-		pathWithQuery += "?" + parsedURL.RawQuery
-	}
+	pathWithQuery := parsedURL.RequestURI()
 
 	sCaSignature := genKeetaSignature(s.SCaSecret, http.MethodGet, headers, pathWithQuery)
 

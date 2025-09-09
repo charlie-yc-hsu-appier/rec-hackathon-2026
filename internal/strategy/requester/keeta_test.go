@@ -14,10 +14,9 @@ func TestKeeta(t *testing.T) {
 	}
 
 	tt := []struct {
-		name    string
-		params  Params
-		want    string
-		wantErr bool
+		name   string
+		params Params
+		want   string
 	}{
 		{
 			name: "GIVEN all params present THEN expect full URL with all params in dictionary order",
@@ -60,9 +59,6 @@ func TestKeeta(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := keeta.GenerateRequestURL(tc.params)
-			if tc.wantErr {
-				require.Error(t, err)
-			}
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
 		})

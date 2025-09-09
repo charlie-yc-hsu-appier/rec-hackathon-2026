@@ -41,10 +41,7 @@ func TestKeeta(t *testing.T) {
 			strategy := &Keeta{}
 			got, err := strategy.UnmarshalResponse(tc.input)
 			if tc.wantedError != nil {
-				require.Error(t, err)
-				if err != nil {
-					require.Equal(t, tc.wantedError.Error(), err.Error())
-				}
+				require.Equal(t, tc.wantedError.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tc.want, got)
