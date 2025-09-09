@@ -1,6 +1,7 @@
 package requester
 
 import (
+	"errors"
 	urlpkg "net/url"
 	"rec-vendor-api/internal/strategy/utils"
 	"strconv"
@@ -20,5 +21,11 @@ func (s *Default) GenerateRequestURL(params Params) (string, error) {
 	url = strings.Replace(url, "{bundle_id}", urlpkg.QueryEscape(params.BundleID), 1)
 	url = strings.Replace(url, "{adtype}", strconv.Itoa(params.AdType), 1)
 	url = strings.Replace(url, "{partner_id}", params.PartnerID, 1)
+
+	// Check if URL contains {subid} placeholder but SubID is not provided
+	if strings.Contains(url, "{subid}") && params.SubID == "" {
+		return "", errors.New("URL contains {subid} placeholder but SubID parameter is not provided")
+	}
+	url = strings.Replace(url, "{subid}", params.SubID, 1)
 	return url, nil
 }

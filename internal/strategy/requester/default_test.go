@@ -8,9 +8,10 @@ import (
 
 func TestDefault(t *testing.T) {
 	tt := []struct {
-		name   string
-		params Params
-		want   string
+		name        string
+		params      Params
+		want        string
+		expectedErr string
 	}{
 		{
 			name: "GIVEN valid parameters THEN return the expected URL",
@@ -37,14 +38,27 @@ func TestDefault(t *testing.T) {
 			},
 			want: "https://example.com/image/user/abc",
 		},
+		{
+			name: "GIVEN URL with {subid} but SubID not provided THEN return error",
+			params: Params{
+				RequestURL: "https://example.com/image?subid={subid}",
+			},
+			expectedErr: "URL contains {subid} placeholder but SubID parameter is not provided",
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			strategy := &Default{}
 			got, err := strategy.GenerateRequestURL(tc.params)
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
+			if tc.expectedErr != "" {
+				require.Error(t, err)
+				require.Equal(t, tc.expectedErr, err.Error())
+				require.Empty(t, got)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.want, got)
+			}
 		})
 	}
 }

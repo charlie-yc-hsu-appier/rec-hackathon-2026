@@ -14,6 +14,7 @@ type Params struct {
 	KeetaCampaignID string
 	Latitude        string
 	Longitude       string
+	SubID           string
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=requester
