@@ -44,6 +44,8 @@ func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
 }
 
 func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error) {
+	requestInfo := telemetry.RequestInfoFromContext(ctx)
+
 	url, err := v.requestURLStrategy.GenerateRequestURL(req.toRequesterParams(v.cfg.RequestURL))
 	if err != nil {
 		return nil, err
@@ -55,8 +57,8 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	restReq = restReq.PatchHeaders(headers)
 
 	restReq = restReq.SetMetrics(
-		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues(v.cfg.Name),
-		telemetry.Metrics.RestApiErrorTotal.WithLabelValues(v.cfg.Name),
+		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID),
+		telemetry.Metrics.RestApiErrorTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID),
 	)
 
 	restResp, err := v.client.Get(ctx, restReq, v.timeout, []int{200})
@@ -66,7 +68,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 
 	res, err := v.respUnmarshalStrategy.UnmarshalResponse(restResp.Body)
 	if err != nil {
-		telemetry.Metrics.RestApiAnomalyTotal.WithLabelValues(v.cfg.Name, err.Error()).Inc()
+		telemetry.Metrics.RestApiAnomalyTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID, err.Error()).Inc()
 		return nil, err
 	}
 

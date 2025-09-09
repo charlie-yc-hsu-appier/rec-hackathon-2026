@@ -170,6 +170,7 @@ pipeline {
 
             # APP credential
             vault-decrypt-v2.sh config-template/config-$BUILD_ENV.yaml $CHART_DIR/secrets/config.yaml
+            cp ./config-template/nginx.conf $CHART_DIR/secrets/
 
             # SA credential
             vault kv get --field=data secret/project/_gcp/iam/appier-ai-recommendation/rec-jenkins-cicd > $CICD_GCLOUD_JSON_FILE
