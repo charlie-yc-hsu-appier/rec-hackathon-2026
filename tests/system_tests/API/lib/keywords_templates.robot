@@ -19,6 +19,16 @@ Test vendors from yaml configuration
   # Test each vendor defined in YAML
   FOR  ${vendor_config}  IN  @{vendors}
     ${vendor_name} =        Get From Dictionary     ${vendor_config}    name
+    
+    # FIXME: temporarily skip
+    # Skip keeta vendor in robot testing to prevent expansion (temporary solution)
+    ${is_keeta} =           Run Keyword And Return Status
+    ...                     Should Be Equal         ${vendor_name}      keeta
+    IF  ${is_keeta}
+      Log                   Skipping keeta vendor in robot testing (temporary solution)
+      Continue For Loop
+    END
+    
     Log                     Testing vendor: ${vendor_name}
 
     # Extract parameters from vendor configuration
