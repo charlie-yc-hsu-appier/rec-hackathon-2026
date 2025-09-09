@@ -44,30 +44,21 @@ func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
 }
 
 func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error) {
-	reqParams := requester.Params{
-		RequestURL: v.cfg.RequestURL,
-		UserID:     req.UserID,
-		ClickID:    req.ClickID,
-		ImgWidth:   req.ImgWidth,
-		ImgHeight:  req.ImgHeight,
-		WebHost:    req.WebHost,
-		BundleID:   req.BundleID,
-		AdType:     req.AdType,
-		PartnerID:  req.PartnerID,
-	}
-	url, err := v.requestURLStrategy.GenerateRequestURL(reqParams)
+	requestInfo := telemetry.RequestInfoFromContext(ctx)
+
+	url, err := v.requestURLStrategy.GenerateRequestURL(req.toRequesterParams(v.cfg.RequestURL))
 	if err != nil {
 		return nil, err
 	}
 	restReq := httpkit.NewRequest(url)
 
-	headerParams := header.Params{RequestURL: url}
+	headerParams := header.Params{RequestURL: url, UserID: req.UserID}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 
 	restReq = restReq.SetMetrics(
-		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues(v.cfg.Name),
-		telemetry.Metrics.RestApiErrorTotal.WithLabelValues(v.cfg.Name),
+		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID),
+		telemetry.Metrics.RestApiErrorTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID),
 	)
 
 	restResp, err := v.client.Get(ctx, restReq, v.timeout, []int{200})
@@ -77,7 +68,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 
 	res, err := v.respUnmarshalStrategy.UnmarshalResponse(restResp.Body)
 	if err != nil {
-		telemetry.Metrics.RestApiAnomalyTotal.WithLabelValues(v.cfg.Name, err.Error()).Inc()
+		telemetry.Metrics.RestApiAnomalyTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID, err.Error()).Inc()
 		return nil, err
 	}
 
@@ -96,6 +87,9 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 			ProductID: ele.ProductID,
 			Url:       productUrl,
 			Image:     ele.ProductImage,
+			Price:     ele.ProductPrice,
+			SalePrice: ele.ProductSalePrice,
+			Currency:  ele.ProductCurrency,
 		})
 	}
 

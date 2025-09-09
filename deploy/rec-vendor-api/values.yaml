@@ -45,3 +45,12 @@ affinity:
             - key: appier/preemptible
               operator: Exists
         weight: 100
+
+nginx:
+  image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/nginx-lua-prometheus:v1.0.0
+  resources:
+    limits:
+      memory: 64Mi
+    requests:
+      cpu: 30m
+      memory: 32Mi

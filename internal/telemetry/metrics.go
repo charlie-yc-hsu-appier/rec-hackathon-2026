@@ -31,21 +31,21 @@ func NewPromMetrics() PromMetrics {
 			Name:      "rest_api_duration_seconds",
 			Help:      "Time spent calling Rest API",
 			Buckets:   histogramBucket,
-		}, []string{"vendor"},
+		}, []string{"vendor", "site", "oid"},
 	)
 	m.RestApiErrorTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Subsystem: systemName,
 			Name:      "rest_api_error_total",
 			Help:      "Error count when calling Rest API",
-		}, []string{"vendor"},
+		}, []string{"vendor", "site", "oid"},
 	)
 	m.RestApiAnomalyTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Subsystem: systemName,
 			Name:      "rest_api_anomaly_total",
 			Help:      "Anomaly count when calling Rest API",
-		}, []string{"vendor", "reason"},
+		}, []string{"vendor", "site", "oid", "reason"},
 	)
 	return m
 }

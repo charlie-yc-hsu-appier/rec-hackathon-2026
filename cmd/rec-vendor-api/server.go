@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
+	"rec-vendor-api/internal/middleware"
 	"rec-vendor-api/internal/telemetry"
 	"rec-vendor-api/internal/vendor"
 	"runtime/debug"
@@ -51,6 +52,7 @@ func main() {
 	}()
 
 	r := gin.New()
+	r.Use(middleware.RequestInfo())
 
 	if cfg.EnableGinLogger {
 		r.Use(gin.Logger())

@@ -10,9 +10,12 @@ var (
 )
 
 type PartnerResp struct {
-	ProductID    string
-	ProductURL   string
-	ProductImage string
+	ProductID        string
+	ProductURL       string
+	ProductImage     string
+	ProductPrice     string
+	ProductSalePrice string
+	ProductCurrency  string
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=unmarshaler
