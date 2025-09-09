@@ -1,7 +1,7 @@
 package requester
 
 import (
-	"errors"
+	"fmt"
 	urlpkg "net/url"
 	"rec-vendor-api/internal/strategy/utils"
 	"strconv"
@@ -24,7 +24,7 @@ func (s *Default) GenerateRequestURL(params Params) (string, error) {
 
 	// Check if URL contains {subid} placeholder but SubID is not provided
 	if strings.Contains(url, "{subid}") && params.SubID == "" {
-		return "", errors.New("URL contains {subid} placeholder but SubID parameter is not provided")
+		return "", fmt.Errorf("subID not provided (image size: %dx%d)", params.ImgWidth, params.ImgHeight)
 	}
 	url = strings.Replace(url, "{subid}", params.SubID, 1)
 	return url, nil

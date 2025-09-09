@@ -42,8 +42,10 @@ func TestDefault(t *testing.T) {
 			name: "GIVEN URL with {subid} but SubID not provided THEN return error",
 			params: Params{
 				RequestURL: "https://example.com/image?subid={subid}",
+				ImgWidth:   300,
+				ImgHeight:  300,
 			},
-			expectedErr: "URL contains {subid} placeholder but SubID parameter is not provided",
+			expectedErr: "subID not provided (image size: 300x300)",
 		},
 	}
 
