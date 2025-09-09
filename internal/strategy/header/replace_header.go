@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"net/url"
 )
 
@@ -21,7 +22,7 @@ func (h *ReplaceHeader) GenerateHeaders(params Params) map[string]string {
 	path := parsedURL.Path
 	query := parsedURL.Query().Encode()
 
-	message := datetimeGMT + "GET" + path + query
+	message := datetimeGMT + http.MethodGet + path + query
 	accessKey := h.AccessKey
 	secret := h.SecretKey
 

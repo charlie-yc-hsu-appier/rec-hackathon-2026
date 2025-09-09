@@ -75,6 +75,20 @@ func (m *MockClock) EXPECT() *MockClockMockRecorder {
 	return m.recorder
 }
 
+// getCurrentMilliTimestamp mocks base method.
+func (m *MockClock) getCurrentMilliTimestamp() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "getCurrentMilliTimestamp")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// getCurrentMilliTimestamp indicates an expected call of getCurrentMilliTimestamp.
+func (mr *MockClockMockRecorder) getCurrentMilliTimestamp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getCurrentMilliTimestamp", reflect.TypeOf((*MockClock)(nil).getCurrentMilliTimestamp))
+}
+
 // getDatetimeGMT mocks base method.
 func (m *MockClock) getDatetimeGMT() string {
 	m.ctrl.T.Helper()
