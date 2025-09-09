@@ -73,6 +73,30 @@ const docTemplate = `{
                         "name": "h",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Web host domain",
+                        "name": "web_host",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "App bundle ID",
+                        "name": "bundle_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Ad Type (native → 3, else → 2)",
+                        "name": "adtype",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Partner ID",
+                        "name": "partner_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -111,10 +135,19 @@ const docTemplate = `{
         "vendor.ProductInfo": {
             "type": "object",
             "properties": {
+                "currency": {
+                    "type": "string"
+                },
                 "image": {
                     "type": "string"
                 },
+                "price": {
+                    "type": "string"
+                },
                 "product_id": {
+                    "type": "string"
+                },
+                "sale_price": {
                     "type": "string"
                 },
                 "url": {

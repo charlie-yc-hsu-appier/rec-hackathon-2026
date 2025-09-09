@@ -2,9 +2,15 @@ basePath: /
 definitions:
   vendor.ProductInfo:
     properties:
+      currency:
+        type: string
       image:
         type: string
+      price:
+        type: string
       product_id:
+        type: string
+      sale_price:
         type: string
       url:
         type: string
@@ -54,6 +60,22 @@ paths:
         name: h
         required: true
         type: integer
+      - description: Web host domain
+        in: query
+        name: web_host
+        type: string
+      - description: App bundle ID
+        in: query
+        name: bundle_id
+        type: string
+      - description: Ad Type (native → 3, else → 2)
+        in: query
+        name: adtype
+        type: integer
+      - description: Partner ID
+        in: query
+        name: partner_id
+        type: string
       produces:
       - application/json
       responses:

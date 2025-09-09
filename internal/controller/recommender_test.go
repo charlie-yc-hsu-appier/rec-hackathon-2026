@@ -43,7 +43,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(mockResp, nil)
 			},
 			wantCode: http.StatusOK,
-			wantBody: `[{"product_id":"1","url":"url","image":"img"}]`,
+			wantBody: `[{"product_id":"1","url":"url","image":"img","price":"","sale_price":"","currency":""}]`,
 		},
 		{
 			name:       "GIVEN an invalid vendor key THEN expect a bad request response",

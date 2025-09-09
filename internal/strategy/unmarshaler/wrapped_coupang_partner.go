@@ -22,7 +22,6 @@ func (s *WrappedCoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, e
 		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
 		return nil, ErrInvalidFormat
 	}
-
 	if rResp.RCode != "0" {
 		return nil, fmt.Errorf("resp code invalid. code: %s, msg: %s", rResp.RCode, rResp.RMessage)
 	}
