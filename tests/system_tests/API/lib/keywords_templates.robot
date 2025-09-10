@@ -8,6 +8,7 @@ Test vendors from yaml configuration
   ...              Linkmine URL format: adds &web_host={domain}&bundle_id={app_id}&adtype={2|3}
   ...              Auto-selects dimensions from: 300x300, 1200x627, 1200x600
   ...              Tests exactly the number of vendors defined in the YAML
+  ...              Now includes subid parameter from Config API for each vendor
 
   # Parse YAML once at the beginning
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
@@ -15,6 +16,9 @@ Test vendors from yaml configuration
 
   ${vendor_count} =       Get Length              ${vendors}
   Log                     Found ${vendor_count} vendor(s) in YAML configuration
+
+  # Get subid mapping for all vendors from Config API
+  ${vendor_subid_mapping} =  Get vendor subids from config api  ${yaml_content}
 
   # Test each vendor defined in YAML
   FOR  ${vendor_config}  IN  @{vendors}
@@ -30,6 +34,9 @@ Test vendors from yaml configuration
     END
     
     Log                     Testing vendor: ${vendor_name}
+
+    # Get subid for this vendor
+    ${vendor_subid} =       Get From Dictionary     ${vendor_subid_mapping}  ${vendor_name}  default=${EMPTY}
 
     # Extract parameters from vendor configuration
     ${request_url} =        Get From Dictionary     ${vendor_config}    request_url
@@ -73,12 +80,32 @@ Test vendors from yaml configuration
     ${is_linkmine} =        Run Keyword And Return Status
     ...                     Should Be Equal         ${vendor_name}      linkmine
 
-    IF  ${is_linkmine}
-      When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}  web_host=${web_host}  bundle_id=${bundle_id}
-      ...                                                              adtype=${adtype}
+    # Prepare common parameters
+    ${common_params} =      Create Dictionary
+    ...                     endpoint=r/${vendor_name}
+    ...                     user_id=${user_id}
+    ...                     click_id=${click_id}
+    ...                     w=${width}
+    ...                     h=${height}
+
+    # Add subid if available
+    IF  '${vendor_subid}' != '${EMPTY}'
+      Set To Dictionary     ${common_params}        subid=${vendor_subid}
+      Log                   Using subid for ${vendor_name}: ${vendor_subid}
     ELSE
-      When I would like to set the session under vendor endpoint with  endpoint=r/${vendor_name}  user_id=${user_id}  click_id=${click_id}  w=${width}  h=${height}
+      Log                   No subid available for ${vendor_name}
     END
+
+    # Add linkmine-specific parameters if needed
+    IF  ${is_linkmine}
+      Set To Dictionary     ${common_params}
+      ...                   web_host=${web_host}
+      ...                   bundle_id=${bundle_id}
+      ...                   adtype=${adtype}
+    END
+
+    # Make the API call with all parameters
+    When I would like to set the session under vendor endpoint with  &{common_params}
 
     # Verify response
     Then I would like to check status_code should be "200" within the current session

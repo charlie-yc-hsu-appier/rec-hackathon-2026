@@ -21,7 +21,7 @@ vendor_config:
   timeout: 1s
   vendors:
     - name: linkmine
-      request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code=FAXXi4vdOY&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&site_domain={web_host}&app_bundleId={bundle_id}&imp_adType={adtype}"
+      request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code={subid}&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&site_domain={web_host}&app_bundleId={bundle_id}&imp_adType={adtype}"
       tracking_url: "{product_url}&param1={click_id_base64}"
       with_proxy: true
     - name: replace
@@ -33,47 +33,27 @@ vendor_config:
       {{- end }}
       with_proxy: true
     - name: inl_corp_0
-      request_url: "https://adapi.inlcorp.com/cou/api_reco.php?code={size_code}&adid={user_id_lower}&click_id={click_id_base64}"
+      request_url: "https://adapi.inlcorp.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
       tracking_url: "{product_url}"
       with_proxy: true
-      size_code_map:
-        300x300: 650alldb2
-        1200x627: dynamicntdw1
-        1200x600: kkobizdw1
     - name: inl_corp_1
-      request_url: "https://api.adreload.com/cou/api_reco.php?code={size_code}&adid={user_id_lower}&click_id={click_id_base64}"
+      request_url: "https://api.adreload.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
       tracking_url: "{product_url}"
       with_proxy: true
-      size_code_map:
-        300x300: 650alldb2
-        1200x627: dynamicntdw1
-        1200x600: kkobizdw1
     - name: inl_corp_2
-      request_url: "https://api.adiostech.com/cou/api_reco.php?code={size_code}&adid={user_id_lower}&click_id={click_id_base64}"
+      request_url: "https://api.adiostech.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
       tracking_url: "{product_url}"
       with_proxy: true
-      size_code_map:
-        300x300: 650alldb2
-        1200x627: dynamicntdw1
-        1200x600: kkobiz1200x600
     - name: inl_corp_3
-      request_url: "https://api.ootoo.co.kr/cou/api_reco.php?code={size_code}&type=json&click_log=1&click_id={click_id_base64}&adid={user_id_lower}"
+      request_url: "https://api.ootoo.co.kr/cou/api_reco.php?code={subid}&type=json&click_log=1&click_id={click_id_base64}&adid={user_id_lower}"
       tracking_url: "{product_url}"
       with_proxy: true
-      size_code_map:
-        300x300: dlapp4968m
-        1200x627: dlapp4968m1200x627
-        1200x600: dlapp4968m1200x600
     - name: inl_corp_4
-      request_url: "https://cdw.adsrv.co.kr/reco?subId={size_code}&deviceId={user_id_lower}&click_id={click_id_base64}"
+      request_url: "https://cdw.adsrv.co.kr/reco?subId={subid}&deviceId={user_id_lower}&click_id={click_id_base64}"
       tracking_url: "{product_url}"
       with_proxy: true
-      size_code_map:
-        300x300: 24650alldb2
-        1200x627: 24dynamicntdw1
-        1200x600: 24kkobizdw1
     - name: inl_corp_5
-      request_url: "https://api.adzet.co.kr/cou/api_reco.php?code=pinpuzzleAPP&adid={user_id_lower}&click_id={click_id_base64}&imageSize={width}x{height}"
+      request_url: "https://api.adzet.co.kr/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}&imageSize={width}x{height}"
       tracking_url: "{product_url}"
       with_proxy: true
     - name: adpopcorn

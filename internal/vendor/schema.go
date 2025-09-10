@@ -14,6 +14,7 @@ type Request struct {
 	KeetaCampaignID string `form:"k_campaign_id"`
 	Latitude        string `form:"lat"`
 	Longitude       string `form:"lon"`
+	SubID           string `form:"subid"`
 	ClientIP        string
 }
 
@@ -32,6 +33,7 @@ func (r Request) toRequesterParams(url string) requester.Params {
 		KeetaCampaignID: r.KeetaCampaignID,
 		Latitude:        r.Latitude,
 		Longitude:       r.Longitude,
+		SubID:           r.SubID,
 	}
 }
 
