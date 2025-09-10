@@ -13,21 +13,35 @@ Suite Teardown      Release Test Value
 [C4983449] [RAT] [VENDOR] [AUTO] Automated vendor testing from YAML
   [Tags]              testrailid=4983449  RAT     VENDOR
   [Documentation]  Fully automated vendor testing using actual config.yaml file with Config API integration
-  ...              Loads vendor configuration from deploy/rec-vendor-api/secrets/config.yaml
-  ...              Integrates with Config API to filter only active inl_corp vendors for testing
-  ...              Tests all vendors in config with complete automation:
-  ...              - Dynamic endpoint generation: /r/{vendor_name}
-  ...              - Auto-selected test dimensions: 300x300, 1200x627, 1200x600
-  ...              - Vendor-specific parameter handling:
-  ...              * Standard vendors: user_id, click_id, w, h
-  ...              * Linkmine vendor: adds web_host, bundle_id, adtype
-  ...              * INL vendors: URL-encoded subparam with base64 encoding
-  ...              * INL_corp_5: Special handling with subParam=pier
-  ...              - Base64 encoding validation for click_id parameters
-  ...              - Response structure validation (array of products)
-  ...              - Product patch verification with tracking parameters
-  ...              - Config API integration: Only tests active inl_corp_X vendors (backward compatible)
-  ...              - Product patch verification with tracking parameters
+  ...              
+  ...              Configuration Management:
+  ...              • Loads vendor configuration from deploy/rec-vendor-api/secrets/config.yaml
+  ...              • Integrates with Config API to filter only active inl_corp vendors for testing
+  ...              • Backward compatible: non-inl vendors unaffected by Config API filtering
+  ...              
+  ...              Vendor Testing Coverage:
+  ...              • Tests all vendors in config with complete automation including Keeta
+  ...              • Dynamic endpoint generation: /r/{vendor_name}
+  ...              • Auto-selected test dimensions: 300x300, 1200x627, 1200x600
+  ...              
+  ...              Vendor-specific Parameter Handling:
+  ...              • Standard vendors: user_id, click_id, w, h, subid (from Config API)
+  ...              • Linkmine vendor: adds web_host, bundle_id, adtype
+  ...              • INL vendors: URL-encoded subparam with base64 encoding
+  ...              • INL_corp_5: Special handling with subParam=pier
+  ...              • Keeta vendor: Dynamic Config API integration with lat=22.3264, lon=114.1661, k_campaign_id
+  ...              
+  ...              Keeta Integration Features:
+  ...              • Searches running campaigns with JSONPath filtering
+  ...              • Campaign criteria: status_code=Running, datafeed_id=android--com.sankuai.sailor.afooddelivery_2
+  ...              • Uses first campaign with non-empty keeta_campaign_name
+  ...              • Skips image validation and click_id tracking validation for Keeta responses
+  ...              
+  ...              Validation & Quality Assurance:
+  ...              • Base64 encoding validation for click_id parameters
+  ...              • Response structure validation (array of products)
+  ...              • Product patch verification with tracking parameters
+  ...              • Comprehensive error handling and logging
 
   # Load YAML configuration from actual config file
   # Note: size={width}x{height} parameters are auto-selected from predefined sizes (300x300, 1200x627, 1200x600)

@@ -5,10 +5,23 @@ Test vendors from yaml configuration
   [Documentation]  Automated test for all vendors defined in YAML configuration
   ...              Tests the /r endpoint with auto-selected test dimensions and vendor-specific parameters
   ...              Standard URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
-  ...              Linkmine URL format: adds &web_host={domain}&bundle_id={app_id}&adtype={2|3}
-  ...              Auto-selects dimensions from: 300x300, 1200x627, 1200x600
+  ...              
+  ...              Vendor-specific parameter handling:
+  ...              • Standard vendors: user_id, click_id, w, h, subid (from Config API)
+  ...              • Linkmine vendor: adds web_host, bundle_id, adtype parameters
+  ...              • INL vendors: URL-encoded subparam with base64 encoding
+  ...              • Keeta vendor: adds lat=22.3264, lon=114.1661, k_campaign_id (from Config API)
+  ...              
+  ...              Keeta integration features:
+  ...              • Dynamic Config API integration: searches running campaigns
+  ...              • Campaign criteria: datafeed_id=android--com.sankuai.sailor.afooddelivery_2
+  ...              • Uses JSONPath filtering for efficient campaign discovery
+  ...              • Skips image validation and click_id tracking validation for Keeta
+  ...              
+  ...              Auto-selects test dimensions from: 300x300, 1200x627, 1200x600
   ...              Tests exactly the number of vendors defined in the YAML
-  ...              Now includes subid parameter from Config API for each vendor
+  ...              Includes subid parameter from Config API for each vendor
+  ...              Comprehensive validation: response structure, tracking parameters, product data
 
   # Parse YAML once at the beginning
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
@@ -24,16 +37,22 @@ Test vendors from yaml configuration
   FOR  ${vendor_config}  IN  @{vendors}
     ${vendor_name} =        Get From Dictionary     ${vendor_config}    name
     
-    # FIXME: temporarily skip
-    # Skip keeta vendor in robot testing to prevent expansion (temporary solution)
+    Log                     Testing vendor: ${vendor_name}
+
+    # Handle Keeta vendor specially
     ${is_keeta} =           Run Keyword And Return Status
     ...                     Should Be Equal         ${vendor_name}      keeta
     IF  ${is_keeta}
-      Log                   Skipping keeta vendor in robot testing (temporary solution)
-      Continue For Loop
+      # Get Keeta campaign configuration from Config API
+      ${keeta_campaign_name} =  Get keeta campaign configuration
+      
+      IF  '${keeta_campaign_name}' == '${EMPTY}'
+        Log                 Warning: Could not get keeta_campaign_name, skipping Keeta test
+        Continue For Loop
+      END
+      
+      Log                   Testing Keeta vendor with campaign: ${keeta_campaign_name}
     END
-    
-    Log                     Testing vendor: ${vendor_name}
 
     # Get subid for this vendor
     ${vendor_subid} =       Get From Dictionary     ${vendor_subid_mapping}  ${vendor_name}  default=${EMPTY}
@@ -104,6 +123,15 @@ Test vendors from yaml configuration
       ...                   adtype=${adtype}
     END
 
+    # Add Keeta-specific parameters if needed
+    IF  ${is_keeta}
+      Set To Dictionary     ${common_params}
+      ...                   lat=22.3264
+      ...                   lon=114.1661
+      ...                   k_campaign_id=${keeta_campaign_name}
+      Log                   Making Keeta API call with campaign: ${keeta_campaign_name}
+    END
+
     # Make the API call with all parameters
     When I would like to set the session under vendor endpoint with  &{common_params}
 
@@ -111,7 +139,7 @@ Test vendors from yaml configuration
     Then I would like to check status_code should be "200" within the current session
 
     # Validate response structure and content
-    Validate vendor response structure  ${resp_json}
+    Validate vendor response structure  ${resp_json}  ${vendor_name}
     Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}  ${vendor_name}
 
     Log                     ✅ Vendor ${vendor_name} test PASSED
