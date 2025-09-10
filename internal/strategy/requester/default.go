@@ -22,6 +22,7 @@ func (s *Default) GenerateRequestURL(params Params) (string, error) {
 	url = strings.Replace(url, "{adtype}", strconv.Itoa(params.AdType), 1)
 	url = strings.Replace(url, "{partner_id}", params.PartnerID, 1)
 
+	// TODO(AI-28426): Consolidate error handling for all missing required parameters
 	// Check if URL contains {subid} placeholder but SubID is not provided
 	if strings.Contains(url, "{subid}") && params.SubID == "" {
 		return "", fmt.Errorf("subID not provided (image size: %dx%d)", params.ImgWidth, params.ImgHeight)
