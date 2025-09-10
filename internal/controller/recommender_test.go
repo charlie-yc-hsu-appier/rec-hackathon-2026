@@ -69,7 +69,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(nil, errors.New("fail"))
 			},
 			wantCode: http.StatusInternalServerError,
-			wantBody: `{"detail":"fail", "status":500}`,
+			wantBody: `{"detail":"Fail to recommend any products for vendor test_vendor. err: fail", "status":500}`,
 		},
 	}
 
