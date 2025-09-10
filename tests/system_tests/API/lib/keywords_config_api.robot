@@ -388,3 +388,43 @@ Validate and generate safe vendor yaml configuration
   Set Test Message        📊 Final configuration: ${total_count} vendors (active indices: ${active_indices})  append=yes
 
   RETURN                  ${filtered_yaml}
+
+
+Get keeta campaign configuration
+  [Documentation]  Get Keeta campaign configuration by searching for running campaigns
+  ...              Searches for campaigns with status_code=Running, datafeed_id=android--com.sankuai.sailor.afooddelivery_2
+  ...              and non-empty keeta_campaign_name, then extracts the keeta_campaign_name value
+  
+  I have a config_api session
+  
+  # Get all running campaigns
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns?status_code=Running
+  Validate config api response  ${resp}  Running campaigns API error
+  
+  # Use JSONPath to directly filter for Keeta campaigns
+  # Filter: campaigns with datafeed_id=android--com.sankuai.sailor.afooddelivery_2 and non-empty keeta_campaign_name
+  @{keeta_campaigns} =    Get Value From Json     ${resp.json()}          $.campaigns[?(@.datafeed_id == 'android--com.sankuai.sailor.afooddelivery_2' & @.configs.keeta_campaign_name != '')]
+  
+  ${keeta_campaign_count} =  Get Length           ${keeta_campaigns}
+  Log                     Found ${keeta_campaign_count} Keeta campaigns matching criteria
+  
+  # If we found any matching campaigns, use the first one
+  IF  ${keeta_campaign_count} > 0
+    ${selected_campaign} =  Set Variable          ${keeta_campaigns}[0]
+    ${campaign_id} =      Get Value From Json     ${selected_campaign}    $.campaign_id
+    ${datafeed_id} =      Get Value From Json     ${selected_campaign}    $.datafeed_id
+    ${keeta_campaign_name} =  Get Value From Json  ${selected_campaign}   $.configs.keeta_campaign_name
+    
+    Log                   ✅ Found Keeta campaign: ${campaign_id}[0]
+    Log                   ✅ Keeta campaign name: ${keeta_campaign_name}[0]
+    Log                   ✅ Datafeed ID: ${datafeed_id}[0]
+    RETURN                ${keeta_campaign_name}[0]
+  END
+  
+  # If we get here, no valid campaign was found
+  Log                     ❌ No valid Keeta campaign found with criteria:
+  Log                     - status_code=Running
+  Log                     - datafeed_id=android--com.sankuai.sailor.afooddelivery_2  
+  Log                     - non-empty keeta_campaign_name
+  
+  RETURN                  ${EMPTY}
