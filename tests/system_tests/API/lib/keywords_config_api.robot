@@ -8,17 +8,22 @@ I have a config_api session
   Create Session  ConfigAPISession        url=https://${CONFIG_API_HOST}  headers=&{HEADERS}  disable_warnings=1  retry_status_list=[500,502,503,504]  timeout=5
 
 
+Validate config api response
+  [Documentation]  Common validation for Config API responses
+  [Arguments]      ${resp}  ${error_context}
+  
+  ${resp.status_code} =   Convert To String       ${resp.status_code}
+  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  ${error_context}: ${resp.status_code} - ${resp.content}
+  Should Not Be Empty     ${resp.json()}          ${error_context} returned empty response
+
+
 I would like to get campaign_ids with group vendor_inl_corp
   [Documentation]  Get campaign IDs that have group "vendor_inl_corp" from experiments endpoint
   [Arguments]             ${site_id}              ${service_type_id}
 
   # Get experiments data
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
-
-  # Validate response
-  ${resp.status_code} =   Convert To String       ${resp.status_code}
-  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Experiments API error for ${site_id}: ${resp.status_code} - ${resp.content}
-  Should Not Be Empty     ${resp.json()}          Experiments API returned empty response for ${site_id}
+  Validate config api response  ${resp}  Experiments API error for ${site_id}
 
   # Extract campaign_ids where any bucket has group "vendor_inl_corp"
   @{vendor_inl_corp_campaigns} =  Get Value From Json  ${resp.json()}  $.experiments[*].distributions[?(@.buckets[*].group == 'vendor_inl_corp')].campaign_id
@@ -31,8 +36,12 @@ I would like to get campaign_ids with group vendor_inl_corp
     END
   END
 
-  Log                     Found ${filtered_campaigns.__len__()} vendor_inl_corp campaigns: ${filtered_campaigns}
+  ${campaign_count} =     Get Length              ${filtered_campaigns}
+  Log                     Found ${campaign_count} vendor_inl_corp campaigns: ${filtered_campaigns}
   RETURN                  ${filtered_campaigns}
+
+
+
 
 
 I would like to check campaign status
@@ -41,11 +50,7 @@ I would like to check campaign status
 
   # Get campaign details
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
-
-  # Validate response
-  ${resp.status_code} =   Convert To String       ${resp.status_code}
-  Should Not Match Regexp  ${resp.status_code}  (^(4|5)..$)  Campaign ${campaign_id} API error: ${resp.status_code} - ${resp.content}
-  Should Not Be Empty     ${resp.json()}          Campaign ${campaign_id} returned empty response
+  Validate config api response  ${resp}  Campaign ${campaign_id} API error
 
   # Extract campaign status
   ${campaign_status} =    Get Value From Json     ${resp.json()}          $.campaign.status_code
@@ -179,6 +184,133 @@ Get vendor inl_corp indices for yaml configuration
   ...                     max_index=${max_index}
   ...                     vendor_count=${vendor_count}
   RETURN                  ${result}
+
+
+Get vendor subids from config api
+  [Documentation]  Get subid mapping for all vendors from Config API campaigns
+  ...              Returns a dictionary with vendor_name as key and subid as value
+  [Arguments]             ${yaml_content}         ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
+
+  I have a config_api session
+
+  # Parse YAML to get vendor names
+  ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
+  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
+  
+  # Get all campaign IDs
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
+  Validate config api response  ${resp}  Experiments API error
+  
+  # Extract and deduplicate campaign IDs
+  @{all_campaign_ids} =   Get Value From Json     ${resp.json()}          $.experiments[*].distributions[*].campaign_id
+  ${unique_campaign_ids} =  Remove Duplicates      ${all_campaign_ids}
+  
+  ${campaign_count} =     Get Length              ${unique_campaign_ids}
+  ${vendor_count} =       Get Length              ${vendors}
+  Log                     Searching subids across ${campaign_count} campaigns for ${vendor_count} vendors
+  
+  # Create vendor subid mapping
+  &{vendor_subid_mapping} =  Create Dictionary
+  
+  # For each vendor in YAML, try to find its subid in campaigns
+  FOR  ${vendor_config}  IN  @{vendors}
+    ${vendor_name} =      Get From Dictionary     ${vendor_config}    name
+    ${vendor_subid} =     Find vendor subid in campaigns  ${unique_campaign_ids}  ${vendor_name}
+    
+    Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
+    
+    IF  '${vendor_subid}' == '${EMPTY}'
+      Set Test Message    ⚠️ No subid found for vendor: ${vendor_name}  append=yes
+    ELSE
+      Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
+    END
+  END
+  
+  Log                     Vendor subid mapping: ${vendor_subid_mapping}
+  RETURN                  ${vendor_subid_mapping}
+
+
+Find vendor subid in campaigns
+  [Documentation]  Search for vendor subid across all campaigns
+  [Arguments]      ${campaign_ids}  ${vendor_name}
+  
+  FOR  ${campaign_id}  IN  @{campaign_ids}
+    IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
+      ${subid_result} =   Get vendor subid from campaign  ${campaign_id}  ${vendor_name}
+      IF  '${subid_result}' != '${EMPTY}'
+        Log               Found subid for ${vendor_name}: ${subid_result} (from campaign ${campaign_id})
+        RETURN            ${subid_result}
+      END
+    END
+  END
+  
+  RETURN                  ${EMPTY}
+
+
+Get vendor subid from campaign
+  [Documentation]  Get subid for a specific vendor from campaign configs
+  [Arguments]             ${campaign_id}          ${vendor_name}
+
+  # Get campaign details
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
+  Validate config api response  ${resp}  Campaign ${campaign_id} API error
+
+  # Check if campaign has subids configuration
+  ${has_subids} =         Run Keyword And Return Status
+  ...                     Should Have Value In Json  ${resp.json()}  $.campaign.configs.subids
+
+  ${subid} =              Set Variable            ${EMPTY}
+  IF  ${has_subids}
+    ${subids_obj} =       Get Value From Json     ${resp.json()}      $.campaign.configs.subids
+    ${subids_dict} =      Set Variable            ${subids_obj}[0]
+    
+    # Try exact match first
+    ${has_exact_match} =  Run Keyword And Return Status
+    ...                   Dictionary Should Contain Key  ${subids_dict}  ${vendor_name}
+    
+    IF  ${has_exact_match}
+      ${vendor_subid_array} =  Get From Dictionary  ${subids_dict}      ${vendor_name}
+      ${subid} =          Extract subid from array  ${vendor_subid_array}
+      Log                 Found exact match for ${vendor_name}: ${subid}
+    ELSE
+      # Try partial match (e.g., inl_corp_1 matches inl_corp_1_1200x600)
+      ${subids_keys} =    Get Dictionary Keys      ${subids_dict}
+      @{matching_keys} =  Create List
+      
+      # Collect all keys that start with vendor_name
+      FOR  ${key}  IN  @{subids_keys}
+        ${is_partial_match} =  Run Keyword And Return Status
+        ...                    Should Start With   ${key}              ${vendor_name}
+        IF  ${is_partial_match}
+          Append To List  ${matching_keys}  ${key}
+        END
+      END
+      
+      # If we found matching keys, randomly select one
+      ${matching_count} =  Get Length  ${matching_keys}
+      IF  ${matching_count} > 0
+        ${random_index} =  Evaluate  random.randint(0, ${matching_count}-1)  random
+        ${selected_key} =  Get From List  ${matching_keys}  ${random_index}
+        ${vendor_subid_array} =  Get From Dictionary  ${subids_dict}  ${selected_key}
+        ${subid} =        Extract subid from array  ${vendor_subid_array}
+        Log               Found partial match for ${vendor_name} (randomly selected key: ${selected_key} from ${matching_keys}): ${subid}
+      END
+    END
+  END
+
+  RETURN                  ${subid}
+
+
+Extract subid from array
+  [Documentation]  Helper to extract subID from vendor subid array
+  [Arguments]      ${subid_array}
+  
+  IF  ${subid_array}
+    ${subid} =    Get Value From Json     ${subid_array}  $[0].subID
+    RETURN        ${subid}[0]
+  ELSE
+    RETURN        ${EMPTY}
+  END
 
 
 Validate and generate safe vendor yaml configuration
