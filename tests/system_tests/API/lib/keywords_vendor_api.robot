@@ -9,10 +9,11 @@ I would like to set the session under vendor endpoint with
   ...              Available parameters:
   ...              endpoint - The endpoint path (default: /healthz)
   ...              For /r endpoint format: endpoint=r/{vendor_name}
-  ...              Supported parameters: user_id, click_id, w, h, web_host, bundle_id, adtype, subid
+  ...              Supported parameters: user_id, click_id, w, h, web_host, bundle_id, adtype, subid, lat, lon, k_campaign_id
   ...              For example:
   ...              Given I would like to set the session under vendor endpoint with  endpoint=/healthz
   ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300  subid=vendor_subid
+  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/keeta  user_id=uuid  click_id=value  w=300  h=300  lat=22.3264  lon=114.1661  k_campaign_id=campaign_name
   [Arguments]             &{args}
 
   # Set default endpoint if not provided
@@ -26,7 +27,7 @@ I would like to set the session under vendor endpoint with
 
   # Handle optional parameters - Method 2: Direct dictionary filtering
   ${query_params} =       Create Dictionary
-  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   web_host    bundle_id   adtype    subid
+  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   web_host    bundle_id   adtype    subid   lat   lon   k_campaign_id
 
   FOR  ${param}  IN  @{param_names}
     ${param_exists} =   Run Keyword And Return Status
@@ -100,14 +101,14 @@ I would like to check status_code should be "${expected_code}" within the curren
 
 
 Validate vendor response structure
-  [Arguments]             ${response_json}
+  [Arguments]             ${response_json}        ${vendor_name}=${EMPTY}
   [Documentation]  Validate the basic structure of vendor response
   ...              Expected structure:
   ...              [
   ...              {
   ...              "product_id": "1703093047",
   ...              "url": "https://...",
-  ...              "image": "https://..."
+  ...              "image": "https://..."  (optional for Keeta vendor)
   ...              }
   ...              ]
 
@@ -120,6 +121,10 @@ Validate vendor response structure
   Should Not Be Empty     ${response_json}
   ...                     Response array should not be empty
 
+  # Check if this is Keeta vendor (skip image validation)
+  ${is_keeta} =           Run Keyword And Return Status
+  ...                     Should Be Equal         ${vendor_name}      keeta
+
   # Validate each product in the response
   FOR  ${product}  IN  @{response_json}
     Dictionary Should Contain Key  ${product}  product_id
@@ -128,8 +133,11 @@ Validate vendor response structure
     Dictionary Should Contain Key  ${product}  url
     ...                     Each product should contain 'url' key
 
-    Dictionary Should Contain Key  ${product}  image
-    ...                     Each product should contain 'image' key
+    # Skip image validation for Keeta vendor
+    IF  not ${is_keeta}
+      Dictionary Should Contain Key  ${product}  image
+      ...                     Each product should contain 'image' key
+    END
 
     # Validate that values are not empty
     ${product_id} =         Get From Dictionary     ${product}  product_id
@@ -138,14 +146,23 @@ Validate vendor response structure
     ${url} =                Get From Dictionary     ${product}  url
     Should Not Be Empty     ${url}                  url should not be empty
 
-    ${image} =              Get From Dictionary     ${product}  image
-    Should Not Be Empty     ${image}                image should not be empty
+    # Skip image validation for Keeta vendor
+    IF  not ${is_keeta}
+      ${image} =              Get From Dictionary     ${product}  image
+      Should Not Be Empty     ${image}                image should not be empty
+    ELSE
+      Log                     🎯 Keeta vendor: skipping image validation
+    END
 
     Log                     ✅ Product ${product_id} structure validation passed
   END
 
   ${product_count} =      Get Length              ${response_json}
-  Log                     ✅ Response structure validation passed for ${product_count} products
+  IF  ${is_keeta}
+    Log                   ✅ Keeta response structure validation passed for ${product_count} products (image validation skipped)
+  ELSE
+    Log                   ✅ Response structure validation passed for ${product_count} products
+  END
 
 
 Validate product patch contains product ids
@@ -154,10 +171,22 @@ Validate product patch contains product ids
   ...              with base64 encoded click_id in the URL
   ...              New response format: array of products with product_id, url, image
   ...              Special handling for INL vendors with URL encoded parameters
+  ...              Keeta vendor: skip click_id validation
 
   # Response should be a list/array
   Should Not Be Empty     ${response_json}
   ...                     Response array should not be empty
+
+  # Check if this is Keeta vendor (skip click_id validation)
+  ${is_keeta} =           Run Keyword And Return Status
+  ...                     Should Be Equal         ${vendor_name}      keeta
+
+  IF  ${is_keeta}
+    Log                   🎯 Keeta vendor detected - skipping click_id validation
+    ${product_count} =    Get Length              ${response_json}
+    Log                   ✅ Keeta vendor validation passed for ${product_count} products (click_id validation skipped)
+    RETURN
+  END
 
   # Check each product in the response
   FOR  ${product}  IN  @{response_json}
