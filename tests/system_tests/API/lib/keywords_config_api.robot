@@ -41,9 +41,6 @@ I would like to get campaign_ids with group vendor_inl_corp
   RETURN                  ${filtered_campaigns}
 
 
-
-
-
 I would like to check campaign status
   [Documentation]  Check campaign status and extract active inl_rec_api_group_ratio indices
   [Arguments]             ${campaign_id}
