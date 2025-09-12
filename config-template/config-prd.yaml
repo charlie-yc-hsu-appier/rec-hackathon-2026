@@ -33,7 +33,7 @@ vendor_config:
       {{- end }}
       with_proxy: true
     - name: inl_corp_0
-      request_url: "https://adapi.inlcorp.com/cou/api_reco.php?code={subid}}&adid={user_id_lower}&click_id={click_id_base64}"
+      request_url: "https://adapi.inlcorp.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
       tracking_url: "{product_url}"
       with_proxy: true
     - name: inl_corp_1
