@@ -26,7 +26,7 @@ Suite Teardown      Release Test Value
   ...              
   ...              *Vendor-specific Parameter Handling:*
   ...              - Standard vendors: user_id, click_id, w, h, subid (from Config API)
-  ...              - Linkmine vendor: adds web_host, bundle_id, adtype
+  ...              - Linkmine vendor: adds bundle_id (empty string), adtype
   ...              - INL vendors: URL-encoded subparam with base64 encoding
   ...              - INL_corp_5: Special handling with subParam=pier
   ...              - Keeta vendor: Dynamic Config API integration with lat=22.3264, lon=114.1661, k_campaign_id
