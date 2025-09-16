@@ -129,9 +129,40 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/vendors": {
+            "get": {
+                "description": "Usage for getting vendor information",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Vendors",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_controller.VendorInfo"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "internal_controller.VendorInfo": {
+            "type": "object",
+            "properties": {
+                "request_host": {
+                    "type": "string"
+                },
+                "vendor_key": {
+                    "type": "string"
+                }
+            }
+        },
         "vendor.ProductInfo": {
             "type": "object",
             "properties": {

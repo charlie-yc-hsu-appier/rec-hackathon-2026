@@ -69,8 +69,10 @@ func main() {
 		log.Fatalf("Failed to build vendor registry, err: %v", err)
 	}
 	recommender := controller.NewRecommender(vendorRegistry)
+	vendorManager := controller.NewVendorManager(cfg.VendorConfig)
 
 	r.GET("/r/:vendor_key", recommender.Recommend)
+	r.GET("/vendors", vendorManager.GetVendors)
 	r.GET("/healthz", controller.HealthCheck)
 	r.GET("/metrics", telemetry.PromHandler())
 
