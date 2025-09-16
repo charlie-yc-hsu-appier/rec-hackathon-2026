@@ -82,7 +82,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 
 			tc.setupMock(ts.mockClient)
 
-			vc := NewVendorController(ts.vendorRegistry)
+			vc := NewRecommender(ts.vendorRegistry)
 			vc.Recommend(c)
 
 			require.Equal(t, tc.wantCode, w.Code)
