@@ -8,7 +8,7 @@ Test vendors from yaml configuration
   ...              
   ...              Vendor-specific parameter handling:
   ...              • Standard vendors: user_id, click_id, w, h, subid (from Config API)
-  ...              • Linkmine vendor: adds web_host, bundle_id, adtype parameters
+  ...              • Linkmine vendor: adds bundle_id (empty string), adtype parameters
   ...              • INL vendors: URL-encoded subparam with base64 encoding
   ...              • Keeta vendor: adds lat=22.3264, lon=114.1661, k_campaign_id (from Config API)
   ...              
@@ -63,16 +63,15 @@ Test vendors from yaml configuration
 
     # Auto-select test dimensions and vendor-specific parameters
     # Sizes: 300x300, 1200x627, 1200x600
-    # For linkmine: also generates web_host, bundle_id, adtype
+    # For linkmine: also generates bundle_id (empty string), adtype
     ${dimensions} =         Auto select test dimensions  ${request_url}  ${vendor_name}
     ${width} =              Get From Dictionary     ${dimensions}       width
     ${height} =             Get From Dictionary     ${dimensions}       height
 
     # Extract linkmine-specific parameters if available
-    ${has_web_host} =       Run Keyword And Return Status
-    ...                     Dictionary Should Contain Key  ${dimensions}  web_host
-    IF  ${has_web_host}
-      ${web_host} =   Get From Dictionary     ${dimensions}   web_host
+    ${has_bundle_id} =      Run Keyword And Return Status
+    ...                     Dictionary Should Contain Key  ${dimensions}  bundle_id
+    IF  ${has_bundle_id}
       ${bundle_id} =  Get From Dictionary     ${dimensions}   bundle_id
       ${adtype} =     Get From Dictionary     ${dimensions}   adtype
     END
@@ -118,7 +117,6 @@ Test vendors from yaml configuration
     # Add linkmine-specific parameters if needed
     IF  ${is_linkmine}
       Set To Dictionary     ${common_params}
-      ...                   web_host=${web_host}
       ...                   bundle_id=${bundle_id}
       ...                   adtype=${adtype}
     END
