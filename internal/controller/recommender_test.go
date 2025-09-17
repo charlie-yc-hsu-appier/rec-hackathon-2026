@@ -82,8 +82,8 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 
 			tc.setupMock(ts.mockClient)
 
-			vc := NewVendorController(ts.vendorRegistry)
-			vc.Recommend(c)
+			r := NewRecommender(ts.vendorRegistry)
+			r.Recommend(c)
 
 			require.Equal(t, tc.wantCode, w.Code)
 			require.JSONEq(t, tc.wantBody, w.Body.String())

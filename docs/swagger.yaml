@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  internal_controller.VendorInfo:
+    properties:
+      request_host:
+        type: string
+      vendor_key:
+        type: string
+    type: object
   vendor.ProductInfo:
     properties:
       currency:
@@ -98,6 +105,19 @@ paths:
               type: string
             type: object
       summary: Get vendor recommendations
+  /vendors:
+    get:
+      description: Usage for getting vendor information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_controller.VendorInfo'
+            type: array
+      summary: Vendors
 schemes:
 - https
 swagger: "2.0"
