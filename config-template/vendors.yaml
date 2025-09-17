@@ -16,11 +16,11 @@ vendors:
     tracking_url: "{product_url}"
     with_proxy: true
   - name: inl_corp_1
-    request_url: "https://api.adreload.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
+    request_url: "https://rco.mjbiz.co.kr/reco-js?trackingCode=AF3617420&subId={subid}&deviceId={user_id_lower}&click_id={click_id_base64}"
     tracking_url: "{product_url}"
     with_proxy: true
   - name: inl_corp_2
-    request_url: "https://api.adiostech.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
+    request_url: "https://rco.adiostech.com/reco-js?trackingCode=AF7256767&subId={subid}&deviceId={user_id_lower}&click_id={click_id_base64}"
     tracking_url: "{product_url}"
     with_proxy: true
   - name: inl_corp_3
