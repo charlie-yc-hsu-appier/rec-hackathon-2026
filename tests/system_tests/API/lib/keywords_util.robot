@@ -5,7 +5,7 @@ Auto select test dimensions
   [Documentation]  Auto-select test dimensions from predefined sizes
   ...              Returns dimensions dictionary with width, height, and additional vendor parameters
   ...              Available test sizes: 300x300, 1200x627, 1200x600
-  ...              For linkmine vendor: Also generates site_domain (web domain), app_bundleId (app store ID), imp_adType (2 or 3)
+  ...              For linkmine vendor: Also generates app_bundleId (empty string), imp_adType (2 or 3)
   ...              Note: request_url parameter is kept for compatibility but not used
 
   # Predefined test dimensions
@@ -36,20 +36,19 @@ Auto select test dimensions
   ...                 Should Be Equal     ${vendor_name}          linkmine
 
   IF  ${is_linkmine}
-    # Linkmine-specific parameters with predefined options
-    @{domains} =        Create List     coupang.com             gmarket.co.kr           11st.co.kr          auction.co.kr
-    @{bundles} =        Create List     com.coupang.mobile      kr.co.gmarket.mobile    com.elevenst        com.auction.mobile
+    # Linkmine-specific parameters with updated requirements
     @{ad_types} =       Create List     2                       3
 
-    # Random selection
-    ${web_host} =       Evaluate        __import__('random').choice($domains)
-    ${bundle_id} =      Evaluate        __import__('random').choice($bundles)
+    # Random selection for adtype only
     ${adtype} =         Evaluate        __import__('random').choice($ad_types)
 
-    # Add to dimensions dictionary
-    Set To Dictionary   ${dimensions}   web_host=${web_host}    bundle_id=${bundle_id}  adtype=${adtype}
+    # Set bundle_id as empty string and remove web_host (site_domain)
+    ${bundle_id} =      Set Variable    ${Empty}
 
-    Log                 Linkmine params - web_host: ${web_host}, bundle_id: ${bundle_id}, adtype: ${adtype}
+    # Add to dimensions dictionary (no web_host anymore)
+    Set To Dictionary   ${dimensions}   bundle_id=${bundle_id}  adtype=${adtype}
+
+    Log                 Linkmine params - bundle_id: ${bundle_id} (empty), adtype: ${adtype}
   END
 
   RETURN              &{dimensions}
