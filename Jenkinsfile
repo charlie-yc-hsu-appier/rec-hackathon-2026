@@ -169,6 +169,7 @@ pipeline {
             vault-login.sh
 
             # APP credential
+            vault-decrypt-v2.sh config-template/vendors.yaml $CHART_DIR/secrets/vendors.yaml
             vault-decrypt-v2.sh config-template/config-$BUILD_ENV.yaml $CHART_DIR/secrets/config.yaml
             cp ./config-template/nginx.conf $CHART_DIR/secrets/
 
@@ -273,6 +274,7 @@ pipeline {
             vault-login.sh
 
             # APP credential
+            vault-decrypt-v2.sh config-template/vendors.yaml $CHART_DIR/secrets/vendors.yaml
             vault-decrypt-v2.sh config-template/config-$BUILD_ENV.yaml $CHART_DIR/secrets/config.yaml
 
             # SA credential

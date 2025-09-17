@@ -49,6 +49,7 @@ config-dev:
 	cp ./config-template/nginx.conf $(CHART_DIR)/secrets/
 
 	consul-template -once -vault-addr $(VAULT_ADDR) \
+			-template "./config-template/vendors.yaml:$(CHART_DIR)/secrets/vendors.yaml" \
 			-template "./config-template/config-dev.yaml:$(CHART_DIR)/secrets/config.yaml"
 
 
