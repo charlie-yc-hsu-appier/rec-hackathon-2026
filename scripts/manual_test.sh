@@ -8,8 +8,9 @@ SUBID="$2"
 W="$3"
 H="$4"
 
-# Create temporary file for response
-RESPONSE_FILE=$(mktemp)
+# Create temporary directory
+TMPDIR=$(mktemp -d)
+trap 'rm -r "$TMPDIR"' EXIT
 
 echo "=== Testing $VENDOR_KEY ($SUBID) - Expected: ${W}x${H} ==="
 
@@ -19,6 +20,7 @@ URL="http://127.0.0.1:8080/r/${VENDOR_KEY}?subid=${SUBID}&w=${W}&h=${H}&user_id=
 echo "Making request to: $URL"
 
 # Get response and status code
+RESPONSE_FILE="$TMPDIR/response.json"
 HTTP_CODE=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" "$URL")
 
 if [ "$HTTP_CODE" -ne 200 ]; then
@@ -27,7 +29,6 @@ if [ "$HTTP_CODE" -ne 200 ]; then
         echo "Response body:"
         cat "$RESPONSE_FILE"
     fi
-    rm -f "$RESPONSE_FILE"
     exit 1
 fi
 
@@ -37,7 +38,6 @@ echo "  ✅ Request successful (HTTP 200)"
 if [ "$VENDOR_KEY" = "keeta" ]; then
     echo "Keeta vendor detected - skipping image dimension validation"
     echo "  🎉 Keeta request successful!"
-    rm -f "$RESPONSE_FILE"
     exit 0
 fi
 
@@ -45,7 +45,7 @@ fi
 while read -r url; do
     if [ -n "$url" ]; then
         echo "Image: $url"
-        temp=$(mktemp)
+        temp=$(mktemp -p "$TMPDIR")
         if curl -s -L "$url" -o "$temp"; then
             dim=$(file "$temp" | grep -o '[0-9]\+x[0-9]\+' | tail -1)
             if [ -n "$dim" ]; then
@@ -61,18 +61,15 @@ while read -r url; do
                     else
                         echo "  ☑️  Not square. Skip validation since RM will rescale on the FE side. Suggest to check with TS team."
                     fi
-                    rm -f "$temp"
                     break
                 # Check for other dimensions
                 else
                     if [ "$w_actual" -eq "$W" ] && [ "$h_actual" -eq "$H" ]; then
                         echo "  ✅ Correct dimensions"
                         echo "  🎉 Found correct dimensions! Stopping validation."
-                        rm -f "$temp"
                         break
                     else
                         echo "  ❌ Wrong (expected ${W}x${H})"
-                        rm -f "$temp" "$RESPONSE_FILE"
                         exit 1
                     fi
                 fi
@@ -82,10 +79,5 @@ while read -r url; do
         else
             echo "  ⚠️  Failed to download"
         fi
-        rm -f "$temp"
     fi
 done < <(grep -o '"image":"[^"]*"' "$RESPONSE_FILE" | sed 's/"image":"//g' | sed 's/"//g')
-
-# Cleanup
-rm -f "$RESPONSE_FILE"
-echo ""
