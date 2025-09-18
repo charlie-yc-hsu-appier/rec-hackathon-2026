@@ -10,12 +10,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type VendorController struct {
+type Recommender struct {
 	vendorRegistry map[string]vendor.Client
 }
 
-func NewVendorController(vendorRegistry map[string]vendor.Client) *VendorController {
-	return &VendorController{
+func NewRecommender(vendorRegistry map[string]vendor.Client) *Recommender {
+	return &Recommender{
 		vendorRegistry: vendorRegistry,
 	}
 }
@@ -37,7 +37,7 @@ func NewVendorController(vendorRegistry map[string]vendor.Client) *VendorControl
 // @Failure      400 {object} map[string]string "Bad Request"
 // @Failure      500 {object} map[string]string "Internal Error"
 // @Router       /r/{vendor_key} [get]
-func (c *VendorController) Recommend(ctx *gin.Context) {
+func (c *Recommender) Recommend(ctx *gin.Context) {
 	var req vendor.Request
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("fail to bind query parameter, uri: %s", ctx.Request.RequestURI)

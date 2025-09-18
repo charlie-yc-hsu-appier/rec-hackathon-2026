@@ -186,6 +186,7 @@ Get vendor inl_corp indices for yaml configuration
 Get vendor subids from config api
   [Documentation]  Get subid mapping for all vendors from Config API campaigns
   ...              Returns a dictionary with vendor_name as key and subid as value
+  ...              Only processes campaigns where default_group contains "vendor_" regex pattern
   [Arguments]             ${yaml_content}         ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
 
   I have a config_api session
@@ -194,25 +195,34 @@ Get vendor subids from config api
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
   ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
   
-  # Get all campaign IDs
+  # Get all campaign IDs from experiments and filter by default_group
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
   Validate config api response  ${resp}  Experiments API error
   
-  # Extract and deduplicate campaign IDs
-  @{all_campaign_ids} =   Get Value From Json     ${resp.json()}          $.experiments[*].distributions[*].campaign_id
-  ${unique_campaign_ids} =  Remove Duplicates      ${all_campaign_ids}
+  # Filter campaign IDs by checking if any bucket has default_group containing "vendor_"
+  @{vendor_campaign_ids} =  Get Value From Json  ${resp.json()}  $.experiments[*].distributions[?(@.default_group =~ 'vendor_.*')].campaign_id
+
+  # Remove duplicates and empty values
+  ${unique_campaign_ids} =  Remove Duplicates      ${vendor_campaign_ids}
+  @{filtered_campaign_ids} =  Create List
+  FOR  ${campaign_id}  IN  @{unique_campaign_ids}
+    IF  '${campaign_id}' != '' and '${campaign_id}' != '${EMPTY}'
+      Append To List  ${filtered_campaign_ids}  ${campaign_id}
+    END
+  END
   
-  ${campaign_count} =     Get Length              ${unique_campaign_ids}
+  ${campaign_count} =     Get Length              ${filtered_campaign_ids}
   ${vendor_count} =       Get Length              ${vendors}
-  Log                     Searching subids across ${campaign_count} campaigns for ${vendor_count} vendors
+  Log                     Searching subids across ${campaign_count} vendor campaigns for ${vendor_count} vendors
+  Log                     Vendor campaigns found: ${filtered_campaign_ids}
   
   # Create vendor subid mapping
   &{vendor_subid_mapping} =  Create Dictionary
   
-  # For each vendor in YAML, try to find its subid in campaigns
+  # For each vendor in YAML, try to find its subid in filtered campaigns
   FOR  ${vendor_config}  IN  @{vendors}
     ${vendor_name} =      Get From Dictionary     ${vendor_config}    name
-    ${vendor_subid} =     Find vendor subid in campaigns  ${unique_campaign_ids}  ${vendor_name}
+    ${vendor_subid} =     Find vendor subid in campaigns  ${filtered_campaign_ids}  ${vendor_name}
     
     Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
     
