@@ -39,18 +39,18 @@ func (m *MockStrategy) EXPECT() *MockStrategyMockRecorder {
 	return m.recorder
 }
 
-// GeneratePatchedURL mocks base method.
-func (m *MockStrategy) GeneratePatchedURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error) {
+// GenerateURL mocks base method.
+func (m *MockStrategy) GenerateURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GeneratePatchedURL", urlPattern, params)
+	ret := m.ctrl.Call(m, "GenerateURL", urlPattern, params)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(map[string]string)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GeneratePatchedURL indicates an expected call of GeneratePatchedURL.
-func (mr *MockStrategyMockRecorder) GeneratePatchedURL(urlPattern, params any) *gomock.Call {
+// GenerateURL indicates an expected call of GenerateURL.
+func (mr *MockStrategyMockRecorder) GenerateURL(urlPattern, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeneratePatchedURL", reflect.TypeOf((*MockStrategy)(nil).GeneratePatchedURL), urlPattern, params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateURL", reflect.TypeOf((*MockStrategy)(nil).GenerateURL), urlPattern, params)
 }
