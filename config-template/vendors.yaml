@@ -3,6 +3,27 @@ vendors:
     request_url: "https://api.linkmine.co.kr/coupang/reco/v2/?app_code={subid}&device_id={user_id_lower}&device_lmt=0&imp_imageSize={width}x{height}&app_bundleId=&imp_adType={adtype}"
     tracking_url: "{product_url}&param1={click_id_base64}"
     with_proxy: true
+    request:
+      url: "https://api.linkmine.co.kr/coupang/reco/v2/"
+      queries:
+        - key: app_code
+          value: "{subid}"
+        - key: device_id
+          value: "{user_id_lower}"
+        - key: device_lmt
+          value: 0
+        - key: imp_imageSize
+          value: "{width}x{height}"
+        - key: app_bundleId
+          value: ""
+        - key: imp_adType
+          value: "{adtype}"
+    tracking:
+      url: "{product_url}"
+      queries:
+        - key: param1
+          value: "{click_id_base64}"
+
   - name: replace
     request_url: "https://api-gateway.coupang.com/v2/providers/affiliate_open_api/apis/openapi/v1/products/reco?deviceId={user_id_lower}&imageSize={width}x{height}&subId={subid}"
     tracking_url: "https://click.adshot.network/trk?click_id={click_id_base64}&adid={user_id_lower}&land_url={encoded_product_url}"
@@ -11,43 +32,193 @@ vendors:
     secret_key: {{ .Data.data.secret_key }}
     {{- end }}
     with_proxy: true
+    request:
+      url: "https://api-gateway.coupang.com/v2/providers/affiliate_open_api/apis/openapi/v1/products/reco"
+      queries:
+        - key: deviceId
+          value: "{user_id_lower}"
+        - key: imageSize
+          value: "{width}x{height}"
+        - key: subId
+          value: "{subid}"
+    tracking:
+      url: "https://click.adshot.network/trk"
+      queries:
+        - key: click_id
+          value: "{click_id_base64}"
+        - key: adid
+          value: "{user_id_lower}"
+        - key: land_url
+          value: "{encoded_product_url}"
+
+
   - name: inl_corp_0
     request_url: "https://adapi.inlcorp.com/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://adapi.inlcorp.com/cou/api_reco.php"
+      queries:
+        - key: code
+          value: "{subid}"
+        - key: adid
+          value: "{user_id_lower}"
+        - key: click_id
+          value: "{click_id_base64}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: inl_corp_1
     request_url: "https://rco.mjbiz.co.kr/reco-js?trackingCode=AF3617420&subId={subid}&deviceId={user_id_lower}&click_id={click_id_base64}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://rco.mjbiz.co.kr/reco-js"
+      queries:
+        - key: trackingCode
+          value: AF3617420
+        - key: subId
+          value: "{subid}"
+        - key: deviceId
+          value: "{user_id_lower}"
+        - key: click_id
+          value: "{click_id_base64}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: inl_corp_2
     request_url: "https://rco.adiostech.com/reco-js?trackingCode=AF7256767&subId={subid}&deviceId={user_id_lower}&click_id={click_id_base64}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://rco.adiostech.com/reco-js"
+      queries:
+        - key: trackingCode
+          value: AF7256767
+        - key: subId
+          value: "{subid}"
+        - key: deviceId
+          value: "{user_id_lower}"
+        - key: click_id
+          value: "{click_id_base64}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: inl_corp_3
     request_url: "https://api.ootoo.co.kr/cou/api_reco.php?code={subid}&type=json&click_log=1&click_id={click_id_base64}&adid={user_id_lower}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://api.ootoo.co.kr/cou/api_reco.php"
+      queries:
+        - key: code
+          value: "{subid}"
+        - key: type
+          value: json
+        - key: click_log
+          value: 1
+        - key: click_id
+          value: "{click_id_base64}"
+        - key: adid
+          value: "{user_id_lower}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: inl_corp_4
     request_url: "https://cdw.adsrv.co.kr/reco?subId={subid}&deviceId={user_id_lower}&click_id={click_id_base64}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://cdw.adsrv.co.kr/reco"
+      queries:
+        - key: subId
+          value: "{subid}"
+        - key: deviceId
+          value: "{user_id_lower}"
+        - key: click_id
+          value: "{click_id_base64}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: inl_corp_5
     request_url: "https://api.adzet.co.kr/cou/api_reco.php?code={subid}&adid={user_id_lower}&click_id={click_id_base64}&imageSize={width}x{height}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://api.adzet.co.kr/cou/api_reco.php"
+      queries:
+        - key: code
+          value: "{subid}"
+        - key: adid
+          value: "{user_id_lower}"
+        - key: click_id
+          value: "{click_id_base64}"
+        - key: imageSize
+          value: "{width}x{height}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: inl_corp_6
     request_url: "https://api.mobad.kr/cou/api_reco.php?code={subid}&click_log=1&click_id={click_id_base64}&adid={user_id_lower}"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://api.mobad.kr/cou/api_reco.php"
+      queries:
+        - key: code
+          value: "{subid}"
+        - key: click_log
+          value: 1
+        - key: click_id
+          value: "{click_id_base64}"
+        - key: adid
+          value: "{user_id_lower}"
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: adpopcorn
     request_url: "https://ssp-ext-proxy.adpopcorn.com/coupang/reco?identifier={user_id_lower}&subId={subid}&imageSize={width}x{height}"
     tracking_url: "{product_url}&subparam={click_id_base64}"
     with_proxy: true
     user_agent: tzyu.net
+    request:
+      url: "https://ssp-ext-proxy.adpopcorn.com/coupang/reco"
+      queries:
+        - key: identifier
+          value: "{user_id_lower}"
+        - key: subId
+          value: "{subid}"
+        - key: imageSize
+          value: "{width}x{height}"
+    tracking:
+      url: "{product_url}"
+      queries:
+        - key: subparam
+          value: "{click_id_base64}"
   - name: adpacker
     request_url: "https://ad.n-bridge.io/reco/{subid}?ssp_click_id={click_id_base64}&nbr_sub_media={partner_id}&nbr_gaid={user_id_lower}&nbr_width={width}&nbr_height={height}&nbr_ad_type=3&nbr_lmt=0"
     tracking_url: "{product_url}"
     with_proxy: true
+    request:
+      url: "https://ad.n-bridge.io/reco/{subid}"
+      queries:
+        - key: ssp_click_id
+          value: "{click_id_base64}"
+        - key: nbr_sub_media
+          value: "{partner_id}"
+        - key: nbr_gaid
+          value: "{user_id_lower}"
+        - key: nbr_width
+          value: "{width}"
+        - key: nbr_height
+          value: "{height}"
+        - key: nbr_ad_type
+          value: 3
+        - key: nbr_lmt
+          value: 0
+    tracking:
+      url: "{product_url}"
+      queries: []
   - name: keeta
     # query parameters handled in code to support keeta's auth mechanism
     request_url: "https://adgrowth.mykeeta.com/api/rl-recommend"
@@ -59,3 +230,9 @@ vendors:
     s_ca_app: {{ .Data.data.s_ca_app }}
     s_ca_secret: {{ .Data.data.s_ca_secret }}
     {{- end }}
+    request:
+      url: "https://adgrowth.mykeeta.com/api/rl-recommend"
+      queries: []
+    tracking:
+      url: "{product_url}"
+      queries: []

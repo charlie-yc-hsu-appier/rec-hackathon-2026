@@ -21,16 +21,29 @@ type VendorConfig struct {
 }
 
 type Vendor struct {
-	Name         string `mapstructure:"name"`
-	RequestURL   string `mapstructure:"request_url"`
-	TrackingURL  string `mapstructure:"tracking_url"`
-	WithProxy    bool   `mapstructure:"with_proxy"`
-	AccessKey    string `mapstructure:"access_key"`
-	SecretKey    string `mapstructure:"secret_key"`
-	UserAgent    string `mapstructure:"user_agent"`
-	SceneType    string `mapstructure:"scene_type"`
-	Ver          string `mapstructure:"ver"`
-	ChannelToken string `mapstructure:"channel_token"`
-	SCaApp       string `mapstructure:"s_ca_app"`
-	SCaSecret    string `mapstructure:"s_ca_secret"`
+	Name string `mapstructure:"name"`
+	// TODO remove unused RequestURL and TrackingURL
+	RequestURL   string     `mapstructure:"request_url"`
+	TrackingURL  string     `mapstructure:"tracking_url"`
+	WithProxy    bool       `mapstructure:"with_proxy"`
+	AccessKey    string     `mapstructure:"access_key"`
+	SecretKey    string     `mapstructure:"secret_key"`
+	UserAgent    string     `mapstructure:"user_agent"`
+	SceneType    string     `mapstructure:"scene_type"`
+	Ver          string     `mapstructure:"ver"`
+	ChannelToken string     `mapstructure:"channel_token"`
+	SCaApp       string     `mapstructure:"s_ca_app"`
+	SCaSecret    string     `mapstructure:"s_ca_secret"`
+	Request      URLPattern `mapstructure:"request"`
+	Tracking     URLPattern `mapstructure:"tracking"`
+}
+
+type URLPattern struct {
+	URL     string  `mapstructure:"url"`
+	Queries []Query `mapstructure:"queries"`
+}
+
+type Query struct {
+	Key   string `mapstructure:"key"`
+	Value string `mapstructure:"value"`
 }
