@@ -24,6 +24,10 @@ type Params struct {
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=url
+
+// Strategy defines the contract for URL generation.
+// Implementations of GenerateURL should return the base URL as a string,
+// and a map of query parameters.
 type Strategy interface {
 	GenerateURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error)
 }

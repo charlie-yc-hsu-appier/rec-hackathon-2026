@@ -14,7 +14,7 @@ type KeetaRequest struct {
 	ChannelToken string
 }
 
-// GenerateRequestURL generates the request URL for keeta vendor.
+// GenerateURL generates the request URL for keeta vendor.
 //
 // AI-26810: The parameters in the URL query string must be added in the order of their dictionary (alphabetical) keys,
 // to facilitate subsequent signature parameter processing.

@@ -11,7 +11,7 @@ vendors:
         - key: device_id
           value: "{user_id_lower}"
         - key: device_lmt
-          value: 0
+          value: "0"
         - key: imp_imageSize
           value: "{width}x{height}"
         - key: app_bundleId
@@ -76,7 +76,7 @@ vendors:
       url: "https://rco.mjbiz.co.kr/reco-js"
       queries:
         - key: trackingCode
-          value: AF3617420
+          value: "AF3617420"
         - key: subId
           value: "{subid}"
         - key: deviceId
@@ -94,7 +94,7 @@ vendors:
       url: "https://rco.adiostech.com/reco-js"
       queries:
         - key: trackingCode
-          value: AF7256767
+          value: "AF7256767"
         - key: subId
           value: "{subid}"
         - key: deviceId
@@ -114,9 +114,9 @@ vendors:
         - key: code
           value: "{subid}"
         - key: type
-          value: json
+          value: "json"
         - key: click_log
-          value: 1
+          value: "1"
         - key: click_id
           value: "{click_id_base64}"
         - key: adid
@@ -168,7 +168,7 @@ vendors:
         - key: code
           value: "{subid}"
         - key: click_log
-          value: 1
+          value: "1"
         - key: click_id
           value: "{click_id_base64}"
         - key: adid
@@ -213,9 +213,9 @@ vendors:
         - key: nbr_height
           value: "{height}"
         - key: nbr_ad_type
-          value: 3
+          value: "3"
         - key: nbr_lmt
-          value: 0
+          value: "0"
     tracking:
       url: "{product_url}"
       queries: []
