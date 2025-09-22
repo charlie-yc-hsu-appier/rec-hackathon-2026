@@ -7,8 +7,10 @@ import (
 )
 
 const (
-	headerSiteID = "x-rec-siteid"
-	headerOID    = "x-rec-oid"
+	headerSiteID   = "x-rec-siteid"
+	headerOID      = "x-rec-oid"
+	paramVendorKey = "vendor_key"
+	querySubID     = "subid"
 )
 
 type requestInfoMiddleware struct{}
@@ -28,6 +30,8 @@ func (m *requestInfoMiddleware) buildRequestInfo(c *gin.Context) telemetry.Reque
 	return telemetry.RequestInfo{
 		SiteID: c.GetHeader(headerSiteID),
 		OID:    c.GetHeader(headerOID),
+		Vendor: c.Param(paramVendorKey),
+		SubID:  c.Query(querySubID),
 	}
 }
 

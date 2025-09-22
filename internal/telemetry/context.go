@@ -7,6 +7,8 @@ import (
 type RequestInfo struct {
 	SiteID string
 	OID    string
+	Vendor string
+	SubID  string
 }
 
 type reqInfoKey struct{}
