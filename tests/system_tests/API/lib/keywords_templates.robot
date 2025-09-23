@@ -58,8 +58,13 @@ Test vendors from yaml configuration
     ${vendor_subid} =       Get From Dictionary     ${vendor_subid_mapping}  ${vendor_name}  default=${EMPTY}
 
     # Extract parameters from vendor configuration
-    ${request_url} =        Get From Dictionary     ${vendor_config}    request_url
-    ${tracking_url} =       Get From Dictionary     ${vendor_config}    tracking_url
+    # Use structured request and tracking configuration
+    ${request_config} =     Get From Dictionary     ${vendor_config}    request
+    ${request_url} =        Get From Dictionary     ${request_config}   url
+    
+    ${tracking_config} =    Get From Dictionary     ${vendor_config}    tracking
+    ${tracking_url} =       Get From Dictionary     ${tracking_config}  url
+    ${tracking_queries} =   Get From Dictionary     ${tracking_config}  queries
 
     # Auto-select test dimensions and vendor-specific parameters
     # Sizes: 300x300, 1200x627, 1200x600
@@ -76,8 +81,8 @@ Test vendors from yaml configuration
       ${adtype} =     Get From Dictionary     ${dimensions}   adtype
     END
 
-    # Parse tracking URL to get parameter info
-    ${tracking_config} =    Parse yaml tracking url template  ${tracking_url}  ${vendor_name}
+    # Parse tracking configuration
+    ${tracking_config} =    Parse tracking config  ${tracking_queries}  ${vendor_name}
     ${param_name} =         Get From Dictionary     ${tracking_config}  param_name
     ${uses_base64} =        Get From Dictionary     ${tracking_config}  uses_base64
 
