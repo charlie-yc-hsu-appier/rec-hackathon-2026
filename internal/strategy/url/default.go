@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	MacroRegExp = regexp.MustCompile(`\{[^}]*\}`)
+	macroRegExp = regexp.MustCompile(`\{[^}]*\}`)
 )
 
 // Default Strategy: Replace macros in URL and query values with values from Params
@@ -49,7 +49,7 @@ func (s *Default) GenerateURL(urlPattern config.URLPattern, params Params) (stri
 }
 
 func (s *Default) replaceMacros(str string, params Params) (string, error) {
-	matches := MacroRegExp.FindAllString(str, -1)
+	matches := macroRegExp.FindAllString(str, -1)
 	for _, macro := range matches {
 		value, err := s.getMacroValue(macro, params)
 		if err != nil {
@@ -93,9 +93,6 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 		}
 		return strconv.Itoa(params.AdType), nil
 	case "{partner_id}":
-		if params.PartnerID == "" {
-			return "", fmt.Errorf("PartnerID not provided")
-		}
 		return params.PartnerID, nil
 	case "{subid}":
 		if params.SubID == "" {

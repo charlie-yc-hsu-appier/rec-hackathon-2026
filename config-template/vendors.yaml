@@ -230,6 +230,7 @@ vendors:
     s_ca_app: {{ .Data.data.s_ca_app }}
     s_ca_secret: {{ .Data.data.s_ca_secret }}
     {{- end }}
+    # query parameters handled in code to support keeta's auth mechanism
     request:
       url: "https://adgrowth.mykeeta.com/api/rl-recommend"
       queries: []
