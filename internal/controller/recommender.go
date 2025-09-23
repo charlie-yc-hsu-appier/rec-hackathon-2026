@@ -40,7 +40,7 @@ func NewRecommender(vendorRegistry map[string]vendor.Client) *Recommender {
 func (c *Recommender) Recommend(ctx *gin.Context) {
 	var req vendor.Request
 	if err := ctx.ShouldBindQuery(&req); err != nil {
-		log.WithContext(ctx.Request.Context()).WithError(err).Errorf("fail to bind query parameter, uri: %s", ctx.Request.RequestURI)
+		log.WithContext(ctx).WithError(err).Errorf("fail to bind query parameter, uri: %s", ctx.Request.RequestURI)
 		handleBadRequest(ctx, err)
 		return
 	}
@@ -49,14 +49,14 @@ func (c *Recommender) Recommend(ctx *gin.Context) {
 	vendorKey := ctx.Param("vendor_key")
 	vendorClient := c.vendorRegistry[vendorKey]
 	if vendorClient == nil {
-		log.WithContext(ctx.Request.Context()).Errorf("Invalid vendor key: %s", vendorKey)
+		log.WithContext(ctx).Errorf("Invalid vendor key: %s", vendorKey)
 		handleBadRequest(ctx, fmt.Errorf("Vendor key '%s' not supported", vendorKey))
 		return
 	}
 
-	response, err := vendorClient.GetUserRecommendationItems(ctx.Request.Context(), req)
+	response, err := vendorClient.GetUserRecommendationItems(ctx, req)
 	if err != nil {
-		log.WithContext(ctx.Request.Context()).Errorf("Fail to recommend any products. err: %v", err)
+		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
 		handleInternalServerError(ctx, fmt.Errorf("Fail to recommend any products for vendor %s. err: %w", vendorKey, err))
 		return
 	}

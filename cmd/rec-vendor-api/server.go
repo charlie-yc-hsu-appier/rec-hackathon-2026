@@ -53,6 +53,9 @@ func main() {
 	}()
 
 	r := gin.New()
+	// MUST be set to true for getting value from context
+	r.ContextWithFallback = true
+
 	r.Use(middleware.RequestInfo())
 
 	if cfg.EnableGinLogger {
