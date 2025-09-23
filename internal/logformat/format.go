@@ -12,7 +12,7 @@ type LogFormat struct {
 
 	SiteId    string `json:"sid"`
 	OID       string `json:"oid"`
-	VendorKey string `json:"vendor"`
+	VendorKey string `json:"vendor_key"`
 	SubID     string `json:"subid"`
 	BidObjID  string `json:"bid_obj_id"`
 	ReqID     string `json:"request_id"`
