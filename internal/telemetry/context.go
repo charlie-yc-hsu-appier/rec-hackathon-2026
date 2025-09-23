@@ -5,10 +5,13 @@ import (
 )
 
 type RequestInfo struct {
-	SiteID string
-	OID    string
-	Vendor string
-	SubID  string
+	SiteID    string
+	OID       string
+	VendorKey string
+	SubID     string
+	TraceID   string
+	BidObjID  string
+	ReqID     string
 }
 
 type reqInfoKey struct{}

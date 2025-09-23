@@ -4,11 +4,14 @@ import (
 	"rec-vendor-api/internal/telemetry"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
 	headerSiteID   = "x-rec-siteid"
 	headerOID      = "x-rec-oid"
+	headerBidObjID = "x-rec-bidobjid"
+	headerReqID    = "x-request-id"
 	paramVendorKey = "vendor_key"
 	querySubID     = "subid"
 )
@@ -27,11 +30,20 @@ func (m *requestInfoMiddleware) apply(c *gin.Context) {
 }
 
 func (m *requestInfoMiddleware) buildRequestInfo(c *gin.Context) telemetry.RequestInfo {
+	traceId := ""
+	spanCtx := trace.SpanContextFromContext(c)
+	if spanCtx.HasTraceID() && spanCtx.IsSampled() {
+		traceId = spanCtx.TraceID().String()
+	}
+
 	return telemetry.RequestInfo{
-		SiteID: c.GetHeader(headerSiteID),
-		OID:    c.GetHeader(headerOID),
-		Vendor: c.Param(paramVendorKey),
-		SubID:  c.Query(querySubID),
+		SiteID:    c.GetHeader(headerSiteID),
+		OID:       c.GetHeader(headerOID),
+		VendorKey: c.Param(paramVendorKey),
+		SubID:     c.Query(querySubID),
+		TraceID:   traceId,
+		BidObjID:  c.GetHeader(headerBidObjID),
+		ReqID:     c.GetHeader(headerReqID),
 	}
 }
 
