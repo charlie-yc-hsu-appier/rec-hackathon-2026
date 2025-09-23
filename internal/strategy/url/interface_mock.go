@@ -40,13 +40,12 @@ func (m *MockStrategy) EXPECT() *MockStrategyMockRecorder {
 }
 
 // GenerateURL mocks base method.
-func (m *MockStrategy) GenerateURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error) {
+func (m *MockStrategy) GenerateURL(urlPattern config.URLPattern, params Params) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateURL", urlPattern, params)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(map[string]string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GenerateURL indicates an expected call of GenerateURL.
