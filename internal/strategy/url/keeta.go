@@ -18,7 +18,7 @@ type KeetaRequest struct {
 //
 // AI-26810: The parameters in the URL query string must be added in the order of their dictionary (alphabetical) keys,
 // to facilitate subsequent signature parameter processing.
-func (s *KeetaRequest) GenerateURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error) {
+func (s *KeetaRequest) GenerateURL(urlPattern config.URLPattern, params Params) (string, error) {
 	queryParametersMap := map[string]string{
 		"reqId":        urlpkg.QueryEscape(params.ClickID),
 		"ip":           urlpkg.QueryEscape(params.ClientIP),
@@ -51,5 +51,5 @@ func (s *KeetaRequest) GenerateURL(urlPattern config.URLPattern, params Params) 
 	if queryString != "" {
 		url = url + "?" + queryString
 	}
-	return url, map[string]string{}, nil
+	return url, nil
 }

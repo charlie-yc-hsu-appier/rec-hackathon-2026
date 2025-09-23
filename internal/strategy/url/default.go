@@ -2,6 +2,7 @@ package url
 
 import (
 	"fmt"
+	urlpkg "net/url"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/strategy/utils"
 	"regexp"
@@ -16,26 +17,35 @@ var (
 // Default Strategy: Replace macros in URL and query values with values from Params
 type Default struct{}
 
-func (s *Default) GenerateURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error) {
+func (s *Default) GenerateURL(urlPattern config.URLPattern, params Params) (string, error) {
 	url := urlPattern.URL
 	queries := urlPattern.Queries
 
 	url, err := s.replaceMacros(url, params)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
+	// by parsing the url, we can handle
+	//   - existing query parameters in the url
+	//   - url encoding of replaced macro in url/path
+	parsedURL, err := urlpkg.Parse(url)
+	if err != nil {
+		return "", err
+	}
+
+	q := parsedURL.Query()
 	// note that only the values of the queries can have macros
-	queryMap := make(map[string]string)
 	for _, query := range queries {
 		value, err := s.replaceMacros(query.Value, params)
 		if err != nil {
-			return "", nil, err
+			return "", err
 		}
-		queryMap[query.Key] = value
+		q.Set(query.Key, value)
 	}
+	parsedURL.RawQuery = q.Encode()
 
-	return url, queryMap, nil
+	return parsedURL.String(), nil
 }
 
 func (s *Default) replaceMacros(str string, params Params) (string, error) {

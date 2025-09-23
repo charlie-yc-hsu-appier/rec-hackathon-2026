@@ -15,11 +15,10 @@ func TestKeetaRequest(t *testing.T) {
 	}
 
 	tt := []struct {
-		name          string
-		urlPattern    config.URLPattern
-		params        Params
-		wantURL       string
-		wantParamsMap map[string]string
+		name       string
+		urlPattern config.URLPattern
+		params     Params
+		wantURL    string
 	}{
 		{
 			name: "GIVEN all params present THEN expect full URL with all params in dictionary order",
@@ -33,8 +32,7 @@ func TestKeetaRequest(t *testing.T) {
 				Latitude:        "67.89",
 				Longitude:       "123.45",
 			},
-			wantURL:       "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=67.89&lon=123.45&reqId=FAKE-CLICK-ID&sceneType=FAKE-SCENE-TYPE&ver=0",
-			wantParamsMap: map[string]string{},
+			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=67.89&lon=123.45&reqId=FAKE-CLICK-ID&sceneType=FAKE-SCENE-TYPE&ver=0",
 		},
 		{
 			name: "GIVEN some params empty THEN expect URL with empty values in correct order",
@@ -48,8 +46,7 @@ func TestKeetaRequest(t *testing.T) {
 				Latitude:        "",
 				Longitude:       "56.78",
 			},
-			wantURL:       "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip&lat&lon=56.78&reqId&sceneType=FAKE-SCENE-TYPE&ver=0",
-			wantParamsMap: map[string]string{},
+			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip&lat&lon=56.78&reqId&sceneType=FAKE-SCENE-TYPE&ver=0",
 		},
 		{
 			name: "GIVEN special characters in params THEN expect URL encoding is correct",
@@ -63,17 +60,15 @@ func TestKeetaRequest(t *testing.T) {
 				Latitude:        "12.34",
 				Longitude:       "56.78",
 			},
-			wantURL:       "https://host.keeta/api/recommend?bizType=bType&campaignId=camp+id&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=12.34&lon=56.78&reqId=cl+ick%40id&sceneType=FAKE-SCENE-TYPE&ver=0",
-			wantParamsMap: map[string]string{},
+			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=camp+id&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=12.34&lon=56.78&reqId=cl+ick%40id&sceneType=FAKE-SCENE-TYPE&ver=0",
 		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			gotURL, gotParamsMap, err := keeta.GenerateURL(tc.urlPattern, tc.params)
+			gotURL, err := keeta.GenerateURL(tc.urlPattern, tc.params)
 			require.NoError(t, err)
 			require.Equal(t, tc.wantURL, gotURL)
-			require.Equal(t, tc.wantParamsMap, gotParamsMap)
 		})
 	}
 }

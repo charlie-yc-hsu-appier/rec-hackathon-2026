@@ -29,5 +29,5 @@ type Params struct {
 // Implementations of GenerateURL should return the base URL as a string,
 // and a map of query parameters.
 type Strategy interface {
-	GenerateURL(urlPattern config.URLPattern, params Params) (string, map[string]string, error)
+	GenerateURL(urlPattern config.URLPattern, params Params) (string, error)
 }
