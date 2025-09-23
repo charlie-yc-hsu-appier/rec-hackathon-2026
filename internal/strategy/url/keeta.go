@@ -51,5 +51,5 @@ func (s *KeetaRequest) GenerateURL(urlPattern config.URLPattern, params Params) 
 	if queryString != "" {
 		url = url + "?" + queryString
 	}
-	return url, nil, nil
+	return url, map[string]string{}, nil
 }

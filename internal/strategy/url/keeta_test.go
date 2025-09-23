@@ -33,7 +33,8 @@ func TestKeetaRequest(t *testing.T) {
 				Latitude:        "67.89",
 				Longitude:       "123.45",
 			},
-			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=67.89&lon=123.45&reqId=FAKE-CLICK-ID&sceneType=FAKE-SCENE-TYPE&ver=0",
+			wantURL:       "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=67.89&lon=123.45&reqId=FAKE-CLICK-ID&sceneType=FAKE-SCENE-TYPE&ver=0",
+			wantParamsMap: map[string]string{},
 		},
 		{
 			name: "GIVEN some params empty THEN expect URL with empty values in correct order",
@@ -47,7 +48,8 @@ func TestKeetaRequest(t *testing.T) {
 				Latitude:        "",
 				Longitude:       "56.78",
 			},
-			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip&lat&lon=56.78&reqId&sceneType=FAKE-SCENE-TYPE&ver=0",
+			wantURL:       "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip&lat&lon=56.78&reqId&sceneType=FAKE-SCENE-TYPE&ver=0",
+			wantParamsMap: map[string]string{},
 		},
 		{
 			name: "GIVEN special characters in params THEN expect URL encoding is correct",
@@ -61,7 +63,8 @@ func TestKeetaRequest(t *testing.T) {
 				Latitude:        "12.34",
 				Longitude:       "56.78",
 			},
-			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=camp+id&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=12.34&lon=56.78&reqId=cl+ick%40id&sceneType=FAKE-SCENE-TYPE&ver=0",
+			wantURL:       "https://host.keeta/api/recommend?bizType=bType&campaignId=camp+id&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=12.34&lon=56.78&reqId=cl+ick%40id&sceneType=FAKE-SCENE-TYPE&ver=0",
+			wantParamsMap: map[string]string{},
 		},
 	}
 
