@@ -40,7 +40,7 @@ type Vendor struct {
 
 type URLPattern struct {
 	URL     string  `mapstructure:"url"`
-	Queries []Query `mapstructure:"queries"`
+	Queries []Query `mapstructure:"queries,omitempty"`
 }
 
 type Query struct {
