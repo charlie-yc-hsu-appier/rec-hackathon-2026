@@ -68,6 +68,29 @@ func TestDefault(t *testing.T) {
 			expectedErr: "subID not provided",
 		},
 		{
+			name: "GIVEN url with existing query parameters THEN return the expected URL with existing and parameters from URLPattern config",
+			urlPattern: config.URLPattern{
+				URL: "https://example.com/image/user/abc?imp_adType=1",
+				Queries: []config.Query{
+					{Key: "app_bundleId", Value: "com.example.app"},
+				},
+			},
+			wantURL: "https://example.com/image/user/abc?app_bundleId=com.example.app&imp_adType=1",
+		},
+		{
+			name: "GIVEN url with escapable characters (e.g. `space`) THEN return the expected escaped URL",
+			urlPattern: config.URLPattern{
+				URL: "https://example.com/image 2/user/abc",
+			},
+			params: Params{
+				UserID:    "User",
+				ImgWidth:  50,
+				ImgHeight: 50,
+			},
+			wantURL: "https://example.com/image%202/user/abc",
+		},
+		// tracking
+		{
 			name: "GIVEN valid parameters THEN return the expected tracking URL",
 			urlPattern: config.URLPattern{
 				URL: "{product_url}",
@@ -96,27 +119,81 @@ func TestDefault(t *testing.T) {
 			},
 			wantURL: "https://product.com/item123?click_param=test",
 		},
+		// keeta request
 		{
-			name: "GIVEN url with existing query parameters THEN return the expected URL with existing and parameters from URLPattern config",
+			name: "GIVEN all params present THEN expect full URL with all params in dictionary order",
 			urlPattern: config.URLPattern{
-				URL: "https://example.com/image/user/abc?imp_adType=1",
+				URL: "https://host.keeta/api/recommend",
 				Queries: []config.Query{
-					{Key: "app_bundleId", Value: "com.example.app"},
+					{Key: "reqId", Value: "{click_id}"},
+					{Key: "ip", Value: "{client_ip}"},
+					{Key: "campaignId", Value: "{keeta_campaign_id}"},
+					{Key: "lat", Value: "{latitude}"},
+					{Key: "lon", Value: "{longitude}"},
+					{Key: "sceneType", Value: "FAKE-SCENE-TYPE"},
+					{Key: "ver", Value: "0"},
+					{Key: "channelToken", Value: "FAKE-TOKEN"},
+					{Key: "bizType", Value: "bType"},
 				},
 			},
-			wantURL: "https://example.com/image/user/abc?app_bundleId=com.example.app&imp_adType=1",
+			params: Params{
+				ClickID:         "FAKE-CLICK-ID",
+				ClientIP:        "127.0.0.1",
+				KeetaCampaignID: "FAKE-KEETA-CAMPAIGN",
+				Latitude:        "67.89",
+				Longitude:       "123.45",
+			},
+			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=67.89&lon=123.45&reqId=FAKE-CLICK-ID&sceneType=FAKE-SCENE-TYPE&ver=0",
 		},
 		{
-			name: "GIVEN url with escapable characters (e.g. `space`) THEN return the expected escaped URL",
+			name: "GIVEN some params empty THEN expect URL with empty values in correct order",
 			urlPattern: config.URLPattern{
-				URL: "https://example.com/image 2/user/abc",
+				URL: "https://host.keeta/api/recommend",
+				Queries: []config.Query{
+					{Key: "reqId", Value: "{click_id}"},
+					{Key: "ip", Value: "{client_ip}"},
+					{Key: "campaignId", Value: "{keeta_campaign_id}"},
+					{Key: "lat", Value: "{latitude}"},
+					{Key: "lon", Value: "{longitude}"},
+					{Key: "sceneType", Value: "FAKE-SCENE-TYPE"},
+					{Key: "ver", Value: "0"},
+					{Key: "channelToken", Value: "FAKE-TOKEN"},
+					{Key: "bizType", Value: "bType"},
+				},
 			},
 			params: Params{
-				UserID:    "User",
-				ImgWidth:  50,
-				ImgHeight: 50,
+				ClickID:         "",
+				ClientIP:        "",
+				KeetaCampaignID: "FAKE-KEETA-CAMPAIGN",
+				Latitude:        "",
+				Longitude:       "56.78",
 			},
-			wantURL: "https://example.com/image%202/user/abc",
+			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=FAKE-KEETA-CAMPAIGN&channelToken=FAKE-TOKEN&ip=&lat=&lon=56.78&reqId=&sceneType=FAKE-SCENE-TYPE&ver=0",
+		},
+		{
+			name: "GIVEN special characters in params THEN expect URL encoding is correct",
+			urlPattern: config.URLPattern{
+				URL: "https://host.keeta/api/recommend",
+				Queries: []config.Query{
+					{Key: "reqId", Value: "{click_id}"},
+					{Key: "ip", Value: "{client_ip}"},
+					{Key: "campaignId", Value: "{keeta_campaign_id}"},
+					{Key: "lat", Value: "{latitude}"},
+					{Key: "lon", Value: "{longitude}"},
+					{Key: "sceneType", Value: "FAKE-SCENE-TYPE"},
+					{Key: "ver", Value: "0"},
+					{Key: "channelToken", Value: "FAKE-TOKEN"},
+					{Key: "bizType", Value: "bType"},
+				},
+			},
+			params: Params{
+				ClickID:         "cl ick@id",
+				ClientIP:        "127.0.0.1",
+				KeetaCampaignID: "camp id",
+				Latitude:        "12.34",
+				Longitude:       "56.78",
+			},
+			wantURL: "https://host.keeta/api/recommend?bizType=bType&campaignId=camp+id&channelToken=FAKE-TOKEN&ip=127.0.0.1&lat=12.34&lon=56.78&reqId=cl+ick%40id&sceneType=FAKE-SCENE-TYPE&ver=0",
 		},
 	}
 

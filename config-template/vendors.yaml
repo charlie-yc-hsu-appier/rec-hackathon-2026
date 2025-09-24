@@ -229,11 +229,28 @@ vendors:
     channel_token: {{ .Data.data.channel_token }}
     s_ca_app: {{ .Data.data.s_ca_app }}
     s_ca_secret: {{ .Data.data.s_ca_secret }}
-    {{- end }}
-    # query parameters handled in code to support keeta's auth mechanism
     request:
       url: "https://adgrowth.mykeeta.com/api/rl-recommend"
-      queries: []
+      queries:
+        - Key: "reqId"
+          Value: "{click_id}"
+        - Key: "ip"
+          Value: "{client_ip}"
+        - Key: "campaignId"
+          Value: "{keeta_campaign_id}"
+        - Key: "lat"
+          Value: "{latitude}"
+        - Key: "lon"
+          Value: "{longitude}"
+        - Key: "sceneType"
+          Value: {{ .Data.data.scene_type }}
+        - Key: "ver"
+          Value: {{ .Data.data.ver }}
+        - Key: "channelToken"
+          Value: {{ .Data.data.channel_token }}
+        - Key: "bizType"
+          Value: "bType"
+    {{- end }}
     tracking:
       url: "{product_url}"
       queries: []

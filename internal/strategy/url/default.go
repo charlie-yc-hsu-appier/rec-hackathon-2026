@@ -104,6 +104,19 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 			return "", fmt.Errorf("ProductURL not provided")
 		}
 		return params.ProductURL, nil
+	case "{keeta_campaign_id}":
+		if params.KeetaCampaignID == "" {
+			return "", fmt.Errorf("KeetaCampaignID not provided")
+		}
+		return params.KeetaCampaignID, nil
+	case "{click_id}":
+		return params.ClickID, nil
+	case "{client_ip}":
+		return params.ClientIP, nil
+	case "{latitude}":
+		return params.Latitude, nil
+	case "{longitude}":
+		return params.Longitude, nil
 	default:
 		return "", fmt.Errorf("unknown macro: %s", macro)
 	}
