@@ -262,62 +262,51 @@ Get vendor subid from campaign
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
   Validate config api response  ${resp}  Campaign ${campaign_id} API error
 
-  # Check if campaign has subids configuration
-  ${has_subids} =         Run Keyword And Return Status
-  ...                     Should Have Value In Json  ${resp.json()}  $.campaign.configs.subids
+  # Check if campaign has subid_buckets configuration
+  ${has_subid_buckets} =  Run Keyword And Return Status
+  ...                     Should Have Value In Json  ${resp.json()}  $.campaign.configs.subid_buckets
 
   ${subid} =              Set Variable            ${EMPTY}
-  IF  ${has_subids}
-    ${subids_obj} =       Get Value From Json     ${resp.json()}      $.campaign.configs.subids
-    ${subids_dict} =      Set Variable            ${subids_obj}[0]
+  IF  ${has_subid_buckets}
+    ${subid_buckets_obj} =  Get Value From Json   ${resp.json()}      $.campaign.configs.subid_buckets
+    ${subid_buckets_list} =  Set Variable         ${subid_buckets_obj}[0]
     
-    # Try exact match first
-    ${has_exact_match} =  Run Keyword And Return Status
-    ...                   Dictionary Should Contain Key  ${subids_dict}  ${vendor_name}
+    # Search through subid_buckets list for matching vendor names
+    @{matching_keys} =    Create List
     
-    IF  ${has_exact_match}
-      ${vendor_subid_array} =  Get From Dictionary  ${subids_dict}      ${vendor_name}
-      ${subid} =          Extract subid from array  ${vendor_subid_array}
-      Log                 Found exact match for ${vendor_name}: ${subid}
-    ELSE
+    # Collect all keys that start with vendor_name
+    FOR  ${bucket_config}  IN  @{subid_buckets_list}
+      ${bucket_key} =     Get From Dictionary     ${bucket_config}    key
+      
+      # Try exact match first
+      IF  '${bucket_key}' == '${vendor_name}'
+        ${buckets} =      Get From Dictionary     ${bucket_config}    buckets
+        ${subid} =        Get From Dictionary     ${buckets[0]}       subid
+        Log               Found exact match for ${vendor_name}: ${subid}
+        BREAK
+      END
+      
       # Try partial match (e.g., inl_corp_1 matches inl_corp_1_1200x600)
-      ${subids_keys} =    Get Dictionary Keys      ${subids_dict}
-      @{matching_keys} =  Create List
-      
-      # Collect all keys that start with vendor_name
-      FOR  ${key}  IN  @{subids_keys}
-        ${is_partial_match} =  Run Keyword And Return Status
-        ...                    Should Start With   ${key}              ${vendor_name}
-        IF  ${is_partial_match}
-          Append To List  ${matching_keys}  ${key}
-        END
+      ${is_partial_match} =  Run Keyword And Return Status
+      ...                    Should Start With   ${bucket_key}       ${vendor_name}
+      IF  ${is_partial_match}
+        Append To List    ${matching_keys}      ${bucket_config}
       END
-      
-      # If we found matching keys, randomly select one
-      ${matching_count} =  Get Length  ${matching_keys}
-      IF  ${matching_count} > 0
-        ${random_index} =  Evaluate  random.randint(0, ${matching_count}-1)  random
-        ${selected_key} =  Get From List  ${matching_keys}  ${random_index}
-        ${vendor_subid_array} =  Get From Dictionary  ${subids_dict}  ${selected_key}
-        ${subid} =        Extract subid from array  ${vendor_subid_array}
-        Log               Found partial match for ${vendor_name} (randomly selected key: ${selected_key} from ${matching_keys}): ${subid}
-      END
+    END
+    
+    # If no exact match found but partial matches exist, randomly select one
+    IF  '${subid}' == '${EMPTY}' and @{matching_keys}
+      ${matching_count} =  Get Length            ${matching_keys}
+      ${random_index} =   Evaluate               random.randint(0, ${matching_count}-1)  random
+      ${selected_config} =  Get From List       ${matching_keys}    ${random_index}
+      ${selected_key} =   Get From Dictionary   ${selected_config}  key
+      ${buckets} =        Get From Dictionary   ${selected_config}  buckets
+      ${subid} =          Get From Dictionary   ${buckets[0]}       subid
+      Log                 Found partial match for ${vendor_name} (randomly selected key: ${selected_key}): ${subid}
     END
   END
 
   RETURN                  ${subid}
-
-
-Extract subid from array
-  [Documentation]  Helper to extract subID from vendor subid array
-  [Arguments]      ${subid_array}
-  
-  IF  ${subid_array}
-    ${subid} =    Get Value From Json     ${subid_array}  $[0].subID
-    RETURN        ${subid}[0]
-  ELSE
-    RETURN        ${EMPTY}
-  END
 
 
 Validate and generate safe vendor yaml configuration
