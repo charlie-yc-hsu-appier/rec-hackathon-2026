@@ -56,6 +56,9 @@ make portforward-dev
 
 # Open this on browser, and content should show up:
 http://localhost:8080/healthz
+
+# Manual test script
+./scripts/manual_test_all.sh
 ```
 
 ## Requester Strategy and Tracker Strategy
@@ -74,6 +77,7 @@ We use macros (placeholders) in our URL templates for dynamic replacement. At ru
 | `{bundle_id}`       | App bundle ID or empty for web       | `com.coupang.mobile`                   |
 | `{adtype}`          | The impression ad type               | `value=2(banner) and 3(native)`        |
 | `{partner_id}`      | Partner ID                           | `kakao_kr`                             |
+| `{subid}`           | Sub ID for coupang partners          | `650alldb2`                             |
 
 ### Supported Tracking URL Macros
 
