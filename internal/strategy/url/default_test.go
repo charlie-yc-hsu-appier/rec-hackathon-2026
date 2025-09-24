@@ -96,6 +96,28 @@ func TestDefault(t *testing.T) {
 			},
 			wantURL: "https://product.com/item123?click_param=test",
 		},
+		{
+			name: "GIVEN url with existing query parameters THEN return the expected URL with existing and parameters from URLPattern config",
+			urlPattern: config.URLPattern{
+				URL: "https://example.com/image/user/abc?imp_adType=1",
+				Queries: []config.Query{
+					{Key: "app_bundleId", Value: "com.example.app"},
+				},
+			},
+			wantURL: "https://example.com/image/user/abc?app_bundleId=com.example.app&imp_adType=1",
+		},
+		{
+			name: "GIVEN url with escapable characters (e.g. `space`) THEN return the expected escaped URL",
+			urlPattern: config.URLPattern{
+				URL: "https://example.com/image 2/user/abc",
+			},
+			params: Params{
+				UserID:    "User",
+				ImgWidth:  50,
+				ImgHeight: 50,
+			},
+			wantURL: "https://example.com/image%202/user/abc",
+		},
 	}
 
 	for _, tc := range tt {
