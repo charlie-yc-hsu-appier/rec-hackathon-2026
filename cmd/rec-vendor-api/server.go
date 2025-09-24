@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/controller"
+	logFormat "rec-vendor-api/internal/logformat"
 	"rec-vendor-api/internal/middleware"
 	"rec-vendor-api/internal/telemetry"
 	"rec-vendor-api/internal/vendor"
@@ -41,7 +42,7 @@ func main() {
 	if err := config.Load(*cf, cfg); err != nil {
 		log.Fatalf("Failed to load config, err: %v", err)
 	}
-	logkit.InitLogging(cfg.Logging, &logkit.BaseLogFormat{})
+	logkit.InitLogging(cfg.Logging, &logFormat.LogFormat{})
 
 	// Init tracer
 	shutdownFunc := initTracer(cfg.Tracing)
@@ -52,6 +53,9 @@ func main() {
 	}()
 
 	r := gin.New()
+	// MUST be set to true for getting value from context
+	r.ContextWithFallback = true
+
 	r.Use(middleware.RequestInfo())
 
 	if cfg.EnableGinLogger {

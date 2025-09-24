@@ -54,9 +54,9 @@ func (c *Recommender) Recommend(ctx *gin.Context) {
 		return
 	}
 
-	response, err := vendorClient.GetUserRecommendationItems(ctx.Request.Context(), req)
+	response, err := vendorClient.GetUserRecommendationItems(ctx, req)
 	if err != nil {
-		log.WithContext(ctx).WithFields(log.Fields{"vendor": vendorKey}).Errorf("Fail to recommend any products. err: %v", err)
+		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
 		handleInternalServerError(ctx, fmt.Errorf("Fail to recommend any products for vendor %s. err: %w", vendorKey, err))
 		return
 	}
