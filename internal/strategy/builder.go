@@ -3,9 +3,8 @@ package strategy
 import (
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/strategy/header"
-	"rec-vendor-api/internal/strategy/requester"
-	"rec-vendor-api/internal/strategy/tracker"
 	"rec-vendor-api/internal/strategy/unmarshaler"
+	"rec-vendor-api/internal/strategy/url"
 )
 
 func BuildHeader(v config.Vendor) header.Strategy {
@@ -21,12 +20,10 @@ func BuildHeader(v config.Vendor) header.Strategy {
 	}
 }
 
-func BuildRequester(v config.Vendor) requester.Strategy {
+func BuildRequest(v config.Vendor) url.Strategy {
 	switch v.Name {
-	case "keeta":
-		return &requester.Keeta{SceneType: v.SceneType, Ver: v.Ver, ChannelToken: v.ChannelToken}
 	default:
-		return &requester.Default{}
+		return &url.Default{}
 	}
 }
 
@@ -43,9 +40,9 @@ func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 	}
 }
 
-func BuildTracker(v config.Vendor) tracker.Strategy {
+func BuildTracking(v config.Vendor) url.Strategy {
 	switch v.Name {
 	default:
-		return &tracker.Default{}
+		return &url.Default{}
 	}
 }

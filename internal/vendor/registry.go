@@ -31,9 +31,10 @@ func BuildRegistry(config config.VendorConfig) (map[string]Client, error) {
 			httpClients[v.WithProxy],
 			config.Timeout,
 			strategy.BuildHeader(v),
-			strategy.BuildRequester(v),
+			strategy.BuildRequest(v),
 			strategy.BuildUnmarshaler(v),
-			strategy.BuildTracker(v))
+			strategy.BuildTracking(v),
+		)
 
 		registry[v.Name] = client
 	}

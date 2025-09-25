@@ -67,6 +67,7 @@ func TestDefault(t *testing.T) {
 			},
 			expectedErr: "subID not provided",
 		},
+		// tracking
 		{
 			name: "GIVEN url with existing query parameters THEN return the expected URL with existing and parameters from URLPattern config",
 			urlPattern: config.URLPattern{
