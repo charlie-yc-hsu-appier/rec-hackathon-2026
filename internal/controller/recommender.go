@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"rec-vendor-api/internal/controller/errors"
 	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
@@ -56,6 +57,12 @@ func (c *Recommender) Recommend(ctx *gin.Context) {
 
 	response, err := vendorClient.GetUserRecommendationItems(ctx, req)
 	if err != nil {
+		if err, isBadRequestError := err.(*errors.BadRequestError); isBadRequestError {
+			log.WithContext(ctx).Errorf("VendorClient returned BadRequestError. err: %v", err)
+			handleBadRequest(ctx, fmt.Errorf("VendorClient returned BadRequestError. err: %v", err))
+			return
+		}
+
 		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
 		handleInternalServerError(ctx, fmt.Errorf("Fail to recommend any products for vendor %s. err: %w", vendorKey, err))
 		return

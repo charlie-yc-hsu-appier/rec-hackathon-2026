@@ -1,9 +1,9 @@
 package url
 
 import (
-	"fmt"
 	urlpkg "net/url"
 	"rec-vendor-api/internal/config"
+	"rec-vendor-api/internal/controller/errors"
 	"rec-vendor-api/internal/strategy/utils"
 	"regexp"
 	"strconv"
@@ -65,22 +65,22 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 	switch macro {
 	case "{width}":
 		if params.ImgWidth == 0 {
-			return "", fmt.Errorf("ImgWidth not provided")
+			return "", errors.BadRequestErrorf("ImgWidth not provided")
 		}
 		return strconv.Itoa(params.ImgWidth), nil
 	case "{height}":
 		if params.ImgHeight == 0 {
-			return "", fmt.Errorf("ImgHeight not provided")
+			return "", errors.BadRequestErrorf("ImgHeight not provided")
 		}
 		return strconv.Itoa(params.ImgHeight), nil
 	case "{user_id_lower}":
 		if params.UserID == "" {
-			return "", fmt.Errorf("UserID not provided")
+			return "", errors.BadRequestErrorf("UserID not provided")
 		}
 		return strings.ToLower(params.UserID), nil
 	case "{click_id_base64}":
 		if params.ClickID == "" {
-			return "", fmt.Errorf("ClickID not provided")
+			return "", errors.BadRequestErrorf("ClickID not provided")
 		}
 		return utils.EncodeClickID(params.ClickID), nil
 	case "{web_host}":
@@ -89,24 +89,24 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 		return params.BundleID, nil
 	case "{adtype}":
 		if params.AdType == 0 {
-			return "", fmt.Errorf("AdType not provided")
+			return "", errors.BadRequestErrorf("AdType not provided")
 		}
 		return strconv.Itoa(params.AdType), nil
 	case "{partner_id}":
 		return params.PartnerID, nil
 	case "{subid}":
 		if params.SubID == "" {
-			return "", fmt.Errorf("subID not provided")
+			return "", errors.BadRequestErrorf("subID not provided")
 		}
 		return params.SubID, nil
 	case "{product_url}":
 		if params.ProductURL == "" {
-			return "", fmt.Errorf("ProductURL not provided")
+			return "", errors.BadRequestErrorf("ProductURL not provided")
 		}
 		return params.ProductURL, nil
 	case "{keeta_campaign_id}":
 		if params.KeetaCampaignID == "" {
-			return "", fmt.Errorf("KeetaCampaignID not provided")
+			return "", errors.BadRequestErrorf("KeetaCampaignID not provided")
 		}
 		return params.KeetaCampaignID, nil
 	case "{click_id}":
@@ -118,6 +118,6 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 	case "{longitude}":
 		return params.Longitude, nil
 	default:
-		return "", fmt.Errorf("unknown macro: %s", macro)
+		return "", errors.BadRequestErrorf("unknown macro: %s", macro)
 	}
 }
