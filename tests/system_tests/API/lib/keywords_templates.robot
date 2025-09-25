@@ -25,7 +25,7 @@ Test vendors from yaml configuration
 
   # Parse YAML once at the beginning
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
-  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
+  ${vendors} =            Evaluate                $yaml_data['vendor_config']['vendors']
 
   ${vendor_count} =       Get Length              ${vendors}
   Log                     Found ${vendor_count} vendor(s) in YAML configuration
