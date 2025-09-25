@@ -127,7 +127,6 @@ Parse tracking config
   ...                     param_name=${final_param_name}
   ...                     uses_base64=${uses_base64}
   ...                     has_group_id=${has_group_id}
-  ...                     modified_tracking_url=structured_format
 
   Log                     📋 Tracking config for ${vendor_name}: ${config}
   RETURN                  &{config}

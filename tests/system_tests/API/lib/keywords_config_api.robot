@@ -226,10 +226,12 @@ Get vendor subids from config api
     
     Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
     
-    IF  '${vendor_subid}' == '${EMPTY}'
-      Set Test Message    ⚠️ No subid found for vendor: ${vendor_name}  append=yes
-    ELSE
+    IF  '${vendor_name}' == 'keeta'
+      Set Test Message    ℹ️ Keeta vendor does not require subid  append=yes
+    ELSE IF  '${vendor_subid}' != '${EMPTY}'
       Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
+    ELSE
+      Set Test Message    ❌ No subid found for vendor: ${vendor_name} - subid is required for all non-keeta vendors  append=yes
     END
   END
   

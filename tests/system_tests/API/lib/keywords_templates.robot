@@ -47,8 +47,7 @@ Test vendors from yaml configuration
       ${keeta_campaign_name} =  Get keeta campaign configuration
       
       IF  '${keeta_campaign_name}' == '${EMPTY}'
-        Log                 Warning: Could not get keeta_campaign_name, skipping Keeta test
-        Continue For Loop
+        Fail                Failed to get keeta_campaign_name from Config API - no valid Keeta campaign found
       END
       
       Log                   Testing Keeta vendor with campaign: ${keeta_campaign_name}
@@ -111,12 +110,14 @@ Test vendors from yaml configuration
     ...                     w=${width}
     ...                     h=${height}
 
-    # Add subid if available
-    IF  '${vendor_subid}' != '${EMPTY}'
+    # Add subid (required for all vendors except keeta)
+    IF  ${is_keeta}
+      Log                   Keeta vendor does not require subid
+    ELSE IF  '${vendor_subid}' != '${EMPTY}'
       Set To Dictionary     ${common_params}        subid=${vendor_subid}
       Log                   Using subid for ${vendor_name}: ${vendor_subid}
     ELSE
-      Log                   No subid available for ${vendor_name}
+      Fail                  No subid found for vendor ${vendor_name} - subid is required for all non-keeta vendors
     END
 
     # Add linkmine-specific parameters if needed
