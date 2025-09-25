@@ -186,7 +186,7 @@ pipeline {
     stage('Pre-commit check') {
       steps {
         container('golang') {
-          sh 'apk add --no-cache openssh make git build-base'
+          sh 'apk add --no-cache openssh make git build-base openssl'
           sh 'wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.61.0'
 
           sh 'mkdir -p -m 0600 /root/.ssh'
