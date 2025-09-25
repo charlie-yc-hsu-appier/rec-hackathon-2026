@@ -67,14 +67,11 @@ Encode Base64
   RETURN          ${encoded}
 
 
-Parse yaml tracking url template
-  [Arguments]             ${tracking_url}     ${vendor_name}=${Empty}
-  [Documentation]  Parse YAML tracking_url to extract parameter configuration
-  ...              Example: "{product_url}&param1={click_id_base64}" -> param_name=param1, uses_base64=true
-  ...              Special handling for INL vendors: if tracking_url is "{product_url}" only,
-  ...              automatically adds subparam={click_id_base64} for compatibility
-  ...              Special handling for adpacker: uses ssp_click_id parameter name
-  ...              Note: INL vendors use 'subparam' parameter in the tracking template
+Parse tracking config
+  [Arguments]             ${tracking_queries}     ${vendor_name}=${Empty}
+  [Documentation]  Parse tracking queries to extract parameter configuration
+  ...              Example tracking queries: [{"key": "param1", "value": "{click_id_base64}"}]
+  ...              Returns config dictionary with param_name, uses_base64, and has_group_id
 
   # Special handling for adpacker vendor
   ${is_adpacker_vendor} =  Run Keyword And Return Status
@@ -83,48 +80,62 @@ Parse yaml tracking url template
   # Special handling for INL vendors
   ${is_inl_vendor} =      Run Keyword And Return Status
   ...                     Should Contain      ${vendor_name}      inl
-  ${modified_tracking_url} =  Set Variable  ${tracking_url}
+
   ${final_param_name} =   Set Variable        unknown
+  ${uses_base64} =        Set Variable        ${FALSE}
+  ${has_group_id} =       Set Variable        ${FALSE}
 
+  # Find click_id related parameters in queries
+  FOR  ${query}  IN  @{tracking_queries}
+    ${key} =              Get From Dictionary  ${query}            key
+    ${value} =            Get From Dictionary  ${query}            value
+    
+    # Check if this query contains click_id
+    ${is_click_id_param} =  Run Keyword And Return Status
+    ...                     Should Contain       ${value}            click_id
+    
+    IF  ${is_click_id_param}
+      ${final_param_name} =  Set Variable       ${key}
+      
+      # Check if uses base64 encoding
+      ${uses_base64} =    Run Keyword And Return Status
+      ...                 Should Contain       ${value}            base64
+      
+      # Check if requires group_id (typically for INL vendors with subparam)
+      ${has_group_id} =   Set Variable If     '${key}' == 'subparam'  ${TRUE}  ${FALSE}
+      
+      BREAK
+    END
+  END
+
+  # Special handling for adpacker vendor
   IF  ${is_adpacker_vendor}
-    Log                     Adpacker vendor detected, using ssp_click_id parameter for validation
     ${final_param_name} =   Set Variable        ssp_click_id
-  ELSE IF  ${is_inl_vendor} and '${tracking_url}' == '{product_url}'
-    Log                     INL vendor detected with simple tracking_url, adding subparam base64 parameter for compatibility
-    ${modified_tracking_url} =  Set Variable  {product_url}&subparam={click_id_base64}
-    ${final_param_name} =   Set Variable        subparam
-  ELSE
-    # Extract parameter name using regex for non-INL vendors
-    ${param_matches} =      Get Regexp Matches  ${modified_tracking_url}  [&?]([^=]+)=  1
-    ${final_param_name} =   Set Variable If     ${param_matches}    ${param_matches[0]}     unknown
-  END
-
-  # Check if uses base64 encoding
-  IF  ${is_adpacker_vendor}
-    # Adpacker uses base64 encoding for ssp_click_id parameter
     ${uses_base64} =        Set Variable        ${TRUE}
-  ELSE
-    ${uses_base64} =        Run Keyword And Return Status
-    ...                     Should Contain      ${modified_tracking_url}  base64
   END
 
-  # Check if requires group_id (typically for INL vendors)
-  ${has_group_id} =       Set Variable If     '${final_param_name}' == 'subparam'  ${TRUE}  ${FALSE}
+  # Special handling for INL vendors without explicit tracking queries
+  IF  ${is_inl_vendor} and '${final_param_name}' == 'unknown'
+    Log                     INL vendor detected without tracking queries, using subparam base64 parameter for compatibility
+    ${final_param_name} =   Set Variable        subparam
+    ${uses_base64} =        Set Variable        ${TRUE}
+    ${has_group_id} =       Set Variable        ${TRUE}
+  END
 
   # Create config dictionary
   &{config} =             Create Dictionary
   ...                     param_name=${final_param_name}
   ...                     uses_base64=${uses_base64}
   ...                     has_group_id=${has_group_id}
-  ...                     modified_tracking_url=${modified_tracking_url}
 
+  Log                     📋 Tracking config for ${vendor_name}: ${config}
   RETURN                  &{config}
 
 
 Load vendor config from file
   [Arguments]         ${config_file_path}=${Empty}
   [Documentation]  Load vendor configuration from config.yaml file
-  ...              Returns vendor_config section as YAML string for testing
+  ...              Returns vendors section as YAML string for testing
   ...              Default path: deploy/rec-vendor-api/secrets/config.yaml (from project root)
 
   # Calculate default config file path if not provided
@@ -137,12 +148,11 @@ Load vendor config from file
   # Read the configuration file
   ${yaml_content} =   Get File                ${config_file_path}
 
-  # Parse the YAML to extract only vendor_config section
+  # Parse the YAML - vendors directly at top level
   ${config_data} =    Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
-  ${vendor_config} =  Get From Dictionary     ${config_data}          vendor_config
 
-  # Convert vendor_config back to YAML string for testing framework
-  ${vendor_yaml} =    Evaluate                yaml.dump($vendor_config)  yaml
+  # Convert back to YAML string for testing framework
+  ${vendor_yaml} =    Evaluate                yaml.dump($config_data)  yaml
 
   Log                 📄 Loaded vendor config from: ${config_file_path}
   RETURN              ${vendor_yaml}

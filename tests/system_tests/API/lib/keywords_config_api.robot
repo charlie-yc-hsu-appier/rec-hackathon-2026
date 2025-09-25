@@ -193,7 +193,7 @@ Get vendor subids from config api
 
   # Parse YAML to get vendor names
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
-  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
+  ${vendors} =            Evaluate                $yaml_data['vendor_config']['vendors']
   
   # Get all campaign IDs from experiments and filter by default_group
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
@@ -226,10 +226,12 @@ Get vendor subids from config api
     
     Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
     
-    IF  '${vendor_subid}' == '${EMPTY}'
-      Set Test Message    ⚠️ No subid found for vendor: ${vendor_name}  append=yes
-    ELSE
+    IF  '${vendor_name}' == 'keeta'
+      Set Test Message    ℹ️ Keeta vendor does not require subid  append=yes
+    ELSE IF  '${vendor_subid}' != '${EMPTY}'
       Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
+    ELSE
+      Set Test Message    ❌ No subid found for vendor: ${vendor_name} - subid is required for all non-keeta vendors  append=yes
     END
   END
   
@@ -315,7 +317,7 @@ Validate and generate safe vendor yaml configuration
 
   # Parse original YAML
   ${yaml_data} =          Evaluate                yaml.safe_load('''${original_yaml_content}''')  yaml
-  ${original_vendors} =   Get From Dictionary     ${yaml_data}            vendors
+  ${original_vendors} =   Evaluate                $yaml_data['vendor_config']['vendors']
 
   # Check if any vendor contains "inl"
   ${has_inl} =            Set Variable            ${False}
@@ -376,7 +378,7 @@ Validate and generate safe vendor yaml configuration
   END
 
   # Rebuild YAML with filtered vendors
-  Set To Dictionary       ${yaml_data}            vendors=${filtered_vendors}
+  Set To Dictionary       ${yaml_data}[vendor_config]  vendors=${filtered_vendors}
   ${filtered_yaml} =      Evaluate                yaml.dump($yaml_data, default_flow_style=False)  yaml
 
   ${total_count} =        Get Length              ${filtered_vendors}
@@ -420,7 +422,7 @@ Get keeta campaign configuration
   # If we get here, no valid campaign was found
   Log                     ❌ No valid Keeta campaign found with criteria:
   Log                     - status_code=Running
-  Log                     - datafeed_id=android--com.sankuai.sailor.afooddelivery_2  
+  Log                     - datafeed_id=android--com.sankuai.sailor.afooddelivery_2
   Log                     - non-empty keeta_campaign_name
   
   RETURN                  ${EMPTY}

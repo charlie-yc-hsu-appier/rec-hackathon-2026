@@ -25,7 +25,7 @@ Test vendors from yaml configuration
 
   # Parse YAML once at the beginning
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml
-  ${vendors} =            Get From Dictionary     ${yaml_data}        vendors
+  ${vendors} =            Evaluate                $yaml_data['vendor_config']['vendors']
 
   ${vendor_count} =       Get Length              ${vendors}
   Log                     Found ${vendor_count} vendor(s) in YAML configuration
@@ -47,8 +47,7 @@ Test vendors from yaml configuration
       ${keeta_campaign_name} =  Get keeta campaign configuration
       
       IF  '${keeta_campaign_name}' == '${EMPTY}'
-        Log                 Warning: Could not get keeta_campaign_name, skipping Keeta test
-        Continue For Loop
+        Fail                Failed to get keeta_campaign_name from Config API - no valid Keeta campaign found
       END
       
       Log                   Testing Keeta vendor with campaign: ${keeta_campaign_name}
@@ -58,8 +57,13 @@ Test vendors from yaml configuration
     ${vendor_subid} =       Get From Dictionary     ${vendor_subid_mapping}  ${vendor_name}  default=${EMPTY}
 
     # Extract parameters from vendor configuration
-    ${request_url} =        Get From Dictionary     ${vendor_config}    request_url
-    ${tracking_url} =       Get From Dictionary     ${vendor_config}    tracking_url
+    # Use structured request and tracking configuration
+    ${request_config} =     Get From Dictionary     ${vendor_config}    request
+    ${request_url} =        Get From Dictionary     ${request_config}   url
+    
+    ${tracking_config} =    Get From Dictionary     ${vendor_config}    tracking
+    ${tracking_url} =       Get From Dictionary     ${tracking_config}  url
+    ${tracking_queries} =   Get From Dictionary     ${tracking_config}  queries
 
     # Auto-select test dimensions and vendor-specific parameters
     # Sizes: 300x300, 1200x627, 1200x600
@@ -76,8 +80,8 @@ Test vendors from yaml configuration
       ${adtype} =     Get From Dictionary     ${dimensions}   adtype
     END
 
-    # Parse tracking URL to get parameter info
-    ${tracking_config} =    Parse yaml tracking url template  ${tracking_url}  ${vendor_name}
+    # Parse tracking configuration
+    ${tracking_config} =    Parse tracking config  ${tracking_queries}  ${vendor_name}
     ${param_name} =         Get From Dictionary     ${tracking_config}  param_name
     ${uses_base64} =        Get From Dictionary     ${tracking_config}  uses_base64
 
@@ -106,12 +110,14 @@ Test vendors from yaml configuration
     ...                     w=${width}
     ...                     h=${height}
 
-    # Add subid if available
-    IF  '${vendor_subid}' != '${EMPTY}'
+    # Add subid (required for all vendors except keeta)
+    IF  ${is_keeta}
+      Log                   Keeta vendor does not require subid
+    ELSE IF  '${vendor_subid}' != '${EMPTY}'
       Set To Dictionary     ${common_params}        subid=${vendor_subid}
       Log                   Using subid for ${vendor_name}: ${vendor_subid}
     ELSE
-      Log                   No subid available for ${vendor_name}
+      Fail                  No subid found for vendor ${vendor_name} - subid is required for all non-keeta vendors
     END
 
     # Add linkmine-specific parameters if needed
