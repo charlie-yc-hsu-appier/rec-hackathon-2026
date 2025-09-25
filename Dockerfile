@@ -4,7 +4,7 @@ ENV GOPRIVATE=github.com/plaxieappier
 
 WORKDIR /rec-vendor-api
 
-RUN apk add build-base git ca-certificates openssh
+RUN apk add build-base git ca-certificates openssh openssl
 RUN mkdir -pm 0600 /root/.ssh \
     && touch /root/.ssh/known_hosts \
     && ssh-keyscan github.com >> ~/.ssh/known_hosts
