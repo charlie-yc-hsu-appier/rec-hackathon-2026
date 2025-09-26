@@ -60,7 +60,6 @@ func (s *Default) replaceMacros(str string, params Params) (string, error) {
 	return str, nil
 }
 
-// TODO replace error with dedicated error type so that controller can render 400
 func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 	switch macro {
 	case "{width}":
