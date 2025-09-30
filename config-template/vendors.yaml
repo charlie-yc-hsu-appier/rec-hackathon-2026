@@ -45,7 +45,7 @@ vendors:
         - key: adid
           value: "{user_id_lower}"
         - key: land_url
-          value: "{encoded_product_url}"
+          value: "{product_url}"
 
 
   - name: inl_corp_0
