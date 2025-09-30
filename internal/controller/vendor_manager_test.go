@@ -31,12 +31,16 @@ func (ts *VendorsTestSuite) TestGetVendors() {
 			vendorConfig: config.VendorConfig{
 				Vendors: []config.Vendor{
 					{
-						Name:       "vendor1",
-						RequestURL: "https://api.vendor1.com/recommend?key=value&param=test",
+						Name: "vendor1",
+						Request: config.URLPattern{
+							URL: "https://api.vendor1.com/recommend?key=value&param=test",
+						},
 					},
 					{
-						Name:       "vendor2",
-						RequestURL: "https://api.vendor2.com/v1/recommend",
+						Name: "vendor2",
+						Request: config.URLPattern{
+							URL: "https://api.vendor2.com/v1/recommend",
+						},
 					},
 				},
 			},
@@ -63,8 +67,10 @@ func (ts *VendorsTestSuite) TestGetVendors() {
 			vendorConfig: config.VendorConfig{
 				Vendors: []config.Vendor{
 					{
-						Name:       "invalid_url_vendor",
-						RequestURL: "://invalid-url",
+						Name: "invalid_url_vendor",
+						Request: config.URLPattern{
+							URL: "://invalid-url",
+						},
 					},
 				},
 			},

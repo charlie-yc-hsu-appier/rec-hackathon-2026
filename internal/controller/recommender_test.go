@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	controller_errors "rec-vendor-api/internal/controller/errors"
 	"testing"
 
 	"rec-vendor-api/internal/vendor"
@@ -60,6 +61,16 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 			setupMock:  func(mc *vendor.MockClient) {},
 			wantCode:   http.StatusBadRequest,
 			wantBody:   `{"detail":"Key: 'Request.UserID' Error:Field validation for 'UserID' failed on the 'required' tag", "status":400}`,
+		},
+		{
+			name:       "GIVEN an BadRequestError error THEN expect an bad request error response",
+			vendorKey:  "test_vendor",
+			requestURL: "/r/test_vendor?user_id=123&click_id=456&w=100&h=200",
+			setupMock: func(mc *vendor.MockClient) {
+				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(nil, controller_errors.BadRequestErrorf("param missing"))
+			},
+			wantCode: http.StatusBadRequest,
+			wantBody: `{"detail":"VendorClient returned BadRequestError. err: param missing", "status":400}`,
 		},
 		{
 			name:       "GIVEN an internal error THEN expect an internal server error response",

@@ -6,9 +6,8 @@ import (
 
 	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/strategy/header"
-	"rec-vendor-api/internal/strategy/requester"
-	"rec-vendor-api/internal/strategy/tracker"
 	"rec-vendor-api/internal/strategy/unmarshaler"
+	"rec-vendor-api/internal/strategy/url"
 	"rec-vendor-api/internal/telemetry"
 
 	"github.com/plaxieappier/rec-go-kit/httpkit"
@@ -19,9 +18,9 @@ type vendorClient struct {
 	client                httpkit.Client
 	timeout               time.Duration
 	headerStrategy        header.Strategy
-	requestURLStrategy    requester.Strategy
+	requestURLStrategy    url.Strategy
 	respUnmarshalStrategy unmarshaler.Strategy
-	trackingURLStrategy   tracker.Strategy
+	trackingURLStrategy   url.Strategy
 }
 
 //go:generate mockgen -source=./client.go -destination=./client_mock.go -package=vendor
@@ -30,8 +29,8 @@ type Client interface {
 }
 
 func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
-	headerStrategy header.Strategy, requestURLStrategy requester.Strategy,
-	respUnmarshalStrategy unmarshaler.Strategy, trackingURLStrategy tracker.Strategy) Client {
+	headerStrategy header.Strategy, requestURLStrategy url.Strategy,
+	respUnmarshalStrategy unmarshaler.Strategy, trackingURLStrategy url.Strategy) Client {
 	return &vendorClient{
 		cfg:                   cfg,
 		client:                client,
@@ -46,13 +45,13 @@ func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
 func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Request) ([]ProductInfo, error) {
 	requestInfo := telemetry.RequestInfoFromContext(ctx)
 
-	url, err := v.requestURLStrategy.GenerateRequestURL(req.toRequesterParams(v.cfg.RequestURL))
+	requestURL, err := v.requestURLStrategy.GenerateURL(v.cfg.Request, req.toURLParams())
 	if err != nil {
 		return nil, err
 	}
-	restReq := httpkit.NewRequest(url)
+	restReq := httpkit.NewRequest(requestURL)
 
-	headerParams := header.Params{RequestURL: url, UserID: req.UserID}
+	headerParams := header.Params{RequestURL: requestURL, UserID: req.UserID}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 
@@ -75,17 +74,19 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	products := make([]ProductInfo, 0, len(res))
 
 	for _, ele := range res {
-		trackParams := tracker.Params{
-			TrackingURL: v.cfg.TrackingURL,
-			ProductURL:  ele.ProductURL,
-			ClickID:     req.ClickID,
-			UserID:      req.UserID,
+		trackParams := url.Params{
+			ProductURL: ele.ProductURL,
+			ClickID:    req.ClickID,
+			UserID:     req.UserID,
 		}
-		productUrl := v.trackingURLStrategy.GenerateTrackingURL(trackParams)
+		productURL, err := v.trackingURLStrategy.GenerateURL(v.cfg.Tracking, trackParams)
+		if err != nil {
+			return nil, err
+		}
 
 		products = append(products, ProductInfo{
 			ProductID: ele.ProductID,
-			Url:       productUrl,
+			Url:       productURL,
 			Image:     ele.ProductImage,
 			Price:     ele.ProductPrice,
 			SalePrice: ele.ProductSalePrice,

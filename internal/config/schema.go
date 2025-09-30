@@ -21,10 +21,7 @@ type VendorConfig struct {
 }
 
 type Vendor struct {
-	Name string `mapstructure:"name"`
-	// TODO remove unused RequestURL and TrackingURL
-	RequestURL   string     `mapstructure:"request_url"`
-	TrackingURL  string     `mapstructure:"tracking_url"`
+	Name         string     `mapstructure:"name"`
 	WithProxy    bool       `mapstructure:"with_proxy"`
 	AccessKey    string     `mapstructure:"access_key"`
 	SecretKey    string     `mapstructure:"secret_key"`

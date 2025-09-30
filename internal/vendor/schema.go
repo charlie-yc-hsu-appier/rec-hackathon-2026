@@ -1,6 +1,8 @@
 package vendor
 
-import "rec-vendor-api/internal/strategy/requester"
+import (
+	"rec-vendor-api/internal/strategy/url"
+)
 
 type Request struct {
 	UserID          string `form:"user_id" binding:"required"`
@@ -18,9 +20,8 @@ type Request struct {
 	ClientIP        string
 }
 
-func (r Request) toRequesterParams(url string) requester.Params {
-	return requester.Params{
-		RequestURL:      url,
+func (r Request) toURLParams() url.Params {
+	return url.Params{
 		UserID:          r.UserID,
 		ClickID:         r.ClickID,
 		ImgWidth:        r.ImgWidth,
