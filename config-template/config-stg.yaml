@@ -16,7 +16,7 @@ tracing:
     - /healthz
 vendor_config:
   {{- with secret "secret/project/recommendation/rec-serving/staging/rec-proxy" }}
-  proxy_url: http://{{ .Data.data.user }}:{{ .Data.data.password }}@rec-proxy-smp-prd.arepa.appier.co:3128
+  proxy_url: http://{{ .Data.data.user }}:{{ .Data.data.password }}@rec-proxy-smp-prd-2.arepa.appier.co:3128
   {{- end }}
   timeout: 1s
 {{ file "deploy/rec-vendor-api/secrets/vendors.yaml" | indent 2 }}
