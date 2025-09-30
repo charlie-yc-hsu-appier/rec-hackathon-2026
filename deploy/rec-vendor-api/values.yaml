@@ -22,10 +22,10 @@ podAnnotations:
 
 resources:
   limits:
-    memory: 128Mi
+    memory: 64Mi
   requests:
     cpu: 300m
-    memory: 128Mi
+    memory: 32Mi
 
 service:
   type: ClusterIP
