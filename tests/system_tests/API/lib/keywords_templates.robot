@@ -9,6 +9,7 @@ Test vendors from yaml configuration
   ...              Vendor-specific parameter handling:
   ...              • Standard vendors: user_id, click_id, w, h, subid (from Config API)
   ...              • Linkmine vendor: adds bundle_id (empty string), adtype parameters
+  ...              • Adpacker vendor: adds adtype parameter
   ...              • INL vendors: URL-encoded subparam with base64 encoding
   ...              • Keeta vendor: adds lat=22.3264, lon=114.1661, k_campaign_id (from Config API)
   ...              
@@ -67,16 +68,23 @@ Test vendors from yaml configuration
 
     # Auto-select test dimensions and vendor-specific parameters
     # Sizes: 300x300, 1200x627, 1200x600
-    # For linkmine: also generates bundle_id (empty string), adtype
+    # For linkmine and adpacker: also generates adtype parameter
+    # For linkmine: additionally generates bundle_id (empty string)
     ${dimensions} =         Auto select test dimensions  ${request_url}  ${vendor_name}
     ${width} =              Get From Dictionary     ${dimensions}       width
     ${height} =             Get From Dictionary     ${dimensions}       height
 
-    # Extract linkmine-specific parameters if available
+    # Extract vendor-specific parameters if available
     ${has_bundle_id} =      Run Keyword And Return Status
     ...                     Dictionary Should Contain Key  ${dimensions}  bundle_id
+    ${has_adtype} =         Run Keyword And Return Status
+    ...                     Dictionary Should Contain Key  ${dimensions}  adtype
+    
     IF  ${has_bundle_id}
       ${bundle_id} =  Get From Dictionary     ${dimensions}   bundle_id
+    END
+    
+    IF  ${has_adtype}
       ${adtype} =     Get From Dictionary     ${dimensions}   adtype
     END
 
@@ -98,10 +106,6 @@ Test vendors from yaml configuration
     # Test the vendor endpoint
     Given I have an vendor session
 
-    # Check if this is linkmine vendor to include additional parameters
-    ${is_linkmine} =        Run Keyword And Return Status
-    ...                     Should Be Equal         ${vendor_name}      linkmine
-
     # Prepare common parameters
     ${common_params} =      Create Dictionary
     ...                     endpoint=r/${vendor_name}
@@ -120,11 +124,17 @@ Test vendors from yaml configuration
       Fail                  No subid found for vendor ${vendor_name} - subid is required for all non-keeta vendors
     END
 
-    # Add linkmine-specific parameters if needed
-    IF  ${is_linkmine}
-      Set To Dictionary     ${common_params}
-      ...                   bundle_id=${bundle_id}
-      ...                   adtype=${adtype}
+    # Add vendor-specific parameters if they exist
+    # Add bundle_id for linkmine vendor
+    IF  ${has_bundle_id}
+      Set To Dictionary     ${common_params}        bundle_id=${bundle_id}
+      Log                   Added bundle_id for ${vendor_name}: ${bundle_id}
+    END
+    
+    # Add adtype for vendors that need it (linkmine, adpacker)
+    IF  ${has_adtype}
+      Set To Dictionary     ${common_params}        adtype=${adtype}
+      Log                   Added adtype for ${vendor_name}: ${adtype}
     END
 
     # Add Keeta-specific parameters if needed
