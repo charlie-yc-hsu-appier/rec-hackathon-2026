@@ -5,7 +5,8 @@ Auto select test dimensions
   [Documentation]  Auto-select test dimensions from predefined sizes
   ...              Returns dimensions dictionary with width, height, and additional vendor parameters
   ...              Available test sizes: 300x300, 1200x627, 1200x600
-  ...              For linkmine vendor: Also generates app_bundleId (empty string), imp_adType (2 or 3)
+  ...              For linkmine vendor: Also generates bundle_id (empty string) and adtype (2 or 3)
+  ...              For adpacker vendor: Also generates adtype (2 or 3)
   ...              Note: request_url parameter is kept for compatibility but not used
 
   # Predefined test dimensions
@@ -31,24 +32,33 @@ Auto select test dimensions
 
   Log                 📏 Selected test dimensions: ${width}x${height}
 
-  # Generate additional vendor parameters only for linkmine
+  # Generate additional vendor parameters for vendors that need them
   ${is_linkmine} =    Run Keyword And Return Status
   ...                 Should Be Equal     ${vendor_name}          linkmine
+  ${is_adpacker} =    Run Keyword And Return Status
+  ...                 Should Be Equal     ${vendor_name}          adpacker
 
-  IF  ${is_linkmine}
-    # Linkmine-specific parameters with updated requirements
+  # Generate adtype parameter for both linkmine and adpacker
+  ${needs_adtype} =   Set Variable If     ${is_linkmine} or ${is_adpacker}     ${TRUE}     ${FALSE}
+  
+  IF  ${needs_adtype}
+    # Common parameters for vendors that need adtype
     @{ad_types} =       Create List     2                       3
-
-    # Random selection for adtype only
     ${adtype} =         Evaluate        __import__('random').choice($ad_types)
+    
+    # Add adtype to dimensions
+    Set To Dictionary   ${dimensions}   adtype=${adtype}
+    
+    Log                 Generated adtype for ${vendor_name}: ${adtype}
+  END
 
-    # Set bundle_id as empty string and remove web_host (site_domain)
+  # Linkmine-specific parameters (bundle_id)
+  IF  ${is_linkmine}
+    # Set bundle_id as empty string for linkmine
     ${bundle_id} =      Set Variable    ${Empty}
-
-    # Add to dimensions dictionary (no web_host anymore)
-    Set To Dictionary   ${dimensions}   bundle_id=${bundle_id}  adtype=${adtype}
-
-    Log                 Linkmine params - bundle_id: ${bundle_id} (empty), adtype: ${adtype}
+    Set To Dictionary   ${dimensions}   bundle_id=${bundle_id}
+    
+    Log                 Linkmine-specific params - bundle_id: ${bundle_id} (empty)
   END
 
   RETURN              &{dimensions}
