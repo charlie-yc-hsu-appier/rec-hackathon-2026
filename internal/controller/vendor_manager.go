@@ -21,7 +21,7 @@ func NewVendorManager(cfg config.VendorConfig) *vendorManager {
 	vendors := make([]VendorInfo, 0, len(cfg.Vendors))
 	for _, vendor := range cfg.Vendors {
 		requestHost := ""
-		if parsedURL, err := url.Parse(vendor.RequestURL); err == nil {
+		if parsedURL, err := url.Parse(vendor.Request.URL); err == nil {
 			requestHost = parsedURL.Host
 		}
 		vendors = append(vendors, VendorInfo{

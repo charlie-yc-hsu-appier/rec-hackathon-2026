@@ -10,9 +10,8 @@ import (
 	"time"
 
 	"rec-vendor-api/internal/strategy/header"
-	"rec-vendor-api/internal/strategy/requester"
-	"rec-vendor-api/internal/strategy/tracker"
 	"rec-vendor-api/internal/strategy/unmarshaler"
+	"rec-vendor-api/internal/strategy/url"
 
 	"github.com/plaxieappier/rec-go-kit/httpkit"
 	"github.com/stretchr/testify/require"
@@ -24,18 +23,18 @@ type VendorClientTestSuite struct {
 	suite.Suite
 	mockRestClient  *httpkit.MockClient
 	mockHeader      *header.MockStrategy
-	mockRequester   *requester.MockStrategy
+	mockRequester   *url.MockStrategy
 	mockUnmarshaler *unmarshaler.MockStrategy
-	mockTracker     *tracker.MockStrategy
+	mockTracker     *url.MockStrategy
 }
 
 func (ts *VendorClientTestSuite) SetupTest() {
 	ts.mockRestClient = httpkit.NewMockClient(gomock.NewController(ts.T()))
 	ctrl := gomock.NewController(ts.T())
 	ts.mockHeader = header.NewMockStrategy(ctrl)
-	ts.mockRequester = requester.NewMockStrategy(ctrl)
+	ts.mockRequester = url.NewMockStrategy(ctrl)
 	ts.mockUnmarshaler = unmarshaler.NewMockStrategy(ctrl)
-	ts.mockTracker = tracker.NewMockStrategy(ctrl)
+	ts.mockTracker = url.NewMockStrategy(ctrl)
 }
 
 func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
@@ -56,11 +55,11 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name: "GIVEN valid response THEN expect success",
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url", nil)
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
-				ts.mockTracker.EXPECT().GenerateTrackingURL(gomock.Any()).Return("http://tracking-url")
+				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url", nil)
 
 			},
 			want: []ProductInfo{{ProductID: "1", Url: "http://tracking-url", Image: "img1"}},
@@ -69,7 +68,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name: "GIVEN network error THEN expect error",
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url", nil)
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(nil, errors.New("network error"))
 
@@ -80,7 +79,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name: "GIVEN unmarshal error THEN expect error",
 			mockStrategy: func() {
 				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("http://test-url", nil)
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte("invalid json")}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
@@ -91,7 +90,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 		{
 			name: "GIVEN request URL generation error THEN expect error",
 			mockStrategy: func() {
-				ts.mockRequester.EXPECT().GenerateRequestURL(gomock.Any()).Return("", fmt.Errorf("failed to generate request URL"))
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("", fmt.Errorf("failed to generate request URL"))
 			},
 			wantErr: true,
 		},
