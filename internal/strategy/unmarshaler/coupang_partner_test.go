@@ -23,6 +23,11 @@ func TestCoupangPartner(t *testing.T) {
 			input:       []byte("invalid json"),
 			wantedError: ErrInvalidFormat,
 		},
+		{
+			name:        "GIVEN product with ID 0 THEN return an error",
+			input:       []byte(`{"data":[{"productId":0,"productUrl":"url","productImage":"img"}]}`),
+			wantedError: ErrInvalidProductID,
+		},
 	}
 
 	for _, tc := range tt {

@@ -29,6 +29,11 @@ func TestWrappedCoupangPartner(t *testing.T) {
 			input:       []byte(`{"rCode":"1","rMessage":"error","data":[]}`),
 			wantedError: errors.New("resp code invalid. code: 1, msg: error"),
 		},
+		{
+			name:        "GIVEN product with ID 0 THEN return an error",
+			input:       []byte(`{"data":[{"productId":0,"productUrl":"url","productImage":"img"}]}`),
+			wantedError: ErrInvalidProductID,
+		},
 	}
 
 	for _, tc := range tt {
