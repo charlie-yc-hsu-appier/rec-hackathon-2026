@@ -191,7 +191,7 @@ vendors:
         - key: nbr_height
           value: "{height}"
         - key: nbr_ad_type
-          value: "3"
+          value: "{adtype}"
         - key: nbr_lmt
           value: "0"
     tracking:
