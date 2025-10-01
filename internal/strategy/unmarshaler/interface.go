@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	ErrInvalidFormat = errors.New("invalid format")
-	ErrNoProducts    = errors.New("no products were returned")
+	ErrInvalidFormat    = errors.New("invalid format")
+	ErrNoProducts       = errors.New("no products were returned")
+	ErrInvalidProductID = errors.New("only a product with ID 0 was returned")
 )
 
 type PartnerResp struct {

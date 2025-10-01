@@ -21,6 +21,7 @@ func (s *CoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
 		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
 		return nil, ErrInvalidFormat
 	}
+	
 	res := make([]PartnerResp, 0, len(resp))
 	for _, item := range resp {
 		res = append(res, PartnerResp{
@@ -28,6 +29,9 @@ func (s *CoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
 			ProductURL:   item.ProductURL,
 			ProductImage: item.ProductImage,
 		})
+	}
+	if len(res) == 1 && res[0].ProductID == "0" {
+		return nil, ErrInvalidProductID
 	}
 	return res, nil
 }

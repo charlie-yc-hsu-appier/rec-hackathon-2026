@@ -34,5 +34,8 @@ func (s *WrappedCoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, e
 			ProductImage: item.ProductImage,
 		})
 	}
+	if len(res) == 1 && res[0].ProductID == "0" {
+		return nil, ErrInvalidProductID
+	}
 	return res, nil
 }
