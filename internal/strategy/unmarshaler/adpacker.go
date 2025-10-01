@@ -30,5 +30,8 @@ func (s *Adpacker) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
 			ProductImage: item.ProductImage,
 		})
 	}
+	if len(res) == 1 && res[0].ProductID == "0" {
+		return nil, ErrInvalidProductID
+	}
 	return res, nil
 }
