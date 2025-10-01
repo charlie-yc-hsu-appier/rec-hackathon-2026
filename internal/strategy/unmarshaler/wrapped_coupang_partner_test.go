@@ -31,7 +31,7 @@ func TestWrappedCoupangPartner(t *testing.T) {
 		},
 		{
 			name:        "GIVEN product with ID 0 THEN return an error",
-			input:       []byte(`{"data":[{"productId":0,"productUrl":"url","productImage":"img"}]}`),
+			input:       []byte(`{"rCode":"0","rMessage":"success","data":[{"productId":0,"productUrl":"url","productImage":"img"}]}`),
 			wantedError: ErrInvalidProductID,
 		},
 	}
