@@ -129,7 +129,7 @@ vendors:
   - name: inl_corp_5
     with_proxy: true
     request:
-      url: "https://api.adzet.co.kr/cou/api_reco.php"
+      url: "https://wapi.adzet.co.kr/cou/api_reco.php"
       queries:
         - key: code
           value: "{subid}"
