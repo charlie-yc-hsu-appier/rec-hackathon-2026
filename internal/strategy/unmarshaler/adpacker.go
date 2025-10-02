@@ -18,7 +18,7 @@ func (s *Adpacker) UnmarshalResponse(ctx context.Context, body []byte) ([]Partne
 	resp := &adpackerResp{}
 	if err := json.Unmarshal(body, resp); err != nil {
 		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
-		return nil, ErrInvalidFormat
+		return nil, newInvalidFormatError(body)
 	}
 	if len(resp.Data) == 0 {
 		return nil, ErrNoProducts

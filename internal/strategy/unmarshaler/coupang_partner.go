@@ -20,7 +20,7 @@ func (s *CoupangPartner) UnmarshalResponse(ctx context.Context, body []byte) ([]
 	var resp []coupangResp
 	if err := json.Unmarshal(body, &resp); err != nil {
 		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
-		return nil, ErrInvalidFormat
+		return nil, newInvalidFormatError(body)
 	}
 
 	res := make([]PartnerResp, 0, len(resp))

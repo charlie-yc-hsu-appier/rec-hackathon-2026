@@ -3,10 +3,10 @@ package unmarshaler
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
 var (
-	ErrInvalidFormat    = errors.New("invalid format")
 	ErrNoProducts       = errors.New("no products were returned")
 	ErrInvalidProductID = errors.New("only a product with ID 0 was returned")
 )
@@ -24,4 +24,14 @@ type PartnerResp struct {
 
 type Strategy interface {
 	UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error)
+}
+
+func newInvalidFormatError(b []byte) error {
+	s := string(b)
+	runes := []rune(s)
+
+	if len(runes) > 20 {
+		s = string(runes[:20]) + "..."
+	}
+	return fmt.Errorf("invalid format. body: %s", s)
 }

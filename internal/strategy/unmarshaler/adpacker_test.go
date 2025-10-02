@@ -2,6 +2,7 @@ package unmarshaler
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestAdpacker(t *testing.T) {
 		{
 			name:        "GIVEN invalid JSON THEN return an error",
 			input:       []byte("invalid json"),
-			wantedError: ErrInvalidFormat,
+			wantedError: errors.New("invalid format. body: invalid json"),
 		},
 		{
 			name:        "GIVEN empty data array THEN return an error",

@@ -2,6 +2,7 @@ package unmarshaler
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,8 @@ func TestCoupangPartner(t *testing.T) {
 		},
 		{
 			name:        "GIVEN invalid JSON THEN return an error",
-			input:       []byte("invalid json"),
-			wantedError: ErrInvalidFormat,
+			input:       []byte("invalid json and more text to exceed the limit"),
+			wantedError: errors.New("invalid format. body: invalid json and mor..."),
 		},
 		{
 			name:        "GIVEN product with ID 0 THEN return an error",

@@ -21,7 +21,7 @@ func (s *WrappedCoupangPartner) UnmarshalResponse(ctx context.Context, body []by
 	rResp := &wrappedResp{}
 	if err := json.Unmarshal(body, rResp); err != nil {
 		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
-		return nil, ErrInvalidFormat
+		return nil, newInvalidFormatError(body)
 	}
 	if rResp.RCode != "0" {
 		return nil, fmt.Errorf("resp code invalid. code: %s, msg: %s", rResp.RCode, rResp.RMessage)

@@ -33,7 +33,7 @@ func (s *Keeta) UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerRe
 	var resp keetaResp
 	if err := json.Unmarshal(body, &resp); err != nil {
 		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
-		return nil, ErrInvalidFormat
+		return nil, newInvalidFormatError(body)
 	}
 	if resp.Code != 0 {
 		return nil, fmt.Errorf("resp code invalid. code: %d, msg: %s", resp.Code, resp.Msg)
