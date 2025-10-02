@@ -1,9 +1,11 @@
 package unmarshaler
 
 import (
+	"context"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type adpackerResp struct {
@@ -12,10 +14,10 @@ type adpackerResp struct {
 
 type Adpacker struct{}
 
-func (s *Adpacker) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
+func (s *Adpacker) UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error) {
 	resp := &adpackerResp{}
 	if err := json.Unmarshal(body, resp); err != nil {
-		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
+		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
 		return nil, ErrInvalidFormat
 	}
 	if len(resp.Data) == 0 {

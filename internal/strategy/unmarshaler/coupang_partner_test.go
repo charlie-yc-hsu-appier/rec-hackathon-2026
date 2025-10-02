@@ -1,6 +1,7 @@
 package unmarshaler
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestCoupangPartner(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			strategy := &CoupangPartner{}
-			got, err := strategy.UnmarshalResponse(tc.input)
+			got, err := strategy.UnmarshalResponse(context.Background(), tc.input)
 			if tc.wantedError != nil {
 				require.Error(t, err)
 				require.Equal(t, tc.wantedError.Error(), err.Error())

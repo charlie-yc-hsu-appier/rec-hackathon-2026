@@ -1,8 +1,10 @@
 package unmarshaler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,10 +29,10 @@ type keetaItem struct {
 
 type Keeta struct{}
 
-func (s *Keeta) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
+func (s *Keeta) UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error) {
 	var resp keetaResp
 	if err := json.Unmarshal(body, &resp); err != nil {
-		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
+		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
 		return nil, ErrInvalidFormat
 	}
 	if resp.Code != 0 {

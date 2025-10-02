@@ -1,6 +1,7 @@
 package unmarshaler
 
 import (
+	"context"
 	"errors"
 )
 
@@ -22,5 +23,5 @@ type PartnerResp struct {
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=unmarshaler
 
 type Strategy interface {
-	UnmarshalResponse(body []byte) ([]PartnerResp, error)
+	UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error)
 }

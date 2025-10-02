@@ -1,6 +1,7 @@
 package unmarshaler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -16,10 +17,10 @@ type wrappedResp struct {
 
 type WrappedCoupangPartner struct{}
 
-func (s *WrappedCoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
+func (s *WrappedCoupangPartner) UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error) {
 	rResp := &wrappedResp{}
 	if err := json.Unmarshal(body, rResp); err != nil {
-		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
+		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
 		return nil, ErrInvalidFormat
 	}
 	if rResp.RCode != "0" {

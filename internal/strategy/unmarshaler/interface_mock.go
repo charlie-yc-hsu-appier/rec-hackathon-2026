@@ -10,6 +10,7 @@
 package unmarshaler
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -39,16 +40,16 @@ func (m *MockStrategy) EXPECT() *MockStrategyMockRecorder {
 }
 
 // UnmarshalResponse mocks base method.
-func (m *MockStrategy) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
+func (m *MockStrategy) UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnmarshalResponse", body)
+	ret := m.ctrl.Call(m, "UnmarshalResponse", ctx, body)
 	ret0, _ := ret[0].([]PartnerResp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UnmarshalResponse indicates an expected call of UnmarshalResponse.
-func (mr *MockStrategyMockRecorder) UnmarshalResponse(body any) *gomock.Call {
+func (mr *MockStrategyMockRecorder) UnmarshalResponse(ctx, body any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnmarshalResponse", reflect.TypeOf((*MockStrategy)(nil).UnmarshalResponse), body)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnmarshalResponse", reflect.TypeOf((*MockStrategy)(nil).UnmarshalResponse), ctx, body)
 }

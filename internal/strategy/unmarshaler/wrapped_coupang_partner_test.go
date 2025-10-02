@@ -1,6 +1,7 @@
 package unmarshaler
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -39,7 +40,7 @@ func TestWrappedCoupangPartner(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			strategy := &WrappedCoupangPartner{}
-			got, err := strategy.UnmarshalResponse(tc.input)
+			got, err := strategy.UnmarshalResponse(context.Background(), tc.input)
 			if tc.wantedError != nil {
 				require.Equal(t, tc.wantedError.Error(), err.Error())
 			} else {

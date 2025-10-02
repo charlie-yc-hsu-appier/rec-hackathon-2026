@@ -1,6 +1,7 @@
 package unmarshaler
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,7 +39,7 @@ func TestAdpacker(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			strategy := &Adpacker{}
-			got, err := strategy.UnmarshalResponse(tc.input)
+			got, err := strategy.UnmarshalResponse(context.Background(), tc.input)
 			if tc.wantedError != nil {
 				require.Equal(t, tc.wantedError.Error(), err.Error())
 			} else {
