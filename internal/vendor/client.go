@@ -65,7 +65,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		return nil, err
 	}
 
-	res, err := v.respUnmarshalStrategy.UnmarshalResponse(restResp.Body)
+	res, err := v.respUnmarshalStrategy.UnmarshalResponse(ctx, restResp.Body)
 	if err != nil {
 		telemetry.Metrics.RestApiAnomalyTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID, err.Error()).Inc()
 		return nil, err

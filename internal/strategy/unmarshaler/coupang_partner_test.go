@@ -1,6 +1,8 @@
 package unmarshaler
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,8 +22,8 @@ func TestCoupangPartner(t *testing.T) {
 		},
 		{
 			name:        "GIVEN invalid JSON THEN return an error",
-			input:       []byte("invalid json"),
-			wantedError: ErrInvalidFormat,
+			input:       []byte("invalid json and more text to exceed the limit"),
+			wantedError: errors.New("invalid format. body: invalid json and mor..."),
 		},
 		{
 			name:        "GIVEN product with ID 0 THEN return an error",
@@ -33,7 +35,7 @@ func TestCoupangPartner(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			strategy := &CoupangPartner{}
-			got, err := strategy.UnmarshalResponse(tc.input)
+			got, err := strategy.UnmarshalResponse(context.Background(), tc.input)
 			if tc.wantedError != nil {
 				require.Error(t, err)
 				require.Equal(t, tc.wantedError.Error(), err.Error())

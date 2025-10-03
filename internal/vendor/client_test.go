@@ -58,7 +58,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)}, nil)
-				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
+				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
 				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url", nil)
 
 			},
@@ -82,7 +82,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte("invalid json")}, nil)
-				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
+				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
 
 			},
 			wantErr: true,

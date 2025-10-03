@@ -1,6 +1,7 @@
 package unmarshaler
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
@@ -15,13 +16,13 @@ type coupangResp struct {
 
 type CoupangPartner struct{}
 
-func (s *CoupangPartner) UnmarshalResponse(body []byte) ([]PartnerResp, error) {
+func (s *CoupangPartner) UnmarshalResponse(ctx context.Context, body []byte) ([]PartnerResp, error) {
 	var resp []coupangResp
 	if err := json.Unmarshal(body, &resp); err != nil {
-		log.WithError(err).Errorf("fail to unmarshal response body: %s", string(body))
-		return nil, ErrInvalidFormat
+		log.WithContext(ctx).Errorf("fail to unmarshal response body: %s", string(body))
+		return nil, newInvalidFormatError(body)
 	}
-	
+
 	res := make([]PartnerResp, 0, len(resp))
 	for _, item := range resp {
 		res = append(res, PartnerResp{
