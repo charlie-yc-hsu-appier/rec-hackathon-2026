@@ -21,7 +21,6 @@ vendors:
       queries:
         - key: param1
           value: "{click_id_base64}"
-
   - name: replace
     {{- with secret "secret/project/recommendation/rec-serving/replace" }}
     access_key: {{ .Data.data.access_key }}
@@ -46,8 +45,6 @@ vendors:
           value: "{user_id_lower}"
         - key: land_url
           value: "{product_url}"
-
-
   - name: inl_corp_0
     with_proxy: true
     request:

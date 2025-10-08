@@ -65,7 +65,7 @@ http://localhost:8080/healthz
 
 We use macros (placeholders) in our URL templates for dynamic replacement. At runtime, these macros get swapped out for real data, making the request API and tracking URLs dynamic and easy to maintain.
 
-### Supported Request URL Macros
+### Supported URL Macros
 
 | Macro               | Description                          | Example Replacement                    |
 |---------------------|--------------------------------------|----------------------------------------|
@@ -77,13 +77,10 @@ We use macros (placeholders) in our URL templates for dynamic replacement. At ru
 | `{bundle_id}`       | App bundle ID or empty for web       | `com.coupang.mobile`                   |
 | `{adtype}`          | The impression ad type               | `value=2(banner) and 3(native)`        |
 | `{partner_id}`      | Partner ID                           | `kakao_kr`                             |
-| `{subid}`           | Sub ID for coupang partners          | `650alldb2`                             |
-
-### Supported Tracking URL Macros
-
-| Macro                   | Description                              | Example Replacement                                          |
-|-------------------------|------------------------------------------|--------------------------------------------------------------|
-| `{product_url}`         | Product URL string                       | `https://ads-partners.example.com/image2/uuid1234`           |
-| `{encoded_product_url}` | Encoded Product URL (URL-encoded)        | `https%3A%2F%2Fads-partners.example.com%2Fimage2%2Fuuid1234` |
-| `{click_id_base64}`     | Click ID encoded in base64               | `Y2xpY2tJRA`                                                 |
-| `{user_id_lower}`       | User ID in lowercase                     | `57846b41-0290-40c5-9e96-88d17f59eac5`                       |
+| `{subid}`           | Sub ID for coupang partners          | `650alldb2`                            |
+| `{keeta_campaign_id}` | Campaign ID of Keeta               | `1901910420462051330`                  |
+| `{click_id}`        | Raw click ID                         | `oSRKfG7nRAy0wgPAg3gN8`                |
+| `{client_ip}`       | User's IP address                    | `182.239.90.0`                         |
+| `{latitude}`        | User's geo latitude                  | `22.3200`                              |
+| `{longitude}`       | User's geo longitude                 | `114.1800`                             |
+| `{product_url}`     | Product URL string                   | `https://ads-partners.example.com/image2/uuid1234` |
