@@ -31,20 +31,12 @@ service:
   type: ClusterIP
   port: 80
 
-nodeSelector: {}
+nodeSelector:
+  cloud.google.com/compute-class: shared
 
 tolerations:
   - key: appier/preemptible
     operator: Exists
-
-affinity:
-  nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - preference:
-          matchExpressions:
-            - key: appier/preemptible
-              operator: Exists
-        weight: 100
 
 nginx:
   image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/nginx-lua-prometheus:v1.0.0
