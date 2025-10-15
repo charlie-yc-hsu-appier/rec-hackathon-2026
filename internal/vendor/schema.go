@@ -17,6 +17,7 @@ type Request struct {
 	Latitude        string `form:"lat"`
 	Longitude       string `form:"lon"`
 	SubID           string `form:"subid"`
+	OS              string `form:"os"`
 	ClientIP        string
 }
 
@@ -35,6 +36,7 @@ func (r Request) toURLParams() url.Params {
 		Latitude:        r.Latitude,
 		Longitude:       r.Longitude,
 		SubID:           r.SubID,
+		OS:              r.OS,
 	}
 }
 

@@ -35,6 +35,8 @@ func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 		return &unmarshaler.Adpacker{}
 	case "keeta":
 		return &unmarshaler.Keeta{}
+	case "adforus":
+		return &unmarshaler.Adforus{}
 	default:
 		return &unmarshaler.CoupangPartner{}
 	}
