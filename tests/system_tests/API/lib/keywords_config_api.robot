@@ -226,12 +226,16 @@ Get vendor subids from config api
     
     Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
     
-    IF  '${vendor_name}' == 'keeta'
-      Set Test Message    ℹ️ Keeta vendor does not require subid  append=yes
+    @{vendors_no_subid} =   Create List             keeta                   adforus
+    ${needs_subid} =        Run Keyword And Return Status
+    ...                     List Should Not Contain Value  ${vendors_no_subid}  ${vendor_name}
+    
+    IF  not ${needs_subid}
+      Set Test Message    ℹ️ ${vendor_name} vendor does not require subid  append=yes
     ELSE IF  '${vendor_subid}' != '${EMPTY}'
       Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
     ELSE
-      Set Test Message    ❌ No subid found for vendor: ${vendor_name} - subid is required for all non-keeta vendors  append=yes
+      Set Test Message    ❌ No subid found for vendor: ${vendor_name} - subid is required for non-exempt vendors  append=yes
     END
   END
   

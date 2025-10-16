@@ -37,6 +37,8 @@ Auto select test dimensions
   ...                 Should Be Equal     ${vendor_name}          linkmine
   ${is_adpacker} =    Run Keyword And Return Status
   ...                 Should Be Equal     ${vendor_name}          adpacker
+  ${is_adforus} =     Run Keyword And Return Status
+  ...                 Should Be Equal     ${vendor_name}          adforus
 
   # Generate adtype parameter for both linkmine and adpacker
   ${needs_adtype} =   Set Variable If     ${is_linkmine} or ${is_adpacker}     ${TRUE}     ${FALSE}
@@ -59,6 +61,17 @@ Auto select test dimensions
     Set To Dictionary   ${dimensions}   bundle_id=${bundle_id}
     
     Log                 Linkmine-specific params - bundle_id: ${bundle_id} (empty)
+  END
+
+  # Adforus-specific parameters (os for user_id transformation)
+  IF  ${is_adforus}
+    # For adforus vendor, we need to test both android and ios
+    # This will be handled in the calling template to ensure both OS are tested
+    # Default to android for single dimension generation (will be overridden in template)
+    ${os} =             Set Variable    android
+    Set To Dictionary   ${dimensions}   os=${os}
+    
+    Log                 Adforus-specific params - os: ${os} (will test both android and ios)
   END
 
   RETURN              &{dimensions}
@@ -166,3 +179,43 @@ Load vendor config from file
 
   Log                 📄 Loaded vendor config from: ${config_file_path}
   RETURN              ${vendor_yaml}
+
+
+Apply vendor specific user id transformation
+  [Arguments]         ${user_id}              ${vendor_name}          ${has_os}=${FALSE}      ${os}=${EMPTY}
+  [Documentation]  Apply vendor-specific transformations to user_id based on vendor requirements
+  ...              Currently supports:
+  ...              - adforus: OS-specific case transformation (android=lowercase, ios=uppercase)
+  ...              - other vendors: return original user_id unchanged
+  ...              
+  ...              Examples:
+  ...              - adforus + android: ABC123 → abc123
+  ...              - adforus + ios: abc123 → ABC123
+  ...              - linkmine: ABC123 → ABC123 (unchanged)
+
+  # Adforus vendor: OS-specific case transformation
+  ${is_adforus} =     Run Keyword And Return Status
+  ...                 Should Be Equal         ${vendor_name}          adforus
+  
+  IF  ${is_adforus} and ${has_os}
+    IF  '${os}' == 'android'
+      ${final_user_id} =  Convert To Lowercase  ${user_id}
+      Log               ${vendor_name} Android: transformed user_id to lowercase - ${final_user_id}
+    ELSE IF  '${os}' == 'ios'
+      ${final_user_id} =  Convert To Uppercase  ${user_id}
+      Log               ${vendor_name} iOS: transformed user_id to uppercase - ${final_user_id}
+    ELSE
+      ${final_user_id} =  Set Variable        ${user_id}
+      Log               ${vendor_name}: unknown OS '${os}', using original user_id - ${final_user_id}
+    END
+  ELSE
+    # For all other vendors or when no OS specified, return original user_id
+    ${final_user_id} =    Set Variable        ${user_id}
+    IF  ${is_adforus}
+      Log               ${vendor_name}: no OS specified, using original user_id - ${final_user_id}
+    ELSE
+      Log               ${vendor_name}: no transformation needed, using original user_id - ${final_user_id}
+    END
+  END
+
+  RETURN              ${final_user_id}

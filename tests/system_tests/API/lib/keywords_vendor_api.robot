@@ -9,11 +9,13 @@ I would like to set the session under vendor endpoint with
   ...              Available parameters:
   ...              endpoint - The endpoint path (default: /healthz)
   ...              For /r endpoint format: endpoint=r/{vendor_name}
-  ...              Supported parameters: user_id, click_id, w, h, bundle_id, adtype, subid, lat, lon, k_campaign_id
+  ...              Supported parameters: user_id, click_id, w, h, bundle_id, adtype, subid, lat, lon, k_campaign_id, os
+  ...              user_id parameter automatically adjusts based on vendor requirements (e.g., case-sensitive for adforus)
   ...              For example:
   ...              Given I would like to set the session under vendor endpoint with  endpoint=/healthz
   ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300  subid=vendor_subid
   ...              Given I would like to set the session under vendor endpoint with  endpoint=r/keeta  user_id=uuid  click_id=value  w=300  h=300  lat=22.3264  lon=114.1661  k_campaign_id=campaign_name
+  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/adforus  user_id=uuid  click_id=value  w=300  h=300  os=android
   [Arguments]             &{args}
 
   # Set default endpoint if not provided
@@ -27,7 +29,7 @@ I would like to set the session under vendor endpoint with
 
   # Handle optional parameters - Method 2: Direct dictionary filtering
   ${query_params} =       Create Dictionary
-  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   bundle_id   adtype    subid   lat   lon   k_campaign_id
+  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   bundle_id   adtype    subid   lat   lon   k_campaign_id   os
 
   FOR  ${param}  IN  @{param_names}
     ${param_exists} =   Run Keyword And Return Status
