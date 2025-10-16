@@ -168,7 +168,7 @@ Validate vendor response structure
 
 
 Validate product patch contains product ids
-  [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}  ${os}=${Empty}  ${final_user_id}=${Empty}
+  [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}  ${os}=${Empty}  ${user_id}=${Empty}
   [Documentation]  Validate that each product contains the correct tracking parameter
   ...              with base64 encoded click_id in the URL
   ...              New response format: array of products with product_id, url, image
@@ -234,18 +234,18 @@ Validate product patch contains product ids
     ${is_adforus} =         Run Keyword And Return Status
     ...                     Should Be Equal         ${vendor_name}      adforus
 
-    IF  ${is_adforus} and '${os}' != '${Empty}' and '${final_user_id}' != '${Empty}'
+    IF  ${is_adforus} and '${os}' != '${Empty}' and '${user_id}' != '${Empty}'
       Log                   🎯 Adforus vendor detected - validating adid case in product_url for OS: ${os}
       
       IF  '${os}' == 'ios'
         # For iOS, adid should be uppercase in product_url
-        ${expected_adid_case} =  Convert To Uppercase  ${final_user_id}
+        ${expected_adid_case} =  Convert To Uppercase  ${user_id}
         Should Contain      ${product_url}          ${expected_adid_case}
         ...                 Product URL should contain uppercase adid for iOS: adid=${expected_adid_case}, but got: ${product_url}
         Log                 ✅ iOS adid validation passed - found uppercase adid: ${expected_adid_case}
       ELSE IF  '${os}' == 'android'
         # For Android, adid should be lowercase in product_url
-        ${expected_adid_case} =  Convert To Lowercase  ${final_user_id}
+        ${expected_adid_case} =  Convert To Lowercase  ${user_id}
         Should Contain      ${product_url}          ${expected_adid_case}
         ...                 Product URL should contain lowercase adid for Android: adid=${expected_adid_case}, but got: ${product_url}
         Log                 ✅ Android adid validation passed - found lowercase adid: ${expected_adid_case}

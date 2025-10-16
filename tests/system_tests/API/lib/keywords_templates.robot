@@ -140,16 +140,13 @@ Test vendors from yaml configuration
         ${click_id_base64} =    Set Variable    ${click_id}
       END
 
-      # Adjust user_id based on vendor-specific requirements
-      ${final_user_id} =      Apply vendor specific user id transformation  ${user_id}  ${vendor_name}  ${has_os}  ${os}
-
       # Test the vendor endpoint
       Given I have an vendor session
 
       # Prepare common parameters
       ${common_params} =      Create Dictionary
       ...                     endpoint=r/${vendor_name}
-      ...                     user_id=${final_user_id}
+      ...                     user_id=${user_id}
       ...                     click_id=${click_id}
       ...                     w=${width}
       ...                     h=${height}
@@ -194,7 +191,7 @@ Test vendors from yaml configuration
       IF  ${is_adforus}
         Set To Dictionary     ${common_params}
         ...                   os=${os}
-        Log                   Making Adforus API call with os: ${os}, user_id: ${final_user_id}
+        Log                   Making Adforus API call with os: ${os}, user_id: ${user_id}
       END
 
       # Make the API call with all parameters
@@ -205,7 +202,7 @@ Test vendors from yaml configuration
 
       # Validate response structure and content
       Validate vendor response structure  ${resp_json}  ${vendor_name}
-      Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}  ${vendor_name}  ${os}  ${final_user_id}
+      Validate product patch contains product ids  ${resp_json}  ${param_name}  ${click_id_base64}  ${vendor_name}  ${os}  ${user_id}
 
       IF  ${is_adforus}
         Log                   ✅ Adforus vendor ${vendor_name} test PASSED with OS: ${os}
