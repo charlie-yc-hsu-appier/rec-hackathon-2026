@@ -21,6 +21,9 @@ type Params struct {
 
 	// tracking
 	ProductURL string
+
+	// decide to use upper case or lower case user id
+	OS string
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=url

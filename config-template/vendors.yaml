@@ -226,3 +226,25 @@ vendors:
     tracking:
       url: "{product_url}"
       queries: []
+  - name: adforus
+    with_proxy: false
+    request:
+      url: "https://api.linkmine.co.kr/ohouse/"
+      queries:
+        - key: app_code
+          value: "zbkj6Sirtt"
+        - key: limit
+          value: "50"
+        - key: adid
+          value: "{user_id_case_by_os}"
+        - key: resize_w
+          value: "{width}"
+        - key: resize_h
+          value: "{height}"
+    tracking:
+      url: "{product_url}"
+      queries:
+        - key: param1
+          value: "{click_id_base64}"
+        - key: adid
+          value: "{user_id_case_by_os}"

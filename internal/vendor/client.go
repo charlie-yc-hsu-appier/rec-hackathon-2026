@@ -78,6 +78,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 			ProductURL: ele.ProductURL,
 			ClickID:    req.ClickID,
 			UserID:     req.UserID,
+			OS:         req.OS,
 		}
 		productURL, err := v.trackingURLStrategy.GenerateURL(v.cfg.Tracking, trackParams)
 		if err != nil {

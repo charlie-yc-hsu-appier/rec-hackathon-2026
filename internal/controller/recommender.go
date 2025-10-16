@@ -35,6 +35,7 @@ func NewRecommender(vendorRegistry map[string]vendor.Client) *Recommender {
 // @Param        bundle_id   query string false "App bundle ID"
 // @Param        adtype      query int    false "Ad Type (native → 3, else → 2)"
 // @Param        partner_id  query string false "Partner ID"
+// @Param        os          query string false "Operating System (android, ios)"
 // @Success      200 {object} []vendor.ProductInfo
 // @Failure      400 {object} map[string]string "Bad Request"
 // @Failure      500 {object} map[string]string "Internal Error"

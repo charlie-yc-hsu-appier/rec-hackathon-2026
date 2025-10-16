@@ -97,6 +97,12 @@ const docTemplate = `{
                         "description": "Partner ID",
                         "name": "partner_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Operating System (android, ios)",
+                        "name": "os",
+                        "in": "query"
                     }
                 ],
                 "responses": {
