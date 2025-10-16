@@ -202,8 +202,8 @@ Apply vendor specific user id transformation
       ${final_user_id} =  Convert To Lowercase  ${user_id}
       Log               ${vendor_name} Android: transformed user_id to lowercase - ${final_user_id}
     ELSE IF  '${os}' == 'ios'
-      ${final_user_id} =  Convert To Uppercase  ${user_id}
-      Log               ${vendor_name} iOS: transformed user_id to uppercase - ${final_user_id}
+      ${final_user_id} =  Convert To Lowercase  ${user_id}
+      Log               ${vendor_name} iOS: transformed user_id to lowercase - ${final_user_id}
     ELSE
       ${final_user_id} =  Set Variable        ${user_id}
       Log               ${vendor_name}: unknown OS '${os}', using original user_id - ${final_user_id}
