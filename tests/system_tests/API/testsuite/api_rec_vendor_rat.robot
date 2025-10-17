@@ -30,12 +30,19 @@ Suite Teardown      Release Test Value
   ...              - INL vendors: URL-encoded subparam with base64 encoding
   ...              - INL_corp_5: Special handling with subParam=pier
   ...              - Keeta vendor: Dynamic Config API integration with lat=22.3264, lon=114.1661, k_campaign_id
+  ...              - Adforus vendor: OS-specific adid handling (lowercase Android, uppercase iOS)
   ...              
   ...              *Keeta Integration Features:*
   ...              - Searches running campaigns with JSONPath filtering
   ...              - Campaign criteria: status_code=Running, datafeed_id=android--com.sankuai.sailor.afooddelivery_2
   ...              - Uses first campaign with non-empty keeta_campaign_name
   ...              - Skips image validation and click_id tracking validation for Keeta responses
+  ...              
+  ...              *Adforus Integration Features:*
+  ...              - OS-specific adid case handling: Android (lowercase), iOS (uppercase)
+  ...              - Comprehensive dual-OS testing: automatically tests both Android and iOS
+  ...              - Dedicated testing workflow ensuring complete OS coverage
+  ...              - No subid requirement (similar to Keeta vendor)
   ...              
   ...              *Validation & Quality Assurance:*
   ...              - Base64 encoding validation for click_id parameters

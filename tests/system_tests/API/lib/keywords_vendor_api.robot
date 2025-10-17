@@ -9,11 +9,13 @@ I would like to set the session under vendor endpoint with
   ...              Available parameters:
   ...              endpoint - The endpoint path (default: /healthz)
   ...              For /r endpoint format: endpoint=r/{vendor_name}
-  ...              Supported parameters: user_id, click_id, w, h, bundle_id, adtype, subid, lat, lon, k_campaign_id
+  ...              Supported parameters: user_id, click_id, w, h, bundle_id, adtype, subid, lat, lon, k_campaign_id, os
+  ...              user_id parameter automatically adjusts based on vendor requirements (e.g., case-sensitive for adforus)
   ...              For example:
   ...              Given I would like to set the session under vendor endpoint with  endpoint=/healthz
   ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300  subid=vendor_subid
   ...              Given I would like to set the session under vendor endpoint with  endpoint=r/keeta  user_id=uuid  click_id=value  w=300  h=300  lat=22.3264  lon=114.1661  k_campaign_id=campaign_name
+  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/adforus  user_id=uuid  click_id=value  w=300  h=300  os=android
   [Arguments]             &{args}
 
   # Set default endpoint if not provided
@@ -27,7 +29,7 @@ I would like to set the session under vendor endpoint with
 
   # Handle optional parameters - Method 2: Direct dictionary filtering
   ${query_params} =       Create Dictionary
-  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   bundle_id   adtype    subid   lat   lon   k_campaign_id
+  @{param_names} =        Create List             vendor_key              user_id             click_id            w                       h   bundle_id   adtype    subid   lat   lon   k_campaign_id   os
 
   FOR  ${param}  IN  @{param_names}
     ${param_exists} =   Run Keyword And Return Status
@@ -166,12 +168,13 @@ Validate vendor response structure
 
 
 Validate product patch contains product ids
-  [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}
+  [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}  ${os}=${Empty}  ${user_id}=${Empty}
   [Documentation]  Validate that each product contains the correct tracking parameter
   ...              with base64 encoded click_id in the URL
   ...              New response format: array of products with product_id, url, image
   ...              Special handling for INL vendors with URL encoded parameters
   ...              Keeta vendor: skip click_id validation
+  ...              Adforus vendor: validate adid case in product_url based on OS
 
   # Response should be a list/array
   Should Not Be Empty     ${response_json}
@@ -226,6 +229,30 @@ Validate product patch contains product ids
     # Verify the tracking parameter contains the base64 encoded click_id
     Should Contain          ${product_url}          ${search_pattern}
     ...                     Product URL should contain ${search_pattern}, but got: ${product_url}
+
+    # Additional validation for Adforus vendor - check adid case in product_url
+    ${is_adforus} =         Run Keyword And Return Status
+    ...                     Should Be Equal         ${vendor_name}      adforus
+
+    IF  ${is_adforus} and '${os}' != '${Empty}' and '${user_id}' != '${Empty}'
+      Log                   🎯 Adforus vendor detected - validating adid case in product_url for OS: ${os}
+      
+      IF  '${os}' == 'ios'
+        # For iOS, adid should be uppercase in product_url
+        ${expected_adid_case} =  Convert To Uppercase  ${user_id}
+        Should Contain      ${product_url}          ${expected_adid_case}
+        ...                 Product URL should contain uppercase adid for iOS: adid=${expected_adid_case}, but got: ${product_url}
+        Log                 ✅ iOS adid validation passed - found uppercase adid: ${expected_adid_case}
+      ELSE IF  '${os}' == 'android'
+        # For Android, adid should be lowercase in product_url
+        ${expected_adid_case} =  Convert To Lowercase  ${user_id}
+        Should Contain      ${product_url}          ${expected_adid_case}
+        ...                 Product URL should contain lowercase adid for Android: adid=${expected_adid_case}, but got: ${product_url}
+        Log                 ✅ Android adid validation passed - found lowercase adid: ${expected_adid_case}
+      ELSE
+        Log                 ⚠️ Unknown OS for adforus vendor: ${os}, skipping adid case validation
+      END
+    END
 
     Log                     ✅ Product ${product_id} validation passed - URL contains correct tracking parameter: ${search_pattern}
   END
