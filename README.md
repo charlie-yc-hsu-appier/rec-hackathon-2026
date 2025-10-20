@@ -2,11 +2,15 @@
 
 Table of contents
 =================
-* [Prerequisite](#prerequisite)
-* [Development](#development)
-    * [Install modules](#install-modules)
-    * [Run pre-commit check](#run-pre-commit-check)
-    * [Test on dev cluster](#test-on-dev-cluster)
+- [rec-vendor-api](#rec-vendor-api)
+- [Table of contents](#table-of-contents)
+  - [Prerequisite](#prerequisite)
+  - [Development](#development)
+    - [Install modules](#install-modules)
+    - [Run pre-commit check](#run-pre-commit-check)
+    - [Test on dev cluster](#test-on-dev-cluster)
+  - [Requester Strategy and Tracker Strategy](#requester-strategy-and-tracker-strategy)
+    - [Supported URL Macros](#supported-url-macros)
 
 
 ## Prerequisite
@@ -67,20 +71,21 @@ We use macros (placeholders) in our URL templates for dynamic replacement. At ru
 
 ### Supported URL Macros
 
-| Macro               | Description                          | Example Replacement                    |
-|---------------------|--------------------------------------|----------------------------------------|
-| `{width}`           | Image width (integer)                | `1200`                                 |
-| `{height}`          | Image height (integer)               | `600`                                  |
-| `{user_id_lower}`   | User ID in lowercase                 | `57846b41-0290-40c5-9e96-88d17f59eac5` |
-| `{click_id_base64}` | Click ID encoded in base64           | `Y2xpY2tJRA`                           |
-| `{web_host}`        | Site domain for web or empty for app | `testabc.com`                          |
-| `{bundle_id}`       | App bundle ID or empty for web       | `com.coupang.mobile`                   |
-| `{adtype}`          | The impression ad type               | `value=2(banner) and 3(native)`        |
-| `{partner_id}`      | Partner ID                           | `kakao_kr`                             |
-| `{subid}`           | Sub ID for coupang partners          | `650alldb2`                            |
-| `{keeta_campaign_id}` | Campaign ID of Keeta               | `1901910420462051330`                  |
-| `{click_id}`        | Raw click ID                         | `oSRKfG7nRAy0wgPAg3gN8`                |
-| `{client_ip}`       | User's IP address                    | `182.239.90.0`                         |
-| `{latitude}`        | User's geo latitude                  | `22.3200`                              |
-| `{longitude}`       | User's geo longitude                 | `114.1800`                             |
-| `{product_url}`     | Product URL string                   | `https://ads-partners.example.com/image2/uuid1234` |
+| Macro                  | Description                                      | Example Replacement                                |
+| ---------------------- | ------------------------------------------------ | -------------------------------------------------- |
+| `{width}`              | Image width (integer)                            | `1200`                                             |
+| `{height}`             | Image height (integer)                           | `600`                                              |
+| `{user_id_lower}`      | User ID in lowercase                             | `57846b41-0290-40c5-9e96-88d17f59eac5`             |
+| `{user_id_case_by_os}` | User ID in lowercase (aos) or in uppercase (ios) | `57846b41-0290-40c5-9e96-88d17f59eac5`             |
+| `{click_id_base64}`    | Click ID encoded in base64                       | `Y2xpY2tJRA`                                       |
+| `{web_host}`           | Site domain for web or empty for app             | `testabc.com`                                      |
+| `{bundle_id}`          | App bundle ID or empty for web                   | `com.coupang.mobile`                               |
+| `{adtype}`             | The impression ad type                           | `value=2(banner) and 3(native)`                    |
+| `{partner_id}`         | Partner ID                                       | `kakao_kr`                                         |
+| `{subid}`              | Sub ID for coupang partners                      | `650alldb2`                                        |
+| `{keeta_campaign_id}`  | Campaign ID of Keeta                             | `1901910420462051330`                              |
+| `{click_id}`           | Raw click ID                                     | `oSRKfG7nRAy0wgPAg3gN8`                            |
+| `{client_ip}`          | User's IP address                                | `182.239.90.0`                                     |
+| `{latitude}`           | User's geo latitude                              | `22.3200`                                          |
+| `{longitude}`          | User's geo longitude                             | `114.1800`                                         |
+| `{product_url}`        | Product URL string                               | `https://ads-partners.example.com/image2/uuid1234` |

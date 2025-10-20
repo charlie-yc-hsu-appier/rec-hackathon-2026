@@ -77,6 +77,19 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 			return "", errors.BadRequestErrorf("UserID not provided")
 		}
 		return strings.ToLower(params.UserID), nil
+	case "{user_id_case_by_os}":
+		if params.UserID == "" {
+			return "", errors.BadRequestErrorf("UserID not provided")
+		}
+		if params.OS == "" {
+			return "", errors.BadRequestErrorf("OS not provided")
+		}
+		if strings.ToLower(params.OS) == "android" {
+			return strings.ToLower(params.UserID), nil
+		} else if strings.ToLower(params.OS) == "ios" {
+			return strings.ToUpper(params.UserID), nil
+		}
+		return "", errors.BadRequestErrorf("unsupported OS: %s (supported: android, ios)", params.OS)
 	case "{click_id_base64}":
 		if params.ClickID == "" {
 			return "", errors.BadRequestErrorf("ClickID not provided")

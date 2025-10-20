@@ -83,6 +83,10 @@ paths:
         in: query
         name: partner_id
         type: string
+      - description: Operating System (android, ios)
+        in: query
+        name: os
+        type: string
       produces:
       - application/json
       responses:

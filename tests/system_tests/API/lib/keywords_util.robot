@@ -37,6 +37,8 @@ Auto select test dimensions
   ...                 Should Be Equal     ${vendor_name}          linkmine
   ${is_adpacker} =    Run Keyword And Return Status
   ...                 Should Be Equal     ${vendor_name}          adpacker
+  ${is_adforus} =     Run Keyword And Return Status
+  ...                 Should Be Equal     ${vendor_name}          adforus
 
   # Generate adtype parameter for both linkmine and adpacker
   ${needs_adtype} =   Set Variable If     ${is_linkmine} or ${is_adpacker}     ${TRUE}     ${FALSE}
@@ -59,6 +61,17 @@ Auto select test dimensions
     Set To Dictionary   ${dimensions}   bundle_id=${bundle_id}
     
     Log                 Linkmine-specific params - bundle_id: ${bundle_id} (empty)
+  END
+
+  # Adforus-specific parameters (os for user_id transformation)
+  IF  ${is_adforus}
+    # For adforus vendor, we need to test both android and ios
+    # This will be handled in the calling template to ensure both OS are tested
+    # Default to android for single dimension generation (will be overridden in template)
+    ${os} =             Set Variable    android
+    Set To Dictionary   ${dimensions}   os=${os}
+    
+    Log                 Adforus-specific params - os: ${os} (will test both android and ios)
   END
 
   RETURN              &{dimensions}
@@ -166,3 +179,4 @@ Load vendor config from file
 
   Log                 📄 Loaded vendor config from: ${config_file_path}
   RETURN              ${vendor_yaml}
+

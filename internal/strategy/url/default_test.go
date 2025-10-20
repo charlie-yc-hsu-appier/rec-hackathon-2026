@@ -22,6 +22,7 @@ func TestDefault(t *testing.T) {
 				Queries: []config.Query{
 					{Key: "size", Value: "{width}x{height}"},
 					{Key: "user", Value: "{user_id_lower}"},
+					{Key: "user_case_android", Value: "{user_id_case_by_os}"},
 					{Key: "click_id", Value: "{click_id_base64}"},
 					{Key: "site_domain", Value: "{web_host}"},
 					{Key: "app_bundleId", Value: "{bundle_id}"},
@@ -31,6 +32,7 @@ func TestDefault(t *testing.T) {
 			},
 			params: Params{
 				UserID:    "TestUser",
+				OS:        "aNDroid",
 				ImgWidth:  200,
 				ImgHeight: 100,
 				ClickID:   "test-id",
@@ -39,7 +41,7 @@ func TestDefault(t *testing.T) {
 				AdType:    1,
 				PartnerID: "kakao_kr",
 			},
-			wantURL: "https://example.com/image?app_bundleId=com.example.app&click_id=dGVzdC1pZA&imp_adType=1&partner_id=kakao_kr&site_domain=http%3A%2F%2Fexample.com%2Fquery%3Fparam1%3D123%26param2%3D456&size=200x100&user=testuser",
+			wantURL: "https://example.com/image?app_bundleId=com.example.app&click_id=dGVzdC1pZA&imp_adType=1&partner_id=kakao_kr&site_domain=http%3A%2F%2Fexample.com%2Fquery%3Fparam1%3D123%26param2%3D456&size=200x100&user=testuser&user_case_android=testuser",
 		},
 		{
 			name: "GIVEN missing placeholders THEN return the expected URL",
@@ -88,6 +90,63 @@ func TestDefault(t *testing.T) {
 				ImgHeight: 50,
 			},
 			wantURL: "https://example.com/image%202/user/abc",
+		},
+
+		{
+			name: "GIVEN user_id_case_by_os macro with iOS OS THEN return uppercase user ID",
+			urlPattern: config.URLPattern{
+				URL: "https://api.example.com/test",
+				Queries: []config.Query{
+					{Key: "adid", Value: "{user_id_case_by_os}"},
+				},
+			},
+			params: Params{
+				UserID: "abc123DEF",
+				OS:     "ios",
+			},
+			wantURL: "https://api.example.com/test?adid=ABC123DEF",
+		},
+		{
+			name: "GIVEN user_id_case_by_os macro with empty UserID THEN return error",
+			urlPattern: config.URLPattern{
+				URL: "https://api.example.com/test",
+				Queries: []config.Query{
+					{Key: "adid", Value: "{user_id_case_by_os}"},
+				},
+			},
+			params: Params{
+				UserID: "",
+				OS:     "android",
+			},
+			expectedErr: "UserID not provided",
+		},
+		{
+			name: "GIVEN user_id_case_by_os macro with empty OS THEN return error",
+			urlPattern: config.URLPattern{
+				URL: "https://api.example.com/test",
+				Queries: []config.Query{
+					{Key: "adid", Value: "{user_id_case_by_os}"},
+				},
+			},
+			params: Params{
+				UserID: "TestUser123",
+				OS:     "",
+			},
+			expectedErr: "OS not provided",
+		},
+		{
+			name: "GIVEN user_id_case_by_os macro with unsupported OS THEN return error",
+			urlPattern: config.URLPattern{
+				URL: "https://api.example.com/test",
+				Queries: []config.Query{
+					{Key: "adid", Value: "{user_id_case_by_os}"},
+				},
+			},
+			params: Params{
+				UserID: "TestUser123",
+				OS:     "web",
+			},
+			expectedErr: "unsupported OS: web (supported: android, ios)",
 		},
 		// tracking
 		{
