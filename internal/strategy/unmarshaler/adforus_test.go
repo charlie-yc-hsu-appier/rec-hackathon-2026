@@ -21,7 +21,6 @@ func TestAdforus_UnmarshalResponse(t *testing.T) {
 					"productId": "3288378",
 					"productName": "추석 이벤트/ 세렌티 1200 모듈 수납장",
 					"productPrice": 241000,
-					"productImage": "https://zeratul.linkmine.io/v1/resize?width=1200&height=600&type=transparent&format=jpeg&bg=%23000000&quality=100&fs=1&url=https%3A%2F%2Fprs.ohouse.com%2Fapne2%2Fany%2Fuploads%2Fproductions%2Fv1-390565205213248.jpg%3Fw%3D600%26h%3D600%26c%3Dc",
 					"productUrl": "https://api.linkmine.co.kr/ck.html?app_code=zbkj6Sirtt&sid=39562&deep_link=https%3A%2F%2Flink.ohou.se%2F%40ohouse%2Faffiliate%3Fchannel%3Daffiliate"
 				}
 			]`),
@@ -29,7 +28,6 @@ func TestAdforus_UnmarshalResponse(t *testing.T) {
 				{
 					ProductID:        "3288378",
 					ProductSalePrice: "241000",
-					ProductImage:     "https://zeratul.linkmine.io/v1/resize?width=1200&height=600&type=transparent&format=jpeg&bg=%23000000&quality=100&fs=1&url=https%3A%2F%2Fprs.ohouse.com%2Fapne2%2Fany%2Fuploads%2Fproductions%2Fv1-390565205213248.jpg%3Fw%3D600%26h%3D600%26c%3Dc",
 					ProductURL:       "https://api.linkmine.co.kr/ck.html?app_code=zbkj6Sirtt&sid=39562&deep_link=https%3A%2F%2Flink.ohou.se%2F%40ohouse%2Faffiliate%3Fchannel%3Daffiliate",
 				},
 			},
@@ -56,13 +54,11 @@ func TestAdforus_UnmarshalResponse(t *testing.T) {
 				{
 					ProductID:        "3288378",
 					ProductSalePrice: "241000",
-					ProductImage:     "image1.jpg",
 					ProductURL:       "url1",
 				},
 				{
 					ProductID:        "1019809",
 					ProductSalePrice: "15740",
-					ProductImage:     "image2.jpg",
 					ProductURL:       "url2",
 				},
 			},
