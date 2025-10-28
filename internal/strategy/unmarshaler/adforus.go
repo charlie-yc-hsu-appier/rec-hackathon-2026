@@ -33,7 +33,6 @@ func (s *Adforus) UnmarshalResponse(ctx context.Context, body []byte) ([]Partner
 		res = append(res, PartnerResp{
 			ProductID:        item.ProductID,
 			ProductURL:       item.ProductURL,
-			ProductImage:     item.ProductImage,
 			ProductSalePrice: strconv.Itoa(item.ProductPrice),
 		})
 	}
