@@ -123,9 +123,12 @@ Validate vendor response structure
   Should Not Be Empty     ${response_json}
   ...                     Response array should not be empty
 
-  # Check if this is Keeta vendor (skip image validation)
+  # Check if this is Keeta or Adforus vendor (skip image validation)
   ${is_keeta} =           Run Keyword And Return Status
   ...                     Should Be Equal         ${vendor_name}      keeta
+  ${is_adforus} =         Run Keyword And Return Status
+  ...                     Should Be Equal         ${vendor_name}      adforus
+  ${skip_image} =         Evaluate                ${is_keeta} or ${is_adforus}
 
   # Validate each product in the response
   FOR  ${product}  IN  @{response_json}
@@ -135,8 +138,8 @@ Validate vendor response structure
     Dictionary Should Contain Key  ${product}  url
     ...                     Each product should contain 'url' key
 
-    # Skip image validation for Keeta vendor
-    IF  not ${is_keeta}
+    # Skip image validation for Keeta and Adforus vendors
+    IF  not ${skip_image}
       Dictionary Should Contain Key  ${product}  image
       ...                     Each product should contain 'image' key
     END
@@ -148,20 +151,20 @@ Validate vendor response structure
     ${url} =                Get From Dictionary     ${product}  url
     Should Not Be Empty     ${url}                  url should not be empty
 
-    # Skip image validation for Keeta vendor
-    IF  not ${is_keeta}
+    # Skip image validation for Keeta and Adforus vendors
+    IF  not ${skip_image}
       ${image} =              Get From Dictionary     ${product}  image
       Should Not Be Empty     ${image}                image should not be empty
     ELSE
-      Log                     🎯 Keeta vendor: skipping image validation
+      Log                     🎯 ${vendor_name} vendor: skipping image validation
     END
 
     Log                     ✅ Product ${product_id} structure validation passed
   END
 
   ${product_count} =      Get Length              ${response_json}
-  IF  ${is_keeta}
-    Log                   ✅ Keeta response structure validation passed for ${product_count} products (image validation skipped)
+  IF  ${skip_image}
+    Log                   ✅ ${vendor_name} response structure validation passed for ${product_count} products (image validation skipped)
   ELSE
     Log                   ✅ Response structure validation passed for ${product_count} products
   END
