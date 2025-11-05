@@ -29,6 +29,11 @@ pre-commit-check: generate test
 	golangci-lint run
 
 
+.PHONY: validate-vendors-config
+validate-vendors-config: config-dev
+	go run ./cmd/validate-config $(CHART_DIR)/secrets/vendors.yaml
+
+
 .PHONY: check-environment
 check-environment:
 	@if [ -z "$(DEV_NAME)" ]; then \
