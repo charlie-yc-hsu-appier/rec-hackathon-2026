@@ -51,7 +51,7 @@ func (s *Default) GenerateURL(urlPattern config.URLPattern, params Params) (stri
 func (s *Default) replaceMacros(str string, params Params) (string, error) {
 	matches := macroRegExp.FindAllString(str, -1)
 	for _, macro := range matches {
-		value, err := s.getMacroValue(macro, params)
+		value, err := s.GetMacroValue(macro, params)
 		if err != nil {
 			return "", err
 		}
@@ -60,7 +60,7 @@ func (s *Default) replaceMacros(str string, params Params) (string, error) {
 	return str, nil
 }
 
-func (s *Default) getMacroValue(macro string, params Params) (string, error) {
+func (s *Default) GetMacroValue(macro string, params Params) (string, error) {
 	switch macro {
 	case "{width}":
 		if params.ImgWidth == 0 {
@@ -130,6 +130,6 @@ func (s *Default) getMacroValue(macro string, params Params) (string, error) {
 	case "{longitude}":
 		return params.Longitude, nil
 	default:
-		return "", errors.BadRequestErrorf("unknown macro: %s", macro)
+		return "", errors.NewUnknownMacroError(macro)
 	}
 }

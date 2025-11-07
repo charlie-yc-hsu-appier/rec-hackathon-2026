@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"rec-vendor-api/internal/config"
+	customerrors "rec-vendor-api/internal/controller/errors"
+	"rec-vendor-api/internal/strategy/url"
 	"regexp"
 	"strings"
 
@@ -123,33 +126,27 @@ func validateVendors(vendors []config.Vendor) error {
 }
 
 func validateMacros(text, vendorName, field string) error {
-	// Extract macros from text
-	macroRegex := regexp.MustCompile(`\{([^}]+)\}`)
-	matches := macroRegex.FindAllStringSubmatch(text, -1)
+	// Extract macros using the same regex as the url strategy
+	macroRegex := regexp.MustCompile(`\{[^}]*\}`)
+	matches := macroRegex.FindAllString(text, -1)
 
-	supportedMacros := map[string]bool{
-		"width":              true,
-		"height":             true,
-		"user_id_lower":      true,
-		"user_id_case_by_os": true,
-		"click_id_base64":    true,
-		"click_id":           true,
-		"web_host":           true,
-		"bundle_id":          true,
-		"adtype":             true,
-		"partner_id":         true,
-		"subid":              true,
-		"keeta_campaign_id":  true,
-		"client_ip":          true,
-		"latitude":           true,
-		"longitude":          true,
-		"product_url":        true,
-	}
+	// Use the actual URL strategy to validate macros
+	// This ensures 100% consistency with runtime behavior
+	strategy := &url.Default{}
 
-	for _, match := range matches {
-		macro := match[1]
-		if !supportedMacros[macro] {
-			return fmt.Errorf("vendor %s: unsupported macro {%s} in %s", vendorName, macro, field)
+	// No need for dummy params - we only check for UnknownMacroError
+	emptyParams := url.Params{}
+
+	// Validate each macro directly using the public GetMacroValue method
+	for _, macro := range matches {
+		_, err := strategy.GetMacroValue(macro, emptyParams)
+		if err != nil {
+			// Check if it's specifically an UnknownMacroError using errors.Is
+			if errors.Is(err, customerrors.ErrUnknownMacro) {
+				return fmt.Errorf("vendor %s: unsupported macro %s in %s", vendorName, macro, field)
+			}
+			// For other errors (like missing params), we don't care during validation
+			// since we're only checking macro support, not parameter completeness
 		}
 	}
 
