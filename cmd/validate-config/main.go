@@ -8,7 +8,6 @@ import (
 	"rec-vendor-api/internal/config"
 	customerrors "rec-vendor-api/internal/controller/errors"
 	"rec-vendor-api/internal/strategy/url"
-	"regexp"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -126,9 +125,8 @@ func validateVendors(vendors []config.Vendor) error {
 }
 
 func validateMacros(text, vendorName, field string) error {
-	// Extract macros using the same regex as the url strategy
-	macroRegex := regexp.MustCompile(`\{[^}]*\}`)
-	matches := macroRegex.FindAllString(text, -1)
+	// Extract macros using the MacroRegExp from url strategy
+	matches := url.MacroRegExp.FindAllString(text, -1)
 
 	// Use the actual URL strategy to validate macros
 	// This ensures 100% consistency with runtime behavior
