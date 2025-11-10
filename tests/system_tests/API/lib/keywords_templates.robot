@@ -1,35 +1,110 @@
+*** Settings ***
+Resource            ../res/init.robot
+
 *** Keywords ***
 # Automated YAML-driven vendor testing keywords #
 Test vendors from yaml configuration
   [Arguments]             ${yaml_content}
-  [Documentation]  Automated test for all vendors defined in YAML configuration
-  ...              Tests the /r endpoint with auto-selected test dimensions and vendor-specific parameters
-  ...              Standard URL format: /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
+  [Documentation]  *Purpose:*
+  ...              Automated end-to-end testing for all vendors defined in YAML configuration.
+  ...              Orchestrates complete vendor testing workflow with dynamic parameter generation, vendor-specific handling, and comprehensive validation.
   ...              
-  ...              Vendor-specific parameter handling:
-  ...              • Standard vendors: user_id, click_id, w, h, subid (from Config API)
-  ...              • Linkmine vendor: adds bundle_id (empty string), adtype parameters
-  ...              • Adpacker vendor: adds adtype parameter
-  ...              • INL vendors: URL-encoded subparam with base64 encoding
-  ...              • Keeta vendor: adds lat=22.3264, lon=114.1661, k_campaign_id (from Config API)
-  ...              • Adforus vendor: adds os (android/ios), auto-transforms user_id based on OS
+  ...              *Parameters:*
+  ...              - yaml_content: YAML configuration content containing vendor definitions, request/tracking configurations
   ...              
-  ...              Keeta integration features:
-  ...              • Dynamic Config API integration: searches running campaigns
-  ...              • Campaign criteria: datafeed_id=android--com.sankuai.sailor.afooddelivery_2
-  ...              • Uses JSONPath filtering for efficient campaign discovery
-  ...              • Skips image validation and click_id tracking validation for Keeta
+  ...              *Standard URL Format:*
+  ...              /r/{vendor_name}?user_id={uuid}&click_id={value}&w={width}&h={height}
   ...              
-  ...              Adforus integration features:
-  ...              • OS-specific adid handling: lowercase for Android, uppercase for iOS
-  ...              • No subid requirement (similar to Keeta vendor)
-  ...              • Comprehensive dual-OS testing: tests both Android and iOS in single run
-  ...              • Dedicated adforus testing workflow ensuring complete OS coverage
+  ...              *Vendor-specific Parameter Handling:*
+  ...              - Standard vendors: user_id, click_id, w, h, subid (from Config API)
+  ...              - Linkmine vendor: adds bundle_id (empty string), adtype parameters
+  ...              - Adpacker vendor: adds adtype parameter
+  ...              - INL vendors: URL-encoded subparam with base64 encoding
+  ...              - INL_corp_5: Special subParam=pier (uppercase P, fixed value)
+  ...              - Keeta vendor: adds lat=22.3264, lon=114.1661, k_campaign_id (from Config API)
+  ...              - Adforus vendor: adds os (android/ios), auto-transforms user_id case based on OS
   ...              
-  ...              Auto-selects test dimensions from: 300x300, 1200x627, 1200x600
-  ...              Tests exactly the number of vendors defined in the YAML
-  ...              Includes subid parameter from Config API for each vendor
-  ...              Comprehensive validation: response structure, tracking parameters, product data
+  ...              *Usage Example:*
+  ...              ```robotframework
+  ...              # Load YAML config and test all vendors
+  ...              ${config_path} =  Set Variable  ${CURDIR}/../../../../deploy/rec-vendor-api/secrets/config.yaml
+  ...              ${yaml_content} =  Load vendor config from file  ${config_path}
+  ...              ${safe_vendor_config} =  Validate and generate safe vendor yaml configuration  ${yaml_content}
+  ...              Test vendors from yaml configuration  ${safe_vendor_config}
+  ...              ```
+  ...              
+  ...              *Implementation:*
+  ...              1. Parse YAML configuration to extract vendor list
+  ...              2. Get vendor subid mapping from Config API for all vendors
+  ...              3. For each vendor in YAML:
+  ...                 a. Extract vendor name and configuration
+  ...                 b. Handle Keeta vendor: Retrieve k_campaign_id from Config API
+  ...                 c. Retrieve vendor-specific subid from Config API mapping
+  ...                 d. Determine OS testing strategy (Adforus: dual-OS, others: single)
+  ...                 e. For each OS iteration (1 for standard vendors, 2 for Adforus):
+  ...                    - Auto-select test dimensions (300x300, 1200x627, 1200x600)
+  ...                    - Extract vendor-specific parameters (bundle_id, adtype, os)
+  ...                    - Parse tracking configuration (param_name, base64 encoding)
+  ...                    - Generate test data (user_id UUID, click_id)
+  ...                    - Encode click_id to base64 if required
+  ...                    - Create vendor session
+  ...                    - Build request parameters based on vendor type
+  ...                    - Handle Keeta: Add GPS coordinates and campaign_id
+  ...                    - Handle Adforus: Transform user_id case based on OS
+  ...                    - Send GET request to /r/{vendor_name} endpoint
+  ...                    - Validate response structure
+  ...                    - Validate tracking parameters in product URLs
+  ...                    - Log test results
+  ...              4. Complete testing for all vendors
+  ...              
+  ...              *Keeta Integration Features:*
+  ...              - Dynamic Config API integration: Searches running campaigns
+  ...              - Campaign criteria: datafeed_id=android--com.sankuai.sailor.afooddelivery_2, status_code=Running
+  ...              - Uses JSONPath filtering ($[?(@.datafeed_id==...)]) for efficient campaign discovery
+  ...              - Extracts first campaign with non-empty keeta_campaign_name
+  ...              - Skips image field validation (Keeta responses may not include image)
+  ...              - Skips click_id tracking validation (Keeta uses k_campaign_id instead)
+  ...              - GPS coordinates: lat=22.3264 (Hong Kong), lon=114.1661
+  ...              
+  ...              *Adforus Integration Features:*
+  ...              - OS-specific adid case handling:
+  ...                * Android: Converts user_id to lowercase (adid must be lowercase)
+  ...                * iOS: Converts user_id to uppercase (adid must be uppercase)
+  ...              - Comprehensive dual-OS testing: Automatically tests both Android and iOS in single run
+  ...              - Dedicated adforus testing workflow ensuring complete OS coverage
+  ...              - No subid requirement (similar to Keeta vendor)
+  ...              - Validates adid case in product URLs matches OS requirement
+  ...              
+  ...              *Test Dimensions:*
+  ...              Auto-selects from: 300x300, 1200x627, 1200x600
+  ...              Different dimensions may be selected for different vendors in same run
+  ...              
+  ...              *Prerequisites:*
+  ...              - YAML configuration must contain valid vendor definitions
+  ...              - Config API must be accessible for subid/campaign retrieval
+  ...              - Vendor API session must be creatable
+  ...              - For Keeta: Must have running campaigns with keeta_campaign_name
+  ...              - ${HTTP_METHOD} and ${VENDOR_HOST} must be set (via Get Test Value)
+  ...              
+  ...              *Validation Coverage:*
+  ...              - Response structure validation (array of products with required fields)
+  ...              - Tracking parameter validation (base64 encoding, URL encoding for INL)
+  ...              - Product data validation (product_id, url, image fields)
+  ...              - Vendor-specific validation (Keeta skips, Adforus adid case)
+  ...              
+  ...              *Special Cases:*
+  ...              - Keeta vendor: Requires valid running campaign, skips standard validations
+  ...              - Adforus vendor: Tests both Android and iOS, validates adid case transformation
+  ...              - INL vendors: Uses URL-encoded subparam format in land parameter
+  ...              - INL_corp_5: Uses fixed subParam=pier instead of dynamic base64 value
+  ...              - Linkmine vendor: Requires bundle_id (can be empty) and adtype parameters
+  ...              - Vendors without subid in Config API: Uses empty string for subid parameter
+  ...              
+  ...              *Error Handling:*
+  ...              - Fails immediately if Keeta campaign configuration not found
+  ...              - Validates YAML structure before testing
+  ...              - Comprehensive logging for debugging vendor-specific issues
+  ...              - Emoji indicators: 🎯 for special handling, ✅ for successful validation
 
   # Parse YAML once at the beginning
   ${yaml_data} =          Evaluate                yaml.safe_load('''${yaml_content}''')  yaml

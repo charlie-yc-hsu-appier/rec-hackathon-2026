@@ -1,6 +1,28 @@
+*** Settings ***
+Resource            ../res/init.robot
+
 *** Keywords ***
 # Config API #
 I have a config_api session
+  [Documentation]  Create HTTP session for Config API with Basic Authentication.
+  ...
+  ...              *Purpose*
+  ...              Initialize HTTP session for Config API with environment-specific credentials
+  ...              and automatic retry configuration.
+  ...
+  ...              *Usage Example*
+  ...              | I have a config_api session |
+  ...
+  ...              *Implementation*
+  ...              - Base URL: https://${CONFIG_API_HOST}
+  ...              - Authentication: Basic Auth (staging credentials)
+  ...              - Auto-retry: 500, 502, 503, 504 status codes
+  ...              - Timeout: 5 seconds
+  ...              - Warnings disabled
+  ...
+  ...              *Prerequisites*
+  ...              - ${CONFIG_API_HOST} must be set from valueset.dat
+  
   [Tags]          robot:flatten
 
   # Basic Auth for Config API
@@ -9,7 +31,24 @@ I have a config_api session
 
 
 Validate config api response
-  [Documentation]  Common validation for Config API responses
+  [Documentation]  Common validation for Config API responses.
+  ...
+  ...              *Purpose*
+  ...              Validate Config API response status and ensure response body is not empty.
+  ...
+  ...              *Parameters*
+  ...              - ${resp}: Response object from Config API
+  ...              - ${error_context}: Context string for error messages
+  ...
+  ...              *Usage Example*
+  ...              | ${resp} = | Get On Session | ConfigAPISession | url=/v0/campaigns/123 |
+  ...              | Validate config api response | ${resp} | Campaign API error |
+  ...
+  ...              *Implementation*
+  ...              - Validates status code is not 4xx or 5xx
+  ...              - Ensures response JSON is not empty
+  ...              - Fails with detailed error message if validation fails
+  
   [Arguments]      ${resp}  ${error_context}
   
   ${resp.status_code} =   Convert To String       ${resp.status_code}
@@ -18,7 +57,28 @@ Validate config api response
 
 
 I would like to get campaign_ids with group vendor_inl_corp
-  [Documentation]  Get campaign IDs that have group "vendor_inl_corp" from experiments endpoint
+  [Documentation]  Get campaign IDs that have group "vendor_inl_corp" from experiments endpoint.
+  ...
+  ...              *Purpose*
+  ...              Retrieve all campaign IDs configured with vendor_inl_corp group from
+  ...              Config API experiments.
+  ...
+  ...              *Parameters*
+  ...              - ${site_id}: Site identifier (e.g., android--com.coupang.mobile_s2s_v3)
+  ...              - ${service_type_id}: Service type (e.g., crossx_recommend)
+  ...
+  ...              *Returns*
+  ...              List of campaign IDs with vendor_inl_corp group (filtered, no empty values)
+  ...
+  ...              *Usage Example*
+  ...              | @{campaigns} = | I would like to get campaign_ids with group vendor_inl_corp |
+  ...              | ... | android--com.coupang.mobile_s2s_v3 | crossx_recommend |
+  ...
+  ...              *Implementation*
+  ...              - Queries /v0/recommend/experiments endpoint
+  ...              - Uses JSONPath to filter campaigns with vendor_inl_corp buckets
+  ...              - Removes empty campaign IDs from result
+  
   [Arguments]             ${site_id}              ${service_type_id}
 
   # Get experiments data
@@ -42,7 +102,31 @@ I would like to get campaign_ids with group vendor_inl_corp
 
 
 I would like to check campaign status
-  [Documentation]  Check campaign status and extract active inl_rec_api_group_ratio indices
+  [Documentation]  Check campaign status and extract active inl_rec_api_group_ratio indices.
+  ...
+  ...              *Purpose*
+  ...              Retrieve campaign status and identify which vendor group indices
+  ...              have non-zero traffic allocation.
+  ...
+  ...              *Parameters*
+  ...              - ${campaign_id}: Campaign identifier to check
+  ...
+  ...              *Returns*
+  ...              Dictionary with:
+  ...              - status: Campaign status code (e.g., "Running", "Finished")
+  ...              - active_indices: List of indices where inl_rec_api_group_ratio != 0.0
+  ...
+  ...              *Usage Example*
+  ...              | ${campaign_info} = | I would like to check campaign status | abc123def456 |
+  ...              | ${status} = | Set Variable | ${campaign_info}[status] |
+  ...              | ${indices} = | Set Variable | ${campaign_info}[active_indices] |
+  ...
+  ...              *Implementation*
+  ...              - Queries /v0/campaigns/{campaign_id}
+  ...              - Extracts status_code from campaign
+  ...              - Parses inl_rec_api_group_ratio array for non-zero values
+  ...              - Returns indices (0-based) where ratio > 0.0
+  
   [Arguments]             ${campaign_id}
 
   # Get campaign details
@@ -76,7 +160,37 @@ I would like to check campaign status
 
 
 Get active vendor_inl_corp campaign ids from config api
-  [Documentation]  Get vendor_inl_corp campaign IDs that are not in "Finished" status with their active inl_rec_api_group_ratio indices
+  [Documentation]  Get vendor_inl_corp campaign IDs that are not in "Finished" status with their active indices.
+  ...
+  ...              *Purpose*
+  ...              Retrieve all active (non-Finished) vendor_inl_corp campaigns with their
+  ...              traffic allocation information.
+  ...
+  ...              *Parameters*
+  ...              - ${site_id}: Site identifier [default: android--com.coupang.mobile_s2s_v3]
+  ...              - ${service_type_id}: Service type [default: crossx_recommend]
+  ...
+  ...              *Returns*
+  ...              Dictionary with:
+  ...              - campaign_ids: List of active campaign IDs
+  ...              - campaigns_info: Dictionary mapping campaign_id to {status, active_indices}
+  ...
+  ...              *Side Effects*
+  ...              - Sets ${extracted_active_vendor_inl_corp_campaigns} test variable
+  ...              - Sets ${extracted_vendor_inl_corp_campaigns_info} test variable
+  ...
+  ...              *Usage Example*
+  ...              | ${result} = | Get active vendor_inl_corp campaign ids from config api |
+  ...              | @{campaign_ids} = | Set Variable | ${result}[campaign_ids] |
+  ...              | &{campaigns_info} = | Set Variable | ${result}[campaigns_info] |
+  ...
+  ...              *Implementation*
+  ...              1. Calls "I have a config_api session"
+  ...              2. Gets all vendor_inl_corp campaigns from experiments
+  ...              3. Checks each campaign's status
+  ...              4. Filters out campaigns with status="Finished"
+  ...              5. Returns active campaigns with their indices
+  
   [Arguments]             ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
 
   I have a config_api session
@@ -115,7 +229,43 @@ Get active vendor_inl_corp campaign ids from config api
 
 
 Get vendor inl_corp indices for yaml configuration
-  [Documentation]  Get all active vendor inl_corp indices from config api for yaml configuration testing
+  [Documentation]  Get all active vendor inl_corp indices from config api for yaml configuration testing.
+  ...
+  ...              *Purpose*
+  ...              Generate YAML vendor configuration based on active inl_corp indices
+  ...              from Config API campaigns.
+  ...
+  ...              *Parameters*
+  ...              - ${site_id}: Site identifier [default: android--com.coupang.mobile_s2s_v3]
+  ...              - ${service_type_id}: Service type [default: crossx_recommend]
+  ...              - ${validate_yaml_safety}: Validation flag [default: ${True}]
+  ...
+  ...              *Returns*
+  ...              Dictionary with:
+  ...              - indices: Sorted list of unique active indices
+  ...              - vendor_names: List of vendor names (inl_corp_0, inl_corp_1, ...)
+  ...              - yaml_snippet: YAML configuration snippet
+  ...              - max_index: Highest index value
+  ...              - vendor_count: Number of active vendors
+  ...
+  ...              *Side Effects*
+  ...              - Sets ${extracted_vendor_indices_for_yaml} test variable
+  ...              - Sets ${extracted_vendor_names_for_yaml} test variable
+  ...              - Sets ${extracted_yaml_snippet_for_vendors} test variable
+  ...              - Logs YAML Config Report to test output
+  ...
+  ...              *Usage Example*
+  ...              | ${config} = | Get vendor inl_corp indices for yaml configuration |
+  ...              | @{indices} = | Set Variable | ${config}[indices] |
+  ...              | Log | Active indices: ${indices} |
+  ...
+  ...              *Implementation*
+  ...              1. Gets all active vendor_inl_corp campaigns
+  ...              2. Collects all active indices from campaigns
+  ...              3. Removes duplicates and sorts indices
+  ...              4. Generates vendor names (inl_corp_{index})
+  ...              5. Creates YAML snippet for vendors section
+  
   [Arguments]             ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend  ${validate_yaml_safety}=${True}
 
   # Get all active vendor_inl_corp campaign information
@@ -184,9 +334,36 @@ Get vendor inl_corp indices for yaml configuration
 
 
 Get vendor subids from config api
-  [Documentation]  Get subid mapping for all vendors from Config API campaigns
-  ...              Returns a dictionary with vendor_name as key and subid as value
-  ...              Only processes campaigns where default_group contains "vendor_" regex pattern
+  [Documentation]  Get subid mapping for all vendors from Config API campaigns.
+  ...
+  ...              *Purpose*
+  ...              Retrieve subid values for each vendor defined in YAML configuration
+  ...              from Config API campaigns with vendor-related default_group.
+  ...
+  ...              *Parameters*
+  ...              - ${yaml_content}: YAML configuration content containing vendor definitions
+  ...              - ${site_id}: Site identifier [default: android--com.coupang.mobile_s2s_v3]
+  ...              - ${service_type_id}: Service type [default: crossx_recommend]
+  ...
+  ...              *Returns*
+  ...              Dictionary mapping vendor_name to subid value
+  ...              (Empty string for vendors without subid)
+  ...
+  ...              *Usage Example*
+  ...              | ${yaml} = | Get File | config.yaml |
+  ...              | ${subid_mapping} = | Get vendor subids from config api | ${yaml} |
+  ...              | ${inl_subid} = | Get From Dictionary | ${subid_mapping} | inl_corp_1 |
+  ...
+  ...              *Implementation*
+  ...              1. Parses YAML to extract vendor list
+  ...              2. Queries experiments API for campaigns with "vendor_" in default_group
+  ...              3. For each vendor, searches campaigns for matching subid
+  ...              4. Validates subid requirements (keeta, adforus exempt)
+  ...              5. Returns vendor_name → subid dictionary
+  ...
+  ...              *Prerequisites*
+  ...              - Config API session must be initialized
+  
   [Arguments]             ${yaml_content}         ${site_id}=android--com.coupang.mobile_s2s_v3  ${service_type_id}=crossx_recommend
 
   I have a config_api session
@@ -244,7 +421,27 @@ Get vendor subids from config api
 
 
 Find vendor subid in campaigns
-  [Documentation]  Search for vendor subid across all campaigns
+  [Documentation]  Search for vendor subid across all campaigns.
+  ...
+  ...              *Purpose*
+  ...              Iterate through campaign IDs to find subid for specific vendor.
+  ...
+  ...              *Parameters*
+  ...              - ${campaign_ids}: List of campaign IDs to search
+  ...              - ${vendor_name}: Vendor name to find subid for
+  ...
+  ...              *Returns*
+  ...              Subid value if found, ${EMPTY} otherwise
+  ...
+  ...              *Usage Example*
+  ...              | @{campaigns} = | Create List | camp1 | camp2 | camp3 |
+  ...              | ${subid} = | Find vendor subid in campaigns | ${campaigns} | inl_corp_1 |
+  ...
+  ...              *Implementation*
+  ...              - Loops through each campaign ID
+  ...              - Calls "Get vendor subid from campaign" for each
+  ...              - Returns first non-empty subid found
+  
   [Arguments]      ${campaign_ids}  ${vendor_name}
   
   FOR  ${campaign_id}  IN  @{campaign_ids}
@@ -261,7 +458,33 @@ Find vendor subid in campaigns
 
 
 Get vendor subid from campaign
-  [Documentation]  Get subid for a specific vendor from campaign configs
+  [Documentation]  Get subid for a specific vendor from campaign configs.
+  ...
+  ...              *Purpose*
+  ...              Extract subid value for vendor from campaign's subid_buckets configuration.
+  ...
+  ...              *Parameters*
+  ...              - ${campaign_id}: Campaign identifier
+  ...              - ${vendor_name}: Vendor name to match in subid_buckets
+  ...
+  ...              *Returns*
+  ...              Subid value if found, ${EMPTY} otherwise
+  ...
+  ...              *Usage Example*
+  ...              | ${subid} = | Get vendor subid from campaign | abc123 | inl_corp_1 |
+  ...
+  ...              *Implementation*
+  ...              1. Queries /v0/campaigns/{campaign_id}
+  ...              2. Checks if subid_buckets exists in configs
+  ...              3. Searches for exact match of vendor_name in bucket keys
+  ...              4. Falls back to partial match if no exact match
+  ...              5. Randomly selects from partial matches if multiple found
+  ...              6. Returns subid from first bucket of matched key
+  ...
+  ...              *Matching Strategy*
+  ...              - Exact: "inl_corp_1" matches "inl_corp_1"
+  ...              - Partial: "inl_corp_1" matches "inl_corp_1_1200x600"
+  
   [Arguments]             ${campaign_id}          ${vendor_name}
 
   # Get campaign details
@@ -316,7 +539,37 @@ Get vendor subid from campaign
 
 
 Validate and generate safe vendor yaml configuration
-  [Documentation]  Backward compatible YAML configuration validation - filters only active inl_corp vendors
+  [Documentation]  Backward compatible YAML configuration validation - filters only active inl_corp vendors.
+  ...
+  ...              *Purpose*
+  ...              Filter YAML vendor configuration to include only active inl_corp vendors
+  ...              based on Config API traffic allocation.
+  ...
+  ...              *Parameters*
+  ...              - ${original_yaml_content}: Original YAML configuration content
+  ...
+  ...              *Returns*
+  ...              Filtered YAML configuration (original if no inl vendors found)
+  ...
+  ...              *Usage Example*
+  ...              | ${original_yaml} = | Get File | config.yaml |
+  ...              | ${safe_yaml} = | Validate and generate safe vendor yaml configuration | ${original_yaml} |
+  ...
+  ...              *Implementation*
+  ...              1. Parses original YAML to get vendor list
+  ...              2. Checks if any vendor contains "inl"
+  ...              3. If no inl vendors: returns original YAML (backward compatibility)
+  ...              4. If inl vendors exist:
+  ...                 - Gets active indices from Config API
+  ...                 - Keeps all non-inl vendors
+  ...                 - Keeps only active inl_corp_{index} vendors
+  ...                 - Rebuilds YAML with filtered vendor list
+  ...              5. Logs filtering details to test output
+  ...
+  ...              *Side Effects*
+  ...              - Logs kept/filtered vendors with ✅/❌ icons
+  ...              - Sets test messages with filtering summary
+  
   [Arguments]             ${original_yaml_content}
 
   # Parse original YAML
@@ -393,9 +646,29 @@ Validate and generate safe vendor yaml configuration
 
 
 Get keeta campaign configuration
-  [Documentation]  Get Keeta campaign configuration by searching for running campaigns
-  ...              Searches for campaigns with status_code=Running, datafeed_id=android--com.sankuai.sailor.afooddelivery_2
-  ...              and non-empty keeta_campaign_name, then extracts the keeta_campaign_name value
+  [Documentation]  Get Keeta campaign configuration by searching for running campaigns.
+  ...
+  ...              *Purpose*
+  ...              Retrieve keeta_campaign_name value from active Keeta campaigns
+  ...              for use in Keeta vendor API testing.
+  ...
+  ...              *Returns*
+  ...              Keeta campaign name (string) if found, ${EMPTY} otherwise
+  ...
+  ...              *Usage Example*
+  ...              | ${k_campaign} = | Get keeta campaign configuration |
+  ...              | Should Not Be Empty | ${k_campaign} |
+  ...
+  ...              *Implementation*
+  ...              - Queries /v0/campaigns?status_code=Running
+  ...              - Filters campaigns with:
+  ...                * datafeed_id = android--com.sankuai.sailor.afooddelivery_2
+  ...                * Non-empty keeta_campaign_name in configs
+  ...              - Uses JSONPath for efficient filtering
+  ...              - Returns keeta_campaign_name from first matching campaign
+  ...
+  ...              *Prerequisites*
+  ...              - Config API session must be initialized
   
   I have a config_api session
   
