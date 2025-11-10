@@ -9,6 +9,8 @@ Table of contents
     - [Install modules](#install-modules)
     - [Run pre-commit check](#run-pre-commit-check)
     - [Test on dev cluster](#test-on-dev-cluster)
+  - [Configuration](#configuration)
+    - [TS Team Vendor Configuration Guide](#ts-team-vendor-configuration-guide)
   - [Requester Strategy and Tracker Strategy](#requester-strategy-and-tracker-strategy)
     - [Supported URL Macros](#supported-url-macros)
 
@@ -64,6 +66,14 @@ http://localhost:8080/healthz
 # Manual test script
 ./scripts/manual_test_all.sh
 ```
+
+## Configuration
+
+### TS Team Vendor Configuration Guide
+
+For Technical Support (TS) team members who need to modify vendor configurations, please refer to our comprehensive guide:
+
+**[Vendor Configuration Guide for TS Team](https://appier.atlassian.net/wiki/spaces/AI/pages/4584833092/Vendor+Configuration+Guide+for+TS+Team)**
 
 ## Requester Strategy and Tracker Strategy
 
