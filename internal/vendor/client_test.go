@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"rec-vendor-api/internal/strategy/body"
 	"rec-vendor-api/internal/strategy/header"
 	"rec-vendor-api/internal/strategy/unmarshaler"
 	"rec-vendor-api/internal/strategy/url"
@@ -24,39 +25,36 @@ type VendorClientTestSuite struct {
 	mockRestClient  *httpkit.MockClient
 	mockHeader      *header.MockStrategy
 	mockRequester   *url.MockStrategy
+	mockBody        *body.MockStrategy
 	mockUnmarshaler *unmarshaler.MockStrategy
 	mockTracker     *url.MockStrategy
 }
 
 func (ts *VendorClientTestSuite) SetupTest() {
-	ts.mockRestClient = httpkit.NewMockClient(gomock.NewController(ts.T()))
 	ctrl := gomock.NewController(ts.T())
+	ts.mockRestClient = httpkit.NewMockClient(ctrl)
 	ts.mockHeader = header.NewMockStrategy(ctrl)
 	ts.mockRequester = url.NewMockStrategy(ctrl)
+	ts.mockBody = body.NewMockStrategy(ctrl)
 	ts.mockUnmarshaler = unmarshaler.NewMockStrategy(ctrl)
 	ts.mockTracker = url.NewMockStrategy(ctrl)
 }
 
 func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
-	req := httpkit.NewRequest("http://test-url")
-	req = req.PatchHeaders(map[string]string{"Authorization": "Bearer test"})
-	req = req.SetMetrics(
-		telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor", "test-site", "test-oid"),
-		telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor", "test-site", "test-oid"),
-	)
-
 	tt := []struct {
 		name         string
+		httpMethod   string
 		mockStrategy func()
 		wantErr      bool
 		want         []ProductInfo
 	}{
 		{
-			name: "GIVEN valid response THEN expect success",
+			name:       "GIVEN valid GET response THEN expect success",
+			httpMethod: "GET",
 			mockStrategy: func() {
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
 				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
 				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url", nil)
@@ -65,22 +63,39 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			want: []ProductInfo{{ProductID: "1", Url: "http://tracking-url", Image: "img1"}},
 		},
 		{
-			name: "GIVEN network error THEN expect error",
+			name:       "GIVEN valid POST response THEN expect success",
+			httpMethod: "POST",
 			mockStrategy: func() {
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
 				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
+				ts.mockBody.EXPECT().GenerateBody(gomock.Any()).Return(map[string]interface{}{"userId": "u1"})
+				ts.mockRestClient.EXPECT().Post(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
+					Return(&httpkit.Response{Body: []byte(`[{"productId":2,"productUrl":"url2","productImage":"img2"}]`)}, nil)
+				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "2", ProductURL: "url2", ProductImage: "img2"}}, nil)
+				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url-post", nil)
+
+			},
+			want: []ProductInfo{{ProductID: "2", Url: "http://tracking-url-post", Image: "img2"}},
+		},
+		{
+			name:       "GIVEN network error THEN expect error",
+			httpMethod: "GET",
+			mockStrategy: func() {
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
 					Return(nil, errors.New("network error"))
 
 			},
 			wantErr: true,
 		},
 		{
-			name: "GIVEN unmarshal error THEN expect error",
+			name:       "GIVEN unmarshal error THEN expect error",
+			httpMethod: "GET",
 			mockStrategy: func() {
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
 				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte("invalid json")}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
 
@@ -88,7 +103,8 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			wantErr: true,
 		},
 		{
-			name: "GIVEN request URL generation error THEN expect error",
+			name:       "GIVEN request URL generation error THEN expect error",
+			httpMethod: "GET",
 			mockStrategy: func() {
 				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("", fmt.Errorf("failed to generate request URL"))
 			},
@@ -98,11 +114,12 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 	for _, tc := range tt {
 		ts.T().Run(tc.name, func(t *testing.T) {
 			vc := NewClient(
-				config.Vendor{Name: "test-vendor"},
+				config.Vendor{Name: "test-vendor", HTTPMethod: tc.httpMethod},
 				ts.mockRestClient,
 				1*time.Second,
 				ts.mockHeader,
 				ts.mockRequester,
+				ts.mockBody,
 				ts.mockUnmarshaler,
 				ts.mockTracker,
 			)

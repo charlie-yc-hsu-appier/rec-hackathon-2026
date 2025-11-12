@@ -22,7 +22,7 @@ func (h *ReplaceHeader) GenerateHeaders(params Params) map[string]string {
 	path := parsedURL.Path
 	query := parsedURL.Query().Encode()
 
-	message := datetimeGMT + http.MethodGet + path + query
+	message := datetimeGMT + http.MethodPost + path + query
 	accessKey := h.AccessKey
 	secret := h.SecretKey
 
