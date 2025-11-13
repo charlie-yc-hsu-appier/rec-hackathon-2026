@@ -41,6 +41,10 @@ func (ts *VendorClientTestSuite) SetupTest() {
 }
 
 func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
+	generatedURL := "http://test-url"
+	generatedHeaders := map[string]string{"Authorization": "Bearer test"}
+	generatedBody := map[string]interface{}{"userId": "u1"}
+
 	tt := []struct {
 		name         string
 		httpMethod   string
@@ -52,9 +56,16 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name:       "GIVEN valid GET response THEN expect success",
 			httpMethod: "GET",
 			mockStrategy: func() {
-				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return(generatedURL, nil)
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(generatedHeaders)
+
+				req := httpkit.NewRequest(generatedURL)
+				req = req.PatchHeaders(generatedHeaders)
+				req = req.SetMetrics(
+					telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor", "test-site", "test-oid"),
+					telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor", "test-site", "test-oid"),
+				)
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
 				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url", nil)
@@ -66,10 +77,18 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name:       "GIVEN valid POST response THEN expect success",
 			httpMethod: "POST",
 			mockStrategy: func() {
-				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockBody.EXPECT().GenerateBody(gomock.Any()).Return(map[string]interface{}{"userId": "u1"})
-				ts.mockRestClient.EXPECT().Post(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return(generatedURL, nil)
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(generatedHeaders)
+				ts.mockBody.EXPECT().GenerateBody(gomock.Any()).Return(generatedBody)
+
+				req := httpkit.NewRequest(generatedURL)
+				req = req.PatchHeaders(generatedHeaders)
+				req = req.SetBody(generatedBody)
+				req = req.SetMetrics(
+					telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor", "test-site", "test-oid"),
+					telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor", "test-site", "test-oid"),
+				)
+				ts.mockRestClient.EXPECT().Post(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte(`[{"productId":2,"productUrl":"url2","productImage":"img2"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "2", ProductURL: "url2", ProductImage: "img2"}}, nil)
 				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url-post", nil)
@@ -81,9 +100,16 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name:       "GIVEN network error THEN expect error",
 			httpMethod: "GET",
 			mockStrategy: func() {
-				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
-				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return(generatedURL, nil)
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(generatedHeaders)
+
+				req := httpkit.NewRequest(generatedURL)
+				req = req.PatchHeaders(generatedHeaders)
+				req = req.SetMetrics(
+					telemetry.Metrics.RestApiDurationSeconds.WithLabelValues("test-vendor", "test-site", "test-oid"),
+					telemetry.Metrics.RestApiErrorTotal.WithLabelValues("test-vendor", "test-site", "test-oid"),
+				)
+				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(nil, errors.New("network error"))
 
 			},
@@ -93,8 +119,8 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 			name:       "GIVEN unmarshal error THEN expect error",
 			httpMethod: "GET",
 			mockStrategy: func() {
-				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://test-url", nil)
-				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(map[string]string{"Authorization": "Bearer test"})
+				ts.mockRequester.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return(generatedURL, nil)
+				ts.mockHeader.EXPECT().GenerateHeaders(gomock.Any()).Return(generatedHeaders)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte("invalid json")}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
