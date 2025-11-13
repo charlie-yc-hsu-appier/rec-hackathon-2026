@@ -3,6 +3,7 @@ package vendor
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"rec-vendor-api/internal/config"
@@ -56,7 +57,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	}
 	restReq := httpkit.NewRequest(requestURL)
 
-	headerParams := header.Params{RequestURL: requestURL, UserID: req.UserID}
+	headerParams := header.Params{RequestURL: requestURL, UserID: req.UserID, HTTPMethod: v.cfg.HTTPMethod}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 
@@ -67,9 +68,9 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 
 	var restResp *httpkit.Response
 	switch v.cfg.HTTPMethod {
-	case "GET":
+	case http.MethodGet:
 		restResp, err = v.client.Get(ctx, restReq, v.timeout, []int{200})
-	case "POST":
+	case http.MethodPost:
 		bodyObj := v.bodyStrategy.GenerateBody(req.toBodyParams())
 		restReq = restReq.SetBody(bodyObj)
 		restResp, err = v.client.Post(ctx, restReq, v.timeout, []int{200})

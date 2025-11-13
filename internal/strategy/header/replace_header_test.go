@@ -33,6 +33,7 @@ func (s *replaceHeaderTestSuite) TestGenerateHeaders() {
 
 	result := header.GenerateHeaders(Params{
 		RequestURL: "https://api-gateway.coupang.com/v2/providers/affiliate_open_api/apis/openapi/v2/products/reco",
+		HTTPMethod: "POST",
 	})
 
 	wantedSignature := "CEA algorithm=HmacSHA256, access-key=access_key, signed-date=250707T103117Z, signature=faf13b58f6cc013892a036b778465bdcb85326d418c11398139a0b80ade01624"
