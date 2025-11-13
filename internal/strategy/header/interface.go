@@ -8,6 +8,7 @@ import (
 type Params struct {
 	RequestURL string
 	UserID     string
+	HTTPMethod string
 }
 
 //go:generate mockgen -source=./interface.go -destination=./interface_mock.go -package=header

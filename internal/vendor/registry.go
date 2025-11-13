@@ -32,6 +32,7 @@ func BuildRegistry(config config.VendorConfig) (map[string]Client, error) {
 			config.Timeout,
 			strategy.BuildHeader(v),
 			strategy.BuildRequest(v),
+			strategy.BuildBody(v),
 			strategy.BuildUnmarshaler(v),
 			strategy.BuildTracking(v),
 		)

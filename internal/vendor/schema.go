@@ -1,6 +1,7 @@
 package vendor
 
 import (
+	"rec-vendor-api/internal/strategy/body"
 	"rec-vendor-api/internal/strategy/url"
 )
 
@@ -37,6 +38,17 @@ func (r Request) toURLParams() url.Params {
 		Longitude:       r.Longitude,
 		SubID:           r.SubID,
 		OS:              r.OS,
+	}
+}
+
+func (r Request) toBodyParams() body.Params {
+	return body.Params{
+		UserID:    r.UserID,
+		ClickID:   r.ClickID,
+		ImgWidth:  r.ImgWidth,
+		ImgHeight: r.ImgHeight,
+		BundleID:  r.BundleID,
+		SubID:     r.SubID,
 	}
 }
 

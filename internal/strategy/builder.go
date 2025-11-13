@@ -2,6 +2,7 @@ package strategy
 
 import (
 	"rec-vendor-api/internal/config"
+	"rec-vendor-api/internal/strategy/body"
 	"rec-vendor-api/internal/strategy/header"
 	"rec-vendor-api/internal/strategy/unmarshaler"
 	"rec-vendor-api/internal/strategy/url"
@@ -29,7 +30,7 @@ func BuildRequest(v config.Vendor) url.Strategy {
 
 func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 	switch v.Name {
-	case "replace", "adpopcorn":
+	case "adpopcorn":
 		return &unmarshaler.WrappedCoupangPartner{}
 	case "adpacker":
 		return &unmarshaler.Adpacker{}
@@ -37,6 +38,8 @@ func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 		return &unmarshaler.Keeta{}
 	case "adforus":
 		return &unmarshaler.Adforus{}
+	case "replace":
+		return &unmarshaler.Replace{}
 	default:
 		return &unmarshaler.CoupangPartner{}
 	}
@@ -46,5 +49,14 @@ func BuildTracking(v config.Vendor) url.Strategy {
 	switch v.Name {
 	default:
 		return &url.Default{}
+	}
+}
+
+func BuildBody(v config.Vendor) body.Strategy {
+	switch v.Name {
+	case "replace":
+		return &body.Replace{}
+	default:
+		return &body.NoBody{}
 	}
 }

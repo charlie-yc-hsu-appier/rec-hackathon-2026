@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"path"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -33,5 +34,16 @@ func Load(configPath string, cfg *Config) error {
 		return err
 	}
 
+	// Normalize HTTPMethod to uppercase for all vendors
+	normalizeVendorsHTTPMethod(cfg.VendorConfig.Vendors)
+
 	return nil
+}
+
+func normalizeVendorsHTTPMethod(vendors []Vendor) {
+	for i := range vendors {
+		if vendors[i].HTTPMethod != "" {
+			vendors[i].HTTPMethod = strings.ToUpper(vendors[i].HTTPMethod)
+		}
+	}
 }

@@ -2,9 +2,12 @@ package vendor
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"time"
 
 	"rec-vendor-api/internal/config"
+	"rec-vendor-api/internal/strategy/body"
 	"rec-vendor-api/internal/strategy/header"
 	"rec-vendor-api/internal/strategy/unmarshaler"
 	"rec-vendor-api/internal/strategy/url"
@@ -19,6 +22,7 @@ type vendorClient struct {
 	timeout               time.Duration
 	headerStrategy        header.Strategy
 	requestURLStrategy    url.Strategy
+	bodyStrategy          body.Strategy
 	respUnmarshalStrategy unmarshaler.Strategy
 	trackingURLStrategy   url.Strategy
 }
@@ -30,13 +34,15 @@ type Client interface {
 
 func NewClient(cfg config.Vendor, client httpkit.Client, timeout time.Duration,
 	headerStrategy header.Strategy, requestURLStrategy url.Strategy,
-	respUnmarshalStrategy unmarshaler.Strategy, trackingURLStrategy url.Strategy) Client {
+	bodyStrategy body.Strategy, respUnmarshalStrategy unmarshaler.Strategy,
+	trackingURLStrategy url.Strategy) Client {
 	return &vendorClient{
 		cfg:                   cfg,
 		client:                client,
 		timeout:               timeout,
 		headerStrategy:        headerStrategy,
 		requestURLStrategy:    requestURLStrategy,
+		bodyStrategy:          bodyStrategy,
 		respUnmarshalStrategy: respUnmarshalStrategy,
 		trackingURLStrategy:   trackingURLStrategy,
 	}
@@ -51,7 +57,7 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	}
 	restReq := httpkit.NewRequest(requestURL)
 
-	headerParams := header.Params{RequestURL: requestURL, UserID: req.UserID}
+	headerParams := header.Params{RequestURL: requestURL, UserID: req.UserID, HTTPMethod: v.cfg.HTTPMethod}
 	headers := v.headerStrategy.GenerateHeaders(headerParams)
 	restReq = restReq.PatchHeaders(headers)
 
@@ -60,7 +66,17 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		telemetry.Metrics.RestApiErrorTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID),
 	)
 
-	restResp, err := v.client.Get(ctx, restReq, v.timeout, []int{200})
+	var restResp *httpkit.Response
+	switch v.cfg.HTTPMethod {
+	case http.MethodGet:
+		restResp, err = v.client.Get(ctx, restReq, v.timeout, []int{200})
+	case http.MethodPost:
+		bodyObj := v.bodyStrategy.GenerateBody(req.toBodyParams())
+		restReq = restReq.SetBody(bodyObj)
+		restResp, err = v.client.Post(ctx, restReq, v.timeout, []int{200})
+	default:
+		return nil, fmt.Errorf("unsupported HTTP method: %s (supported: GET, POST)", v.cfg.HTTPMethod)
+	}
 	if err != nil {
 		return nil, err
 	}
