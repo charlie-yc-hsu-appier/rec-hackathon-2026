@@ -63,9 +63,17 @@ make portforward-dev
 # Open this on browser, and content should show up:
 http://localhost:8080/healthz
 
-# Manual test script
+# Manual test to verify the correct image size:
 ./scripts/manual_test_all.sh
 ```
+
+We provide the QA E2E Robotframework tool in the Makefile for DEV pre-testing purposes.
+Make sure your DEV vendor-api service has been port-forwarded at port **_8080_**, and run:
+
+```shell
+make run-e2e
+```
+
 
 ## Configuration
 

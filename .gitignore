@@ -54,3 +54,7 @@ Thumbs.db
 *.wmv
 
 secrets/
+
+# local e2e test results
+tests/results/
+.pabotsuitenames
