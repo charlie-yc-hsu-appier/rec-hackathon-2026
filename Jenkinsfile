@@ -87,7 +87,7 @@ pipeline {
             tty: true
 
           - name: robot
-            image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/qa/system_test_robot:v1.0.27
+            image: asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/qa/system_test_robot:v1.0.28
             tty: true
             command:
              - cat
@@ -200,6 +200,9 @@ pipeline {
           // adding `buildvcs=false` to mitigate the "error obtaining VCS status: exit status 128" error
           // note: `buildvcs=false` flag is not a must when running golangci-lint
           sh 'GOFLAGS=-buildvcs=false ./bin/golangci-lint run'
+          
+          // Validate vendor configuration with real secrets from vault
+          sh 'go run ./cmd/validate-config $CHART_DIR/secrets/vendors.yaml'
         }
       }
     }

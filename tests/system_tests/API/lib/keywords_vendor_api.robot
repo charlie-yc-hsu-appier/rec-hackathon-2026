@@ -1,21 +1,100 @@
+*** Settings ***
+Resource            ../res/init.robot
+
 *** Keywords ***
 # vendor API endpoint #
 I have an vendor session
+  [Documentation]  Create HTTP session for Vendor API endpoint.
+  ...
+  ...              *Purpose*
+  ...              Initializes persistent HTTP session for Vendor API testing with
+  ...              automatic retry on server errors.
+  ...
+  ...              *Configuration*
+  ...              - Base URL: ${HTTP_METHOD}://${VENDOR_HOST}
+  ...              - Auto-retry on server errors: 500, 502, 503, 504
+  ...              - Warnings disabled
+  ...
+  ...              *Usage Example*
+  ...              | I have an vendor session |
+  ...
+  ...              *Implementation*
+  ...              Creates RequestsLibrary session named 'VendorSession' for all vendor
+  ...              endpoint testing. ${HTTP_METHOD} and ${VENDOR_HOST} loaded from valueset.dat.
+  ...
+  ...              *Prerequisites*
+  ...              - ${HTTP_METHOD} must be set (via Get Test Value)
+  ...              - ${VENDOR_HOST} must be set (via Get Test Value)
+  
   Create Session  VendorSession   url=${HTTP_METHOD}://${VENDOR_HOST}  disable_warnings=1  retry_status_list=[500,502,503,504]
 
 
 I would like to set the session under vendor endpoint with
-  [Documentation]  Send GET request to vendor API endpoint.
-  ...              Available parameters:
-  ...              endpoint - The endpoint path (default: /healthz)
-  ...              For /r endpoint format: endpoint=r/{vendor_name}
-  ...              Supported parameters: user_id, click_id, w, h, bundle_id, adtype, subid, lat, lon, k_campaign_id, os
-  ...              user_id parameter automatically adjusts based on vendor requirements (e.g., case-sensitive for adforus)
-  ...              For example:
-  ...              Given I would like to set the session under vendor endpoint with  endpoint=/healthz
-  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=uuid  click_id=value  w=300  h=300  subid=vendor_subid
-  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/keeta  user_id=uuid  click_id=value  w=300  h=300  lat=22.3264  lon=114.1661  k_campaign_id=campaign_name
-  ...              Given I would like to set the session under vendor endpoint with  endpoint=r/adforus  user_id=uuid  click_id=value  w=300  h=300  os=android
+  [Documentation]  *Purpose:*
+  ...              Send GET request to vendor API endpoint with flexible parameter support for different vendor types.
+  ...              Handles healthz endpoint, standard vendor endpoints, and vendor-specific parameter requirements.
+  ...              
+  ...              *Parameters:*
+  ...              - endpoint: The endpoint path (default: /healthz). For vendor endpoints use format r/{vendor_name}
+  ...              - user_id: User identifier (automatically case-adjusted for vendor requirements)
+  ...              - click_id: Click tracking identifier
+  ...              - w, h: Image dimensions (width, height)
+  ...              - bundle_id: Bundle identifier (linkmine-specific)
+  ...              - adtype: Ad type (linkmine-specific)
+  ...              - subid: Vendor subid from Config API
+  ...              - lat, lon: GPS coordinates (keeta-specific)
+  ...              - k_campaign_id: Campaign identifier (keeta-specific)
+  ...              - os: Operating system (adforus-specific, android/ios)
+  ...              
+  ...              *Returns:*
+  ...              Sets test variables: ${status_code}, ${resp_json}, ${request.url}, ${request.headers}
+  ...              
+  ...              *Usage Examples:*
+  ...              ```robotframework
+  ...              # Healthz endpoint
+  ...              I would like to set the session under vendor endpoint with  endpoint=/healthz
+  ...              
+  ...              # Linkmine vendor with standard parameters
+  ...              I would like to set the session under vendor endpoint with  endpoint=r/linkmine  user_id=${user_id}  click_id=${click_id}  w=300  h=300  bundle_id=${EMPTY}  adtype=banner  subid=vendor_subid
+  ...              
+  ...              # Keeta vendor with GPS and campaign
+  ...              I would like to set the session under vendor endpoint with  endpoint=r/keeta  user_id=${user_id}  click_id=${click_id}  w=1200  h=627  lat=22.3264  lon=114.1661  k_campaign_id=${campaign_name}
+  ...              
+  ...              # Adforus vendor with OS parameter
+  ...              I would like to set the session under vendor endpoint with  endpoint=r/adforus  user_id=${user_id}  click_id=${click_id}  w=300  h=300  os=android
+  ...              ```
+  ...              
+  ...              *Implementation:*
+  ...              1. Set default endpoint (/healthz) if not provided
+  ...              2. Build query parameters dictionary from supported parameters (vendor_key, user_id, click_id, w, h, bundle_id, adtype, subid, lat, lon, k_campaign_id, os)
+  ...              3. Add Accept: */* header to request
+  ...              4. Normalize endpoint path (ensure leading slash)
+  ...              5. Send GET request with VendorSession
+  ...              6. Validate response is not empty
+  ...              7. Extract request URL and headers
+  ...              8. Set test variables (status_code, resp_json, request.url, request.headers)
+  ...              9. Log request URL and response headers to test message
+  ...              10. Validate status code is not 4xx or 5xx
+  ...              
+  ...              *Prerequisites:*
+  ...              - VendorSession must be created via "I have an vendor session" keyword
+  ...              - For vendor endpoints, appropriate parameters must be provided based on vendor type
+  ...              
+  ...              *Side Effects:*
+  ...              - Sets ${status_code} test variable with HTTP response code
+  ...              - Sets ${resp_json} test variable with parsed JSON response
+  ...              - Sets ${request.url} test variable with full request URL
+  ...              - Sets ${request.headers} test variable with request headers
+  ...              - Appends request URL and response headers to test message log
+  ...              
+  ...              *Special Cases:*
+  ...              - Adforus vendor: user_id parameter automatically case-adjusted (uppercase for iOS, lowercase for Android)
+  ...              - Keeta vendor: Requires lat/lon GPS coordinates and k_campaign_id
+  ...              - Linkmine vendor: Requires bundle_id (can be empty string) and adtype parameters
+  ...              - INL vendors: Use subid parameter with URL-encoded subparam format
+  ...              - Endpoint path automatically normalized (adds leading slash if missing)
+  ...              - Empty query parameters dictionary handled gracefully
+  ...              - Fails test if response is empty or status code is 4xx/5xx
   [Arguments]             &{args}
 
   # Set default endpoint if not provided
@@ -95,6 +174,26 @@ I would like to set the session under vendor endpoint with
 
 # Assertion Keywords #
 I would like to check status_code should be "${expected_code}" within the current session
+  [Documentation]  Verify HTTP response status code matches expected value.
+  ...
+  ...              *Purpose*
+  ...              Validates that API response status code equals the expected code.
+  ...              Commonly used to verify successful responses (200) or error handling.
+  ...
+  ...              *Parameters*
+  ...              - expected_code: Expected HTTP status code (e.g., "200", "404", "500")
+  ...
+  ...              *Usage Example*
+  ...              | I would like to check status_code should be "200" within the current session |
+  ...
+  ...              *Implementation*
+  ...              Compares ${status_code} test variable against expected value.
+  ...              Fails with detailed error message including request URL and headers if mismatch.
+  ...
+  ...              *Prerequisites*
+  ...              - ${status_code} must be set by previous API call
+  ...              - ${request.url} and ${request.headers} for error reporting
+  
   Should Be Equal As Strings
   ...     ${status_code}
   ...     ${expected_code}
@@ -104,15 +203,63 @@ I would like to check status_code should be "${expected_code}" within the curren
 
 Validate vendor response structure
   [Arguments]             ${response_json}        ${vendor_name}=${EMPTY}
-  [Documentation]  Validate the basic structure of vendor response
-  ...              Expected structure:
+  [Documentation]  *Purpose:*
+  ...              Validate the structural integrity of vendor API response to ensure it conforms to expected format.
+  ...              Verifies response is a non-empty array of product objects with required fields.
+  ...              
+  ...              *Parameters:*
+  ...              - response_json: JSON response from vendor API (should be list of product dictionaries)
+  ...              - vendor_name: Vendor identifier (default: ${EMPTY}). Used to determine special validation rules (keeta/adforus skip image validation)
+  ...              
+  ...              *Expected Structure:*
+  ...              ```json
   ...              [
-  ...              {
-  ...              "product_id": "1703093047",
-  ...              "url": "https://...",
-  ...              "image": "https://..."  (optional for Keeta vendor)
-  ...              }
+  ...                {
+  ...                  "product_id": "1703093047",
+  ...                  "url": "https://...",
+  ...                  "image": "https://..."  // optional for Keeta/Adforus vendors
+  ...                }
   ...              ]
+  ...              ```
+  ...              
+  ...              *Usage Examples:*
+  ...              ```robotframework
+  ...              # Standard vendor (requires image field)
+  ...              Validate vendor response structure  ${resp_json}  linkmine
+  ...              
+  ...              # Keeta vendor (skips image validation)
+  ...              Validate vendor response structure  ${resp_json}  keeta
+  ...              
+  ...              # Adforus vendor (skips image validation)
+  ...              Validate vendor response structure  ${resp_json}  adforus
+  ...              
+  ...              # Generic validation (requires all fields)
+  ...              Validate vendor response structure  ${resp_json}
+  ...              ```
+  ...              
+  ...              *Implementation:*
+  ...              1. Validate response type is list/array
+  ...              2. Verify response is not empty
+  ...              3. Determine if vendor is Keeta or Adforus (image validation skip flag)
+  ...              4. Iterate through each product in response array
+  ...              5. Validate required keys exist: product_id, url
+  ...              6. Validate optional image key (skip for Keeta/Adforus)
+  ...              7. Verify all field values are not empty
+  ...              8. Log validation status for each product
+  ...              9. Log final summary with product count
+  ...              
+  ...              *Validation Rules:*
+  ...              - Response must be list type
+  ...              - Response must contain at least one product
+  ...              - Each product must have product_id (non-empty)
+  ...              - Each product must have url (non-empty)
+  ...              - Each product must have image (non-empty) EXCEPT Keeta and Adforus vendors
+  ...              
+  ...              *Special Cases:*
+  ...              - Keeta vendor: Skips image field validation (image field not required)
+  ...              - Adforus vendor: Skips image field validation (image field not required)
+  ...              - Empty vendor_name: Requires all fields including image
+  ...              - Logs emoji indicators: 🎯 for skipped validations, ✅ for passed validations
 
   # Response should be a list/array
   ${response_type} =      Evaluate                type($response_json).__name__
@@ -172,12 +319,80 @@ Validate vendor response structure
 
 Validate product patch contains product ids
   [Arguments]             ${response_json}        ${param_name}       ${expected_click_id_base64}  ${vendor_name}=${Empty}  ${os}=${Empty}  ${user_id}=${Empty}
-  [Documentation]  Validate that each product contains the correct tracking parameter
-  ...              with base64 encoded click_id in the URL
-  ...              New response format: array of products with product_id, url, image
-  ...              Special handling for INL vendors with URL encoded parameters
-  ...              Keeta vendor: skip click_id validation
-  ...              Adforus vendor: validate adid case in product_url based on OS
+  [Documentation]  *Purpose:*
+  ...              Validate that product URLs contain correct tracking parameters with proper encoding.
+  ...              Ensures click tracking is properly implemented across different vendor types with vendor-specific validation rules.
+  ...              
+  ...              *Parameters:*
+  ...              - response_json: JSON response array from vendor API (list of product dictionaries)
+  ...              - param_name: Name of the tracking parameter to validate (e.g., 'click_id', 'subparam')
+  ...              - expected_click_id_base64: Base64-encoded click_id value to search for in product URLs
+  ...              - vendor_name: Vendor identifier for special handling (default: ${Empty}). Options: keeta, adforus, inl_corp_X, linkmine
+  ...              - os: Operating system for Adforus vendor (default: ${Empty}). Options: 'ios', 'android'
+  ...              - user_id: User identifier for Adforus adid case validation (default: ${Empty})
+  ...              
+  ...              *Usage Examples:*
+  ...              ```robotframework
+  ...              # Standard vendor (linkmine)
+  ...              Validate product patch contains product ids  ${resp_json}  click_id  ${encoded_click_id}  linkmine
+  ...              
+  ...              # INL vendor with URL-encoded subparam
+  ...              Validate product patch contains product ids  ${resp_json}  subparam  ${encoded_click_id}  inl_corp_1
+  ...              
+  ...              # INL_corp_5 vendor with fixed subParam=pier
+  ...              Validate product patch contains product ids  ${resp_json}  subparam  ${encoded_click_id}  inl_corp_5
+  ...              
+  ...              # Keeta vendor (skips click_id validation)
+  ...              Validate product patch contains product ids  ${resp_json}  click_id  ${encoded_click_id}  keeta
+  ...              
+  ...              # Adforus vendor with OS-specific adid case validation
+  ...              Validate product patch contains product ids  ${resp_json}  click_id  ${encoded_click_id}  adforus  os=android  user_id=${user_id}
+  ...              Validate product patch contains product ids  ${resp_json}  click_id  ${encoded_click_id}  adforus  os=ios  user_id=${user_id}
+  ...              ```
+  ...              
+  ...              *Implementation:*
+  ...              1. Validate response is not empty
+  ...              2. Check if vendor is Keeta (skip entire validation if true)
+  ...              3. Iterate through each product in response array
+  ...              4. Extract product_id, url, image from product dictionary
+  ...              5. Determine if vendor is INL type (contains 'inl' in vendor_name)
+  ...              6. Build appropriate search pattern based on vendor type:
+  ...                 - INL_corp_5: Fixed pattern '%26subParam%3Dpier'
+  ...                 - Other INL: URL-encoded pattern '%26{param_name}%3D{base64_value}'
+  ...                 - Standard: Simple pattern '{param_name}={base64_value}'
+  ...              7. Verify product URL contains expected tracking parameter pattern
+  ...              8. If Adforus vendor: Validate adid case in product URL based on OS
+  ...                 - iOS: Verify uppercase adid
+  ...                 - Android: Verify lowercase adid
+  ...              9. Log validation status for each product
+  ...              10. Log final summary with total product count
+  ...              
+  ...              *Tracking Parameter Encoding:*
+  ...              - Standard vendors: click_id=base64_encoded_value
+  ...              - INL vendors (except INL_corp_5): %26subparam%3Dbase64_encoded_value (URL-encoded &subparam=value)
+  ...              - INL_corp_5: %26subParam%3Dpier (fixed value, uppercase P in subParam)
+  ...              
+  ...              *Prerequisites:*
+  ...              - response_json must be valid JSON array
+  ...              - Each product must contain url field
+  ...              - For Adforus validation: os and user_id parameters must be provided
+  ...              
+  ...              *Special Cases:*
+  ...              - Keeta vendor: Completely skips click_id validation (returns early)
+  ...              - INL_corp_5: Uses fixed parameter 'subParam=pier' instead of dynamic base64 value
+  ...              - Other INL vendors: Uses double URL encoding for tracking parameters in land parameter
+  ...              - Adforus vendor: Additional adid case validation
+  ...                * iOS: Converts user_id to uppercase and validates in product URL
+  ...                * Android: Converts user_id to lowercase and validates in product URL
+  ...                * Unknown OS: Logs warning and skips adid case validation
+  ...              - Standard vendors: Simple param_name=value format
+  ...              
+  ...              *Validation Flow:*
+  ...              1. Response non-empty check
+  ...              2. Keeta vendor early return (skip all validation)
+  ...              3. Per-product tracking parameter validation
+  ...              4. Adforus adid case validation (if applicable)
+  ...              5. Success logging with emoji indicators (🎯 ✅ ⚠️)
 
   # Response should be a list/array
   Should Not Be Empty     ${response_json}

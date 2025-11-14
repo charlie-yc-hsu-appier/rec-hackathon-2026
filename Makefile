@@ -12,6 +12,12 @@ DEV_NAMESPACE := rec
 
 REQ_EXECUTABLES := helm kubectl vault consul-template kubectx
 
+DOCKER_RF_REPO := asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/qa/system_test_robot
+RF_TAG := v1.0.28
+RF_CONFIG := /rec-vendor-api/tests/system_tests/API/res/valueset.dat
+RF_TEST_FOLDER := /rec-vendor-api/tests/system_tests/API/testsuite
+RF_REPORT_DIR := ./tests/results
+
 .PHONY: all
 all: docker-build docker-push
 
@@ -27,6 +33,11 @@ clean: delete-dev
 .PHONY: pre-commit-check
 pre-commit-check: generate test
 	golangci-lint run
+
+
+.PHONY: validate-vendors-config
+validate-vendors-config: config-dev
+	go run ./cmd/validate-config $(CHART_DIR)/secrets/vendors.yaml
 
 
 .PHONY: check-environment
@@ -108,3 +119,13 @@ delete-dev: check-environment
 portforward-dev:
 	kubectx $(DEV_CLUSTER)
 	kubectl port-forward svc/$(RELEASE_NAME) 8080:80 -n $(DEV_NAMESPACE)
+
+
+.PHONY: run-e2e
+run-e2e:
+	rm -f -r ${RF_REPORT_DIR}
+	-docker run --rm \
+		-it --add-host=host.docker.internal:host-gateway -l ${RF_TAG} -v $(shell pwd):/rec-vendor-api ${DOCKER_RF_REPO}:${RF_TAG} \
+		bash -c "cd /rec-vendor-api; mkdir ${RF_REPORT_DIR}; \
+		pabot --pabotlib --resourcefile ${RF_CONFIG} --quiet -v ENV:dev -d ${RF_REPORT_DIR}/rec-vendor-api \
+		-i RAT ${RF_TEST_FOLDER}/api_rec_vendor_rat.robot"

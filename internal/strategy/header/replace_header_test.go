@@ -32,9 +32,10 @@ func (s *replaceHeaderTestSuite) TestGenerateHeaders() {
 	}
 
 	result := header.GenerateHeaders(Params{
-		RequestURL: "https://api-gateway.coupang.com/v2/providers/affiliate_open_api/apis/openapi/v1/products/reco?deviceId=FAKE-USER&imageSize=300x300&subId=KRpartner01",
+		RequestURL: "https://api-gateway.coupang.com/v2/providers/affiliate_open_api/apis/openapi/v2/products/reco",
+		HTTPMethod: "POST",
 	})
 
-	wantedSignature := "CEA algorithm=HmacSHA256, access-key=access_key, signed-date=250707T103117Z, signature=04a3ea3f1e087fb00de58591123578c7080ba99efc24ebf337eb772ae7085023"
+	wantedSignature := "CEA algorithm=HmacSHA256, access-key=access_key, signed-date=250707T103117Z, signature=faf13b58f6cc013892a036b778465bdcb85326d418c11398139a0b80ade01624"
 	require.Equal(s.T(), map[string]string{"Authorization": wantedSignature}, result)
 }
