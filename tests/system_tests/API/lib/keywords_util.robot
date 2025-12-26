@@ -185,10 +185,12 @@ Parse tracking config
   ...              2. Checks if value contains 'base64' for encoding requirement
   ...              3. For 'subparam' key: sets has_group_id=True (INL vendors)
   ...              4. Special handling for adpacker: param_name='ssp_click_id', uses_base64=True
-  ...              5. Special handling for INL vendors without explicit config: defaults to subparam+base64
+  ...              5. Special handling for binalab: param_name='puid', uses_base64=True
+  ...              6. Special handling for INL vendors without explicit config: defaults to subparam+base64
   ...
   ...              *Special Cases*
   ...              - Adpacker vendor: Always uses 'ssp_click_id' with base64
+  ...              - Binalab vendor: Always uses 'puid' with base64
   ...              - INL vendors: Default to 'subparam' with base64 and group_id if not configured
   
   [Arguments]             ${tracking_queries}     ${vendor_name}=${Empty}
@@ -196,6 +198,10 @@ Parse tracking config
   # Special handling for adpacker vendor
   ${is_adpacker_vendor} =  Run Keyword And Return Status
   ...                      Should Be Equal     ${vendor_name}      adpacker
+  
+  # Special handling for binalab vendor
+  ${is_binalab_vendor} =   Run Keyword And Return Status
+  ...                      Should Be Equal     ${vendor_name}      binalab
   
   # Special handling for INL vendors
   ${is_inl_vendor} =      Run Keyword And Return Status
@@ -231,6 +237,12 @@ Parse tracking config
   # Special handling for adpacker vendor
   IF  ${is_adpacker_vendor}
     ${final_param_name} =   Set Variable        ssp_click_id
+    ${uses_base64} =        Set Variable        ${TRUE}
+  END
+
+  # Special handling for binalab vendor
+  IF  ${is_binalab_vendor}
+    ${final_param_name} =   Set Variable        puid
     ${uses_base64} =        Set Variable        ${TRUE}
   END
 

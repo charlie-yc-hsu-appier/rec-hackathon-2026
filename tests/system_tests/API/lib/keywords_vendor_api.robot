@@ -418,7 +418,12 @@ Validate product patch contains product ids
     # Check if this is an INL vendor
     ${is_inl_vendor} =      Run Keyword And Return Status
     ...                     Should Contain          ${vendor_name}      inl
-    Log                     Debug - vendor_name: ${vendor_name}, param_name: ${param_name}, is_inl_vendor: ${is_inl_vendor}
+    
+    # Check if this is binalab vendor
+    ${is_binalab_vendor} =  Run Keyword And Return Status
+    ...                     Should Be Equal         ${vendor_name}      binalab
+    
+    Log                     Debug - vendor_name: ${vendor_name}, param_name: ${param_name}, is_inl_vendor: ${is_inl_vendor}, is_binalab_vendor: ${is_binalab_vendor}
 
     IF  ${is_inl_vendor} and '${param_name}' == 'subparam'
       # Special handling for inl_corp_5 vendor
@@ -438,6 +443,12 @@ Validate product patch contains product ids
         ${search_pattern} =     Set Variable    ${encoded_param}
         Log                     INL vendor detected - searching for URL encoded parameter: ${search_pattern}
       END
+    ELSE IF  ${is_binalab_vendor} and '${param_name}' == 'puid'
+      # For binalab vendor, the puid parameter appears URL encoded in the landUrl parameter
+      # Format: puid%3DMTJhYS4xMmFh (URL encoded puid=base64)
+      ${encoded_param} =      Evaluate        urllib.parse.quote("${param_name}") + "%3D" + "${expected_click_id_base64}"  urllib.parse
+      ${search_pattern} =     Set Variable    ${encoded_param}
+      Log                     Binalab vendor detected - searching for URL encoded parameter: ${search_pattern}
     ELSE
       # For non-INL vendors, use standard format
       ${search_pattern} =     Set Variable    ${param_name}=${expected_click_id_base64}
