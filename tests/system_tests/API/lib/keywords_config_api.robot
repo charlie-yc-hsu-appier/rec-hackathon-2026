@@ -1,6 +1,21 @@
 *** Settings ***
 Resource            ../res/init.robot
 
+*** Variables ***
+# Default subids for vendors (used when Config API doesn't have subid configured)
+# This allows testing without waiting for Config API to have campaign data
+&{DEFAULT_VENDOR_SUBIDS}
+...    inl_corp_1=kkobizdw1
+...    inl_corp_2=kkobiz1200x600
+...    inl_corp_3=dlapp4968m1200x600
+...    inl_corp_4=24kkobizdw1
+...    inl_corp_5=pinpuzzleAPP
+...    inl_corp_6=bluediarydw2
+...    linkmine=FAXXi4vdOY
+...    adpacker=103947SA
+...    replace=KRpartner01
+...    adpopcorn=CPSapapp1
+
 *** Keywords ***
 # Config API #
 I have a config_api session
@@ -358,7 +373,13 @@ Get vendor subids from config api
   ...              1. Parses YAML to extract vendor list
   ...              2. Queries experiments API for campaigns with "vendor_" in default_group
   ...              3. For each vendor, searches campaigns for matching subid
-  ...              4. Returns vendor_name → subid dictionary (empty subid if not found)
+  ...              4. If Config API doesn't have subid, uses default subid (from DEFAULT_VENDOR_SUBIDS)
+  ...              5. Returns vendor_name → subid dictionary
+  ...
+  ...              *Fallback Strategy*
+  ...              - Primary: Use subid from Config API campaigns
+  ...              - Fallback: Use default subid defined in DEFAULT_VENDOR_SUBIDS variable
+  ...              - Last resort: Use empty string if no default defined
   ...
   ...              *Prerequisites*
   ...              - Config API session must be initialized
@@ -400,13 +421,23 @@ Get vendor subids from config api
     ${vendor_name} =      Get From Dictionary     ${vendor_config}    name
     ${vendor_subid} =     Find vendor subid in campaigns  ${filtered_campaign_ids}  ${vendor_name}
     
-    Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
-    
-    IF  '${vendor_subid}' != '${EMPTY}'
-      Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid}  append=yes
+    # If Config API didn't provide subid, try to use default subid
+    IF  '${vendor_subid}' == '${EMPTY}'
+      ${has_default} =    Run Keyword And Return Status
+      ...                 Dictionary Should Contain Key  ${DEFAULT_VENDOR_SUBIDS}  ${vendor_name}
+      
+      IF  ${has_default}
+        ${vendor_subid} =  Get From Dictionary  ${DEFAULT_VENDOR_SUBIDS}  ${vendor_name}
+        Set Test Message  ⚙️ Using default subid for ${vendor_name}: ${vendor_subid}  append=yes
+        Log               Using default subid for ${vendor_name}: ${vendor_subid}
+      ELSE
+        Set Test Message  ℹ️ No subid found for ${vendor_name} - will use empty subid  append=yes
+      END
     ELSE
-      Set Test Message    ℹ️ No subid found for ${vendor_name} - will use empty subid  append=yes
+      Set Test Message    ✅ Found subid for ${vendor_name}: ${vendor_subid} (from Config API)  append=yes
     END
+    
+    Set To Dictionary     ${vendor_subid_mapping}  ${vendor_name}=${vendor_subid}
   END
   
   Log                     Vendor subid mapping: ${vendor_subid_mapping}
