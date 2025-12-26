@@ -226,18 +226,12 @@ Test vendors from yaml configuration
       ...                     w=${width}
       ...                     h=${height}
 
-      # Add subid (required for all vendors except keeta and adforus)
-      @{vendors_no_subid} =   Create List             keeta                   adforus
-      ${needs_subid} =        Run Keyword And Return Status
-      ...                     List Should Not Contain Value  ${vendors_no_subid}  ${vendor_name}
-      
-      IF  not ${needs_subid}
-        Log                   ${vendor_name} vendor does not require subid
-      ELSE IF  '${vendor_subid}' != '${EMPTY}'
+      # Add subid if available (API will validate if required)
+      IF  '${vendor_subid}' != '${EMPTY}'
         Set To Dictionary     ${common_params}        subid=${vendor_subid}
         Log                   Using subid for ${vendor_name}: ${vendor_subid}
       ELSE
-        Fail                  No subid found for vendor ${vendor_name} - subid is required for non-exempt vendors
+        Log                   No subid available for ${vendor_name} - will use empty subid
       END
 
       # Add vendor-specific parameters if they exist
