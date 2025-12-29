@@ -6,7 +6,7 @@ import (
 )
 
 func TestAdPopcornHeader(t *testing.T) {
-	h := &AdpopcornHeader{UserAgent: "tzyu.net"}
+	h := &AdpopcornHeader{UserAgent: "tzyu.net", ContnetType: "application/json"}
 	headers := h.GenerateHeaders(Params{})
-	assert.Equal(t, map[string]string{"User-Agent": "tzyu.net"}, headers)
+	assert.Equal(t, map[string]string{"User-Agent": "tzyu.net", "Content-Type": "application/json"}, headers)
 }
