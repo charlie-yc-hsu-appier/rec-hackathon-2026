@@ -336,10 +336,10 @@ Validate product patch contains product ids
   ...              # Standard vendor (linkmine)
   ...              Validate product patch contains product ids  ${resp_json}  click_id  ${encoded_click_id}  linkmine
   ...              
-  ...              # INL vendor with URL-encoded subparam
+  ...              # INL vendor with subparam
   ...              Validate product patch contains product ids  ${resp_json}  subparam  ${encoded_click_id}  inl_corp_1
   ...              
-  ...              # INL_corp_5 vendor with fixed subParam=pier
+  ...              # INL_corp_5 vendor with fixed subParam=pier (special case)
   ...              Validate product patch contains product ids  ${resp_json}  subparam  ${encoded_click_id}  inl_corp_5
   ...              
   ...              # Keeta vendor (skips click_id validation)
@@ -355,22 +355,21 @@ Validate product patch contains product ids
   ...              2. Check if vendor is Keeta (skip entire validation if true)
   ...              3. Iterate through each product in response array
   ...              4. Extract product_id, url, image from product dictionary
-  ...              5. Determine if vendor is INL type (contains 'inl' in vendor_name)
-  ...              6. Build appropriate search pattern based on vendor type:
-  ...                 - INL_corp_5: Fixed pattern '%26subParam%3Dpier'
-  ...                 - Other INL: URL-encoded pattern '%26{param_name}%3D{base64_value}'
-  ...                 - Standard: Simple pattern '{param_name}={base64_value}'
-  ...              7. Verify product URL contains expected tracking parameter pattern
+  ...              5. URL decode the product URL to normalize parameter format
+  ...              6. Build search pattern:
+  ...                 - INL_corp_5 with subparam: Fixed pattern 'subParam=pier' (uppercase P)
+  ...                 - All other cases: Simple pattern '{param_name}={base64_value}'
+  ...              7. Verify decoded URL contains expected tracking parameter pattern
   ...              8. If Adforus vendor: Validate adid case in product URL based on OS
   ...                 - iOS: Verify uppercase adid
   ...                 - Android: Verify lowercase adid
   ...              9. Log validation status for each product
   ...              10. Log final summary with total product count
   ...              
-  ...              *Tracking Parameter Encoding:*
-  ...              - Standard vendors: click_id=base64_encoded_value
-  ...              - INL vendors (except INL_corp_5): %26subparam%3Dbase64_encoded_value (URL-encoded &subparam=value)
-  ...              - INL_corp_5: %26subParam%3Dpier (fixed value, uppercase P in subParam)
+  ...              *Tracking Parameter Validation:*
+  ...              - Product URLs are URL decoded before validation
+  ...              - Standard format: {param_name}={base64_encoded_value}
+  ...              - Special case: INL_corp_5 uses 'subParam=pier' (uppercase P, fixed value)
   ...              
   ...              *Prerequisites:*
   ...              - response_json must be valid JSON array
@@ -379,13 +378,12 @@ Validate product patch contains product ids
   ...              
   ...              *Special Cases:*
   ...              - Keeta vendor: Completely skips click_id validation (returns early)
-  ...              - INL_corp_5: Uses fixed parameter 'subParam=pier' instead of dynamic base64 value
-  ...              - Other INL vendors: Uses double URL encoding for tracking parameters in land parameter
-  ...              - Adforus vendor: Additional adid case validation
-  ...                * iOS: Converts user_id to uppercase and validates in product URL
-  ...                * Android: Converts user_id to lowercase and validates in product URL
+  ...              - INL_corp_5 with subparam: Uses fixed parameter 'subParam=pier' (uppercase P) instead of dynamic base64 value
+  ...              - Adforus vendor: Additional adid case validation after URL decode
+  ...                * iOS: Converts user_id to uppercase and validates in decoded URL
+  ...                * Android: Converts user_id to lowercase and validates in decoded URL
   ...                * Unknown OS: Logs warning and skips adid case validation
-  ...              - Standard vendors: Simple param_name=value format
+  ...              - All other vendors: Simple param_name=value format after URL decode
   ...              
   ...              *Validation Flow:*
   ...              1. Response non-empty check
@@ -415,49 +413,27 @@ Validate product patch contains product ids
     ${product_url} =        Get From Dictionary     ${product}          url
     ${product_image} =      Get From Dictionary     ${product}          image
 
-    # Check if this is an INL vendor
-    ${is_inl_vendor} =      Run Keyword And Return Status
-    ...                     Should Contain          ${vendor_name}      inl
+    # URL decode the product URL to simplify pattern matching
+    ${decoded_url} =        Evaluate                urllib.parse.unquote("${product_url}")  urllib.parse
+    Log                     Decoded URL: ${decoded_url}
     
-    # Check if this is binalab vendor
-    ${is_binalab_vendor} =  Run Keyword And Return Status
-    ...                     Should Be Equal         ${vendor_name}      binalab
+    # Check for INL_corp_5 special case (uses 'subParam=pier_{click_id}' format)
+    ${is_inl_corp_5} =      Run Keyword And Return Status
+    ...                     Should Contain  ${vendor_name}      inl_corp_5
     
-    Log                     Debug - vendor_name: ${vendor_name}, param_name: ${param_name}, is_inl_vendor: ${is_inl_vendor}, is_binalab_vendor: ${is_binalab_vendor}
-
-    IF  ${is_inl_vendor} and '${param_name}' == 'subparam'
-      # Special handling for inl_corp_5 vendor
-      ${is_inl_corp_5} =      Run Keyword And Return Status
-      ...                     Should Contain  ${vendor_name}      inl_corp_5
-
-      IF  ${is_inl_corp_5}
-        # For inl_corp_5: subParam=pier (P is uppercase, fixed value)
-        ${encoded_param} =      Set Variable    %26subParam%3Dpier
-        ${search_pattern} =     Set Variable    ${encoded_param}
-        Log                     INL_CORP_5 vendor detected - searching for fixed parameter: ${search_pattern}
-      ELSE
-        # For other INL vendors, the parameter appears URL encoded in the land parameter
-        # Format: %26subparam%3DMTJhYS4xMmFh (URL encoded &subparam=base64)
-        # We need to encode both the & and = characters
-        ${encoded_param} =      Evaluate        "%26" + urllib.parse.quote("${param_name}") + "%3D" + "${expected_click_id_base64}"  urllib.parse
-        ${search_pattern} =     Set Variable    ${encoded_param}
-        Log                     INL vendor detected - searching for URL encoded parameter: ${search_pattern}
-      END
-    ELSE IF  ${is_binalab_vendor} and '${param_name}' == 'puid'
-      # For binalab vendor, the puid parameter appears URL encoded in the landUrl parameter
-      # Format: puid%3DMTJhYS4xMmFh (URL encoded puid=base64)
-      ${encoded_param} =      Evaluate        urllib.parse.quote("${param_name}") + "%3D" + "${expected_click_id_base64}"  urllib.parse
-      ${search_pattern} =     Set Variable    ${encoded_param}
-      Log                     Binalab vendor detected - searching for URL encoded parameter: ${search_pattern}
+    IF  ${is_inl_corp_5} and '${param_name}' == 'subparam'
+      # For inl_corp_5: subParam=pier_{base64} (uppercase P, pier_ prefix)
+      ${search_pattern} =     Set Variable    subParam=pier_${expected_click_id_base64}
+      Log                     INL_CORP_5 vendor - searching for: ${search_pattern}
     ELSE
-      # For non-INL vendors, use standard format
+      # For all other vendors, use standard format: param_name=base64_value
       ${search_pattern} =     Set Variable    ${param_name}=${expected_click_id_base64}
-      Log                     Standard vendor - searching for parameter: ${search_pattern}
+      Log                     Searching for parameter: ${search_pattern}
     END
 
-    # Verify the tracking parameter contains the base64 encoded click_id
-    Should Contain          ${product_url}          ${search_pattern}
-    ...                     Product URL should contain ${search_pattern}, but got: ${product_url}
+    # Verify the tracking parameter in decoded URL
+    Should Contain          ${decoded_url}          ${search_pattern}
+    ...                     Decoded URL should contain ${search_pattern}, but got: ${decoded_url}
 
     # Additional validation for Adforus vendor - check adid case in product_url
     ${is_adforus} =         Run Keyword And Return Status

@@ -170,6 +170,7 @@ Test vendors from yaml configuration
       # Extract parameters from vendor configuration
       ${request_config} =     Get From Dictionary     ${vendor_config}    request
       ${request_url} =        Get From Dictionary     ${request_config}   url
+      ${request_queries} =    Get From Dictionary     ${request_config}   queries
       
       ${tracking_config} =    Get From Dictionary     ${vendor_config}    tracking
       ${tracking_url} =       Get From Dictionary     ${tracking_config}  url
@@ -209,8 +210,8 @@ Test vendors from yaml configuration
         END
       END
 
-      # Parse tracking configuration
-      ${tracking_config} =    Parse tracking config  ${tracking_queries}  ${vendor_name}
+      # Parse tracking configuration (check both request and tracking queries)
+      ${tracking_config} =    Parse tracking config  ${request_queries}  ${tracking_queries}  ${vendor_name}
       ${param_name} =         Get From Dictionary     ${tracking_config}  param_name
       ${uses_base64} =        Get From Dictionary     ${tracking_config}  uses_base64
 
