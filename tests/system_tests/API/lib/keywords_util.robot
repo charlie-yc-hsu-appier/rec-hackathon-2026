@@ -158,85 +158,113 @@ Encode Base64
 
 
 Parse tracking config
-  [Documentation]  Extract tracking parameter configuration from vendor tracking queries.
+  [Documentation]  Extract tracking parameter configuration from vendor queries (request and tracking).
   ...
   ...              *Purpose*
-  ...              Parses vendor YAML tracking configuration to determine click_id parameter
+  ...              Parses vendor YAML configuration to determine click_id parameter
   ...              name, encoding requirements, and group_id needs for URL validation.
+  ...              Configuration is automatically detected from YAML, no hardcoding needed.
   ...
   ...              *Parameters*
-  ...              - ${tracking_queries}: List of tracking query dictionaries from YAML
-  ...                Example: [{"key": "subparam", "value": "{click_id_base64}"}]
-  ...              - ${vendor_name}: Vendor identifier for special handling [default: ${Empty}]
+  ...              - ${request_queries}: List of request query dictionaries from vendor.request.queries
+  ...              - ${tracking_queries}: List of tracking query dictionaries from vendor.tracking.queries
+  ...              - ${vendor_name}: Vendor identifier for logging [default: ${Empty}]
   ...
   ...              *Returns*
   ...              Dictionary containing:
-  ...              - param_name: Click tracking parameter name (e.g., 'subparam', 'ssp_click_id')
+  ...              - param_name: Click tracking parameter name (e.g., 'click_id', 'ssp_click_id', 'puid')
   ...              - uses_base64: Boolean - true if click_id requires base64 encoding
   ...              - has_group_id: Boolean - true if parameter requires group_id (INL vendors)
   ...
   ...              *Usage Example*
-  ...              | ${tracking_queries} = | Get From Dictionary | ${vendor} | tracking.queries |
-  ...              | ${config} = | Parse tracking config | ${tracking_queries} | inl_corp_1 |
+  ...              | ${request_queries} = | Get From Dictionary | ${vendor.request} | queries |
+  ...              | ${tracking_queries} = | Get From Dictionary | ${vendor.tracking} | queries |
+  ...              | ${config} = | Parse tracking config | ${request_queries} | ${tracking_queries} | vendor_name |
   ...              | ${param_name} = | Get From Dictionary | ${config} | param_name |
   ...
   ...              *Implementation*
-  ...              1. Searches tracking_queries for click_id-related parameters
-  ...              2. Checks if value contains 'base64' for encoding requirement
-  ...              3. For 'subparam' key: sets has_group_id=True (INL vendors)
-  ...              4. Special handling for adpacker: param_name='ssp_click_id', uses_base64=True
-  ...              5. Special handling for INL vendors without explicit config: defaults to subparam+base64
+  ...              1. Searches request_queries first for click_id-related parameters
+  ...              2. Falls back to tracking_queries if not found in request
+  ...              3. Checks if value contains 'base64' for encoding requirement
+  ...              4. For 'subparam' key: sets has_group_id=True (INL vendors)
+  ...              5. For INL vendors without explicit config: defaults to subparam+base64
   ...
-  ...              *Special Cases*
-  ...              - Adpacker vendor: Always uses 'ssp_click_id' with base64
-  ...              - INL vendors: Default to 'subparam' with base64 and group_id if not configured
+  ...              *Configuration-Driven Approach*
+  ...              - No hardcoded vendor names - all behavior driven by YAML config
+  ...              - Automatically handles new vendors without code changes
   
-  [Arguments]             ${tracking_queries}     ${vendor_name}=${Empty}
-
-  # Special handling for adpacker vendor
-  ${is_adpacker_vendor} =  Run Keyword And Return Status
-  ...                      Should Be Equal     ${vendor_name}      adpacker
-  
-  # Special handling for INL vendors
-  ${is_inl_vendor} =      Run Keyword And Return Status
-  ...                     Should Contain      ${vendor_name}      inl
+  [Arguments]             ${request_queries}      ${tracking_queries}     ${vendor_name}=${Empty}
 
   ${final_param_name} =   Set Variable        unknown
   ${uses_base64} =        Set Variable        ${FALSE}
   ${has_group_id} =       Set Variable        ${FALSE}
+  
+  # Check if this is an INL vendor (special handling needed)
+  ${is_inl_vendor} =      Run Keyword And Return Status
+  ...                     Should Contain      ${vendor_name}      inl
 
-  # Find click_id related parameters in queries
-  FOR  ${query}  IN  @{tracking_queries}
-    ${key} =              Get From Dictionary  ${query}            key
-    ${value} =            Get From Dictionary  ${query}            value
-    
-    # Check if this query contains click_id
-    ${is_click_id_param} =  Run Keyword And Return Status
-    ...                     Should Contain       ${value}            click_id
-    
-    IF  ${is_click_id_param}
-      ${final_param_name} =  Set Variable       ${key}
+  # Priority 1: Check tracking.queries first (these appear in returned URLs)
+  ${tracking_count} =     Get Length          ${tracking_queries}
+  IF  ${tracking_count} > 0
+    FOR  ${query}  IN  @{tracking_queries}
+      ${key} =            Get From Dictionary  ${query}            key
+      ${value} =          Get From Dictionary  ${query}            value
       
-      # Check if uses base64 encoding
-      ${uses_base64} =    Run Keyword And Return Status
-      ...                 Should Contain       ${value}            base64
+      # Check if this query contains click_id
+      ${is_click_id_param} =  Run Keyword And Return Status
+      ...                     Should Contain       ${value}            click_id
       
-      # Check if requires group_id (typically for INL vendors with subparam)
-      ${has_group_id} =   Set Variable If     '${key}' == 'subparam'  ${TRUE}  ${FALSE}
-      
-      BREAK
+      IF  ${is_click_id_param}
+        ${final_param_name} =  Set Variable       ${key}
+        
+        # Check if uses base64 encoding
+        ${uses_base64} =  Run Keyword And Return Status
+        ...               Should Contain       ${value}            base64
+        
+        # Check if requires group_id (typically for INL vendors with subparam)
+        ${has_group_id} =  Set Variable If     '${key}' == 'subparam'  ${TRUE}  ${FALSE}
+        
+        Log             Found click_id parameter in tracking.queries for ${vendor_name}: ${key} (base64=${uses_base64})
+        BREAK
+      END
     END
   END
 
-  # Special handling for adpacker vendor
-  IF  ${is_adpacker_vendor}
-    ${final_param_name} =   Set Variable        ssp_click_id
-    ${uses_base64} =        Set Variable        ${TRUE}
+  # Priority 2: If not found in tracking.queries, check request.queries
+  # (for vendors like adpacker/binalab where click_id param is in request)
+  # Skip this for INL vendors as they use subparam fallback
+  IF  '${final_param_name}' == 'unknown' and not ${is_inl_vendor}
+    ${request_count} =    Get Length          ${request_queries}
+    IF  ${request_count} > 0
+      FOR  ${query}  IN  @{request_queries}
+        ${key} =          Get From Dictionary  ${query}            key
+        ${value} =        Get From Dictionary  ${query}            value
+        
+        # Check if this query contains click_id
+        ${is_click_id_param} =  Run Keyword And Return Status
+        ...                     Should Contain       ${value}            click_id
+        
+        IF  ${is_click_id_param}
+          ${final_param_name} =  Set Variable       ${key}
+          
+          # Check if uses base64 encoding
+          ${uses_base64} =  Run Keyword And Return Status
+          ...               Should Contain       ${value}            base64
+          
+          # Check if requires group_id (typically for INL vendors with subparam)
+          ${has_group_id} =  Set Variable If     '${key}' == 'subparam'  ${TRUE}  ${FALSE}
+          
+          Log             Found click_id parameter in request.queries for ${vendor_name}: ${key} (base64=${uses_base64})
+          BREAK
+        END
+      END
+    END
   END
 
-  # Special handling for INL vendors without explicit tracking queries
+  # Priority 3: Fallback for INL vendors without explicit click_id in queries
+  # INL vendors typically use 'subparam' in tracking URLs even if not explicitly configured
   IF  ${is_inl_vendor} and '${final_param_name}' == 'unknown'
-    Log                     INL vendor detected without tracking queries, using subparam base64 parameter for compatibility
+    Log                     INL vendor detected without click_id in queries, using subparam base64 parameter for compatibility
     ${final_param_name} =   Set Variable        subparam
     ${uses_base64} =        Set Variable        ${TRUE}
     ${has_group_id} =       Set Variable        ${TRUE}
