@@ -76,16 +76,12 @@ Auto select test dimensions
     # Check if this vendor uses {adtype}
     ${has_adtype} =   Run Keyword And Return Status
     ...               Should Contain      ${value}  {adtype}
-    IF  ${has_adtype}
-      ${needs_adtype} =  Set Variable    ${TRUE}
-    END
+    ${needs_adtype} =  Set Variable If    ${has_adtype}    ${TRUE}    ${needs_adtype}
     
     # Check if this vendor uses {bundle_id}
     ${has_bundle_id} =  Run Keyword And Return Status
     ...                 Should Contain   ${value}  {bundle_id}
-    IF  ${has_bundle_id}
-      ${needs_bundle_id} =  Set Variable  ${TRUE}
-    END
+    ${needs_bundle_id} =  Set Variable If    ${has_bundle_id}    ${TRUE}    ${needs_bundle_id}
   END
   
   # Generate adtype if needed (detected from config)
