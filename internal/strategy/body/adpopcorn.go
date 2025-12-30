@@ -48,7 +48,6 @@ func (s *Adpopcorn) GenerateBody(params Params) any {
 		},
 		Affiliate: adpopcornAffiliate{
 			SubID:    params.SubID,
-			SubParam: clickIDBase64,
 		},
 	}
 
