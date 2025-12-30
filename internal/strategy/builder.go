@@ -13,7 +13,7 @@ func BuildHeader(v config.Vendor) header.Strategy {
 	case "replace":
 		return &header.ReplaceHeader{AccessKey: v.AccessKey, SecretKey: v.SecretKey, Clock: &header.ClockImpl{}}
 	case "adpopcorn":
-		return &header.AdpopcornHeader{UserAgent: v.UserAgent}
+		return &header.AdpopcornHeader{UserAgent: v.UserAgent, ContentType: v.ContentType}
 	case "keeta":
 		return &header.KeetaHeader{SCaApp: v.SCaApp, SCaSecret: v.SCaSecret, Clock: &header.ClockImpl{}}
 	default:
@@ -31,7 +31,7 @@ func BuildRequest(v config.Vendor) url.Strategy {
 func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 	switch v.Name {
 	case "adpopcorn":
-		return &unmarshaler.WrappedCoupangPartner{}
+		return &unmarshaler.Replace{}
 	case "adpacker":
 		return &unmarshaler.Adpacker{}
 	case "keeta":
@@ -56,6 +56,8 @@ func BuildBody(v config.Vendor) body.Strategy {
 	switch v.Name {
 	case "replace":
 		return &body.Replace{}
+	case "adpopcorn":
+		return &body.Adpopcorn{}
 	default:
 		return &body.NoBody{}
 	}
