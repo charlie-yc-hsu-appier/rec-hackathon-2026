@@ -35,7 +35,6 @@ func TestAdpopcorn(t *testing.T) {
 				},
 				Affiliate: adpopcornAffiliate{
 					SubID:    "sub-id-456",
-					SubParam: "Y2xpY2staWQtd2l0aC1zcGVjaWFsQGNoYXJzIzEyMw",
 				},
 			},
 		},
@@ -62,7 +61,6 @@ func TestAdpopcorn(t *testing.T) {
 				},
 				Affiliate: adpopcornAffiliate{
 					SubID:    "",
-					SubParam: "",
 				},
 			},
 		},

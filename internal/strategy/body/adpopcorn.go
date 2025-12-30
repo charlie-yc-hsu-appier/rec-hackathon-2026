@@ -34,7 +34,6 @@ type adpopcornAffiliate struct {
 
 
 func (s *Adpopcorn) GenerateBody(params Params) any {
-	clickIDBase64 := utils.EncodeClickID(params.ClickID)
 	body := adpopcornBody{
 		App: adpopcornApp{
 			BundleID: "",
