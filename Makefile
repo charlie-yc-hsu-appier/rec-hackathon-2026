@@ -1,6 +1,7 @@
 VAULT_ADDR := https://vault.appier.us
 VAULT_KEY_PATH := secret/project/recommendation
 
+DEV_NAME ?= $(shell whoami | sed -e "s/\./-/g")
 DOCKER_DEV_REPO := asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/rec-vendor-api-dev
 DOCKER_TAG := $(DEV_NAME)
 
