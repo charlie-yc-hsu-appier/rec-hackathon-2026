@@ -37,13 +37,11 @@ import (
 //go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 func main() {
-	var cf = flag.String("c", "", "config file")
-	flag.Parse()
-
-	cfg := &config.Config{}
-	if err := config.Load(*cf, cfg); err != nil {
+	cfg, err := loadConfig()
+	if err != nil {
 		log.Fatalf("Failed to load config, err: %v", err)
 	}
+	// Init logging
 	logkit.InitLogging(cfg.Logging, &logFormat.LogFormat{})
 
 	// Init tracer
@@ -100,11 +98,31 @@ func main() {
 		}
 	}()
 
+	// Start a gRPC server
+	grpcServer := initGRPCServer(cfg)
+
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 	log.Info("Shutting down server ...")
+}
+
+func initGRPCServer(cfg *config.Config) *grpc.Server {
+	grpcServer := grpc.NewServer()
+	schema.RegisterVendorAPIServer(grpcServer, controller.NewGRPCHandler(vendorRegistry))
+	return grpcServer
+}
+
+func loadConfig() (*config.Config, error) {
+	var cf = flag.String("c", "", "config file")
+	flag.Parse()
+
+	cfg := &config.Config{}
+	if err := config.Load(*cf, cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func initTracer(cfg tracekit.Config) func(context.Context) error {
