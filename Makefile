@@ -67,6 +67,10 @@ install-tool:
 	go install golang.org/x/tools/cmd/goimports@v0.41.0
 	brew install golangci-lint
 
+#############  Local ################
+.PHONY: local
+local: config-dev
+	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml
 
 #############  Testing  #############
 .PHONY: generate
