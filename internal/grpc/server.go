@@ -30,12 +30,10 @@ func NewAPIServer(service vendor.Service) APIServer {
 }
 
 func (s *APIServerImpl) GetRecommendations(ctx context.Context, req *schema.GetRecommendationsRequest) (*schema.GetRecommendationsResponse, error) {
-	// Convert protobuf request to internal Request struct
 	internalReq := convertToInternalRequest(ctx, req)
 
 	recommendations, err := s.vendorService.GetRecommendations(ctx, req.VendorKey, internalReq)
 	if err != nil {
-		// Convert all errors (BadRequestError, UnknownMacroError, etc.) to appropriate gRPC status
 		return nil, errors.ToGRPCStatus(err)
 	}
 
@@ -58,7 +56,6 @@ func (s *APIServerImpl) GetRecommendations(ctx context.Context, req *schema.GetR
 func (s *APIServerImpl) GetVendors(ctx context.Context, _ *emptypb.Empty) (*schema.GetVendorsResponse, error) {
 	vendors, err := s.vendorService.GetVendors(ctx)
 	if err != nil {
-		// Convert errors to appropriate gRPC status
 		return nil, errors.ToGRPCStatus(err)
 	}
 

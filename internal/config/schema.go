@@ -8,10 +8,13 @@ import (
 )
 
 type Config struct {
-	Logging         logkit.Config   `mapstructure:"logging"`
-	EnableGinLogger bool            `mapstructure:"enable_gin_logger"`
-	Tracing         tracekit.Config `mapstructure:"tracing"`
-	VendorConfig    VendorConfig    `mapstructure:"vendor_config"`
+	Logging              logkit.Config   `mapstructure:"logging"`
+	EnableGinLogger      bool            `mapstructure:"enable_gin_logger"`
+	Tracing              tracekit.Config `mapstructure:"tracing"`
+	VendorConfig         VendorConfig    `mapstructure:"vendor_config"`
+	GrpcWriteBufferSize  int             `mapstructure:"grpc_write_buffer_size"`
+	GrpcReadBufferSize   int             `mapstructure:"grpc_read_buffer_size"`
+	GrpcMaxConnectionAge time.Duration   `mapstructure:"grpc_max_connection_age"`
 }
 
 type VendorConfig struct {

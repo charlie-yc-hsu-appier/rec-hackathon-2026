@@ -49,7 +49,7 @@ func (s *ServiceImpl) GetVendors(ctx context.Context) ([]VendorInfo, error) {
 		if parsedURL, err := url.Parse(v.Request.URL); err == nil {
 			requestHost = parsedURL.Host
 		} else {
-			return nil, controller_errors.BadRequestErrorf("failed to parse request URL for vendor %s: %w", v.Name, err)
+			return nil, controller_errors.BadRequestErrorf("failed to parse request URL for vendor %s: %s", v.Name, err.Error())
 		}
 		vendors = append(vendors, VendorInfo{
 			VendorKey:   v.Name,

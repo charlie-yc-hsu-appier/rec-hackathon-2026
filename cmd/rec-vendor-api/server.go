@@ -34,6 +34,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
@@ -121,7 +122,7 @@ func main() {
 	}()
 
 	// Start a gRPC server
-	grpcServer := initGRPCServer(vendorRegistry, cfg.VendorConfig)
+	grpcServer := initGRPCServer(vendorRegistry, cfg)
 	grpcAddr := "0.0.0.0:10000"
 	go func() {
 		lis, err := net.Listen("tcp", grpcAddr)
@@ -159,11 +160,17 @@ func main() {
 	log.Info("Shutting down server ...")
 }
 
-func initGRPCServer(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) *grpc.Server {
-	service := vendor.NewService(vendorRegistry, vendorConfig)
+func initGRPCServer(vendorRegistry map[string]vendor.Client, cfg *config.Config) *grpc.Server {
+	service := vendor.NewService(vendorRegistry, cfg.VendorConfig)
 	apiServer := vendor_grpc.NewAPIServer(service)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionAge: cfg.GrpcMaxConnectionAge,
+		}),
+		grpc.WriteBufferSize(cfg.GrpcWriteBufferSize*1024),
+		grpc.ReadBufferSize(cfg.GrpcReadBufferSize*1024),
+	)
 	schema.RegisterVendorAPIServer(grpcServer, apiServer)
 
 	// Register standard gRPC health service for Kubernetes probes

@@ -20,3 +20,6 @@ vendor_config:
   {{- end }}
   timeout: 1s
 {{ file "deploy/rec-vendor-api/secrets/vendors.yaml" | indent 2 }}
+
+grpc_max_connection_age: 90s
+grpc_buffer_size_kb: 3
