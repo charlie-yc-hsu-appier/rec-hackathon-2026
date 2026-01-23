@@ -61,7 +61,7 @@ func (s *APIServerImpl) GetVendors(ctx context.Context, _ *emptypb.Empty) (*sche
 }
 
 func (s *APIServerImpl) CheckHealthCheck(ctx context.Context, req *emptypb.Empty) (*schema.HealthcheckResponse, error) {
-	// TODO: Implement health check logic
+
 	return &schema.HealthcheckResponse{
 		Status: "ok",
 	}, nil
