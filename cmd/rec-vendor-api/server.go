@@ -36,6 +36,8 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
 	_ "rec-vendor-api/docs"
@@ -127,39 +129,25 @@ func main() {
 
 	// Start a gRPC server
 	grpcServer := initGRPCServer(vendorRegistry, cfg.VendorConfig)
+	grpcAddr := "0.0.0.0:10000"
 	go func() {
-		addr := "0.0.0.0:10000"
-		lis, err := net.Listen("tcp", addr)
+		lis, err := net.Listen("tcp", grpcAddr)
 		if err != nil {
-			log.Fatalf("Failed to listen grpc server on %v, err: %v", addr, err)
+			log.Fatalf("Failed to listen grpc server on %v, err: %v", grpcAddr, err)
 		}
-		log.Infof("Serving gRPC server on %v", addr)
+		log.Infof("Serving gRPC server on %v", grpcAddr)
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve gRPC server on %v, err: %v", addr, err)
+			log.Fatalf("Failed to serve gRPC server on %v, err: %v", grpcAddr, err)
 		}
 	}()
 
 	// gateway server
-	gatewayMux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
-		if _, ok := headerMatcher[key]; ok {
-			return key, true
-		}
-		return runtime.DefaultHeaderMatcher(key)
-	}))
-	gatewayOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := schema.RegisterVendorAPIHandlerFromEndpoint(context.Background(), gatewayMux, "localhost:10000", gatewayOpts); err != nil {
-		log.Fatalf("Failed to register gRPC gateway, err: %v", err)
-	}
-	mux := http.NewServeMux()
-	mux.Handle("/", gatewayMux)
-	gatewayServer := &http.Server{
-		Addr:    "0.0.0.0:10001",
-		Handler: mux,
-	}
+	gatewayAddr := "0.0.0.0:10001"
+	gatewayServer := initGatewayServer(grpcAddr, gatewayAddr)
 	go func() {
-		log.Infof("Serving gateway server on %s", "0.0.0.0:10001")
+		log.Infof("Serving gateway server on %v", gatewayAddr)
 		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to listen and serve gateway server on %s, err: %v", "0.0.0.0:10001", err)
+			log.Fatalf("Failed to listen and serve gateway server on %v, err: %v", gatewayAddr, err)
 		}
 	}()
 
@@ -171,10 +159,40 @@ func main() {
 }
 
 func initGRPCServer(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) *grpc.Server {
+	service := vendor.NewService(vendorRegistry, vendorConfig)
+	apiServer := vendor_grpc.NewAPIServer(service)
+
 	grpcServer := grpc.NewServer()
-	schema.RegisterVendorAPIServer(grpcServer, vendor_grpc.NewAPIServer(vendorRegistry, vendorConfig))
+	schema.RegisterVendorAPIServer(grpcServer, apiServer)
+
+	// Register standard gRPC health service for Kubernetes probes
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
+	// Set the service to serving status
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+
 	reflection.Register(grpcServer)
 	return grpcServer
+}
+
+func initGatewayServer(grpcAddr string, gatewayAddr string) *http.Server {
+	gatewayMux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+		if _, ok := headerMatcher[key]; ok {
+			return key, true
+		}
+		return runtime.DefaultHeaderMatcher(key)
+	}))
+	gatewayOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	if err := schema.RegisterVendorAPIHandlerFromEndpoint(context.Background(), gatewayMux, grpcAddr, gatewayOpts); err != nil {
+		log.Fatalf("Failed to register gRPC gateway, err: %v", err)
+	}
+	mux := http.NewServeMux()
+	mux.Handle("/", gatewayMux)
+	gatewayServer := &http.Server{
+		Addr:    gatewayAddr,
+		Handler: mux,
+	}
+	return gatewayServer
 }
 
 func loadConfig() (*config.Config, error) {
