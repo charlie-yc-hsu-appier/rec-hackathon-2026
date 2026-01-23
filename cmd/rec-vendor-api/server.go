@@ -23,6 +23,7 @@ import (
 	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	log "github.com/sirupsen/logrus"
@@ -34,6 +35,7 @@ import (
 	vendor_grpc "rec-vendor-api/internal/grpc"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	_ "rec-vendor-api/docs"
@@ -50,6 +52,16 @@ import (
 // @schemes https
 //
 //go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
+
+var headerMatcher = map[string]struct{}{
+	"X-Requester":    {},
+	"X-Rec-Siteid":   {},
+	"X-Rec-Bidobjid": {},
+	"X-Rec-Oid":      {},
+	"X-Request-Id":   {},
+	"X-Request-Ts":   {},
+	"Traceparent":    {},
+}
 
 func main() {
 	cfg, err := loadConfig()
@@ -124,6 +136,30 @@ func main() {
 		log.Infof("Serving gRPC server on %v", addr)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC server on %v, err: %v", addr, err)
+		}
+	}()
+
+	// gateway server
+	gatewayMux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+		if _, ok := headerMatcher[key]; ok {
+			return key, true
+		}
+		return runtime.DefaultHeaderMatcher(key)
+	}))
+	gatewayOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	if err := schema.RegisterVendorAPIHandlerFromEndpoint(context.Background(), gatewayMux, "localhost:10000", gatewayOpts); err != nil {
+		log.Fatalf("Failed to register gRPC gateway, err: %v", err)
+	}
+	mux := http.NewServeMux()
+	mux.Handle("/", gatewayMux)
+	gatewayServer := &http.Server{
+		Addr:    "0.0.0.0:10001",
+		Handler: mux,
+	}
+	go func() {
+		log.Infof("Serving gateway server on %s", "0.0.0.0:10001")
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Failed to listen and serve gateway server on %s, err: %v", "0.0.0.0:10001", err)
 		}
 	}()
 
