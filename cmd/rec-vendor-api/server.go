@@ -140,6 +140,7 @@ func main() {
 			log.Fatalf("Failed to serve gRPC server on %v, err: %v", grpcAddr, err)
 		}
 	}()
+	defer grpcServer.GracefulStop()
 
 	// gateway server
 	gatewayAddr := "0.0.0.0:10001"
@@ -148,6 +149,13 @@ func main() {
 		log.Infof("Serving gateway server on %v", gatewayAddr)
 		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Failed to listen and serve gateway server on %v, err: %v", gatewayAddr, err)
+		}
+	}()
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer shutdownCancel()
+		if err := gatewayServer.Shutdown(shutdownCtx); err != nil {
+			log.Fatalf("Failed to shutdown server, err: %v", err)
 		}
 	}()
 
