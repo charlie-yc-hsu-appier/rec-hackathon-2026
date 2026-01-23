@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 
-	"rec-vendor-api/internal/config"
+	"rec-vendor-api/internal/grpcutils"
 	"rec-vendor-api/internal/vendor"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -21,16 +21,63 @@ type APIServerImpl struct {
 	vendorService vendor.Service
 }
 
-func NewAPIServer(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) *APIServerImpl {
+func NewAPIServer(service vendor.Service) *APIServerImpl {
 	return &APIServerImpl{
-		vendorService: vendor.NewService(vendorRegistry, vendorConfig),
+		vendorService: service,
 	}
 }
 
 func (s *APIServerImpl) GetRecommendations(ctx context.Context, req *schema.GetRecommendationsRequest) (*schema.GetRecommendationsResponse, error) {
-	// TODO: Implement logic to convert protobuf request to internal Request
-	// and call vendorService.GetRecommendations
-	return nil, nil
+	// Convert protobuf request to internal Request struct
+	internalReq := convertToInternalRequest(ctx, req)
+
+	recommendations, err := s.vendorService.GetRecommendations(ctx, req.VendorKey, internalReq)
+	if err != nil {
+		return nil, err
+	}
+
+	products := make([]*schema.ProductInfo, 0, len(recommendations))
+	for _, recommendation := range recommendations {
+		products = append(products, &schema.ProductInfo{
+			ProductId: recommendation.ProductID,
+			Url:       recommendation.Url,
+			Image:     recommendation.Image,
+			Price:     recommendation.Price,
+			SalePrice: recommendation.SalePrice,
+			Currency:  recommendation.Currency,
+		})
+	}
+	return &schema.GetRecommendationsResponse{
+		Products: products,
+	}, nil
+}
+
+func convertToInternalRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
+	clientIP := grpcutils.GetClientIPFromContext(ctx)
+
+	osStr := ""
+	if req.Os == schema.OperationSystem_ANDROID {
+		osStr = "android"
+	} else if req.Os == schema.OperationSystem_IOS {
+		osStr = "ios"
+	}
+
+	return vendor.Request{
+		UserID:          req.UserId,
+		ClickID:         req.ClickId,
+		ImgWidth:        int(req.W),
+		ImgHeight:       int(req.H),
+		WebHost:         req.WebHost,
+		BundleID:        req.BundleId,
+		AdType:          int(req.Adtype),
+		PartnerID:       req.PartnerId,
+		OS:              osStr,
+		SubID:           req.Subid,
+		KeetaCampaignID: req.KCampaignId,
+		Latitude:        req.Lat,
+		Longitude:       req.Lon,
+		ClientIP:        clientIP,
+	}
 }
 
 func (s *APIServerImpl) GetVendors(ctx context.Context, _ *emptypb.Empty) (*schema.GetVendorsResponse, error) {

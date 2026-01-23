@@ -4,6 +4,7 @@ go 1.25.6
 
 require (
 	github.com/gin-gonic/gin v1.10.1
+	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/plaxieappier/rec-go-kit/httpkit v1.1.1
 	github.com/plaxieappier/rec-go-kit/logkit v1.1.0
 	github.com/plaxieappier/rec-go-kit/tracekit v1.2.0

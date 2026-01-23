@@ -2,13 +2,14 @@ package vendor
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"rec-vendor-api/internal/config"
 )
 
 type Service interface {
-	GetRecommendations(ctx context.Context, req Request) ([]ProductInfo, error)
+	GetRecommendations(ctx context.Context, vendorKey string, req Request) ([]ProductInfo, error)
 	GetVendors(ctx context.Context) ([]VendorInfo, error)
 }
 
@@ -22,7 +23,6 @@ type ServiceImpl struct {
 	vendorConfig   config.VendorConfig
 }
 
-// NewService creates a new vendor service
 func NewService(vendorRegistry map[string]Client, vendorConfig config.VendorConfig) Service {
 	return &ServiceImpl{
 		vendorRegistry: vendorRegistry,
@@ -30,14 +30,18 @@ func NewService(vendorRegistry map[string]Client, vendorConfig config.VendorConf
 	}
 }
 
-// GetRecommendations will be implemented to get recommendations from a vendor
-func (s *ServiceImpl) GetRecommendations(ctx context.Context, req Request) ([]ProductInfo, error) {
-	// TODO: Implement logic to get recommendations
-	// This will call the appropriate vendor client from the registry
-	return nil, nil
+func (s *ServiceImpl) GetRecommendations(ctx context.Context, vendorKey string, req Request) ([]ProductInfo, error) {
+	vendorClient := s.vendorRegistry[vendorKey]
+	if vendorClient == nil {
+		return nil, fmt.Errorf("vendor not found")
+	}
+	products, err := vendorClient.GetUserRecommendationItems(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
-// GetVendors returns the list of available vendors
 func (s *ServiceImpl) GetVendors(ctx context.Context) ([]VendorInfo, error) {
 	vendors := make([]VendorInfo, 0, len(s.vendorConfig.Vendors))
 	for _, v := range s.vendorConfig.Vendors {
