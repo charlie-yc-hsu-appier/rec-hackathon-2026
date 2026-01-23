@@ -2,10 +2,10 @@ package vendor
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"rec-vendor-api/internal/config"
+	controller_errors "rec-vendor-api/internal/controller/errors"
 )
 
 type Service interface {
@@ -33,7 +33,7 @@ func NewService(vendorRegistry map[string]Client, vendorConfig config.VendorConf
 func (s *ServiceImpl) GetRecommendations(ctx context.Context, vendorKey string, req Request) ([]ProductInfo, error) {
 	vendorClient := s.vendorRegistry[vendorKey]
 	if vendorClient == nil {
-		return nil, fmt.Errorf("vendor not found")
+		return nil, controller_errors.BadRequestErrorf("vendor key '%s' not supported", vendorKey)
 	}
 	products, err := vendorClient.GetUserRecommendationItems(ctx, req)
 	if err != nil {
@@ -48,6 +48,8 @@ func (s *ServiceImpl) GetVendors(ctx context.Context) ([]VendorInfo, error) {
 		requestHost := ""
 		if parsedURL, err := url.Parse(v.Request.URL); err == nil {
 			requestHost = parsedURL.Host
+		} else {
+			return nil, controller_errors.BadRequestErrorf("failed to parse request URL for vendor %s: %w", v.Name, err)
 		}
 		vendors = append(vendors, VendorInfo{
 			VendorKey:   v.Name,

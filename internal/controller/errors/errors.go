@@ -1,6 +1,12 @@
 package errors
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
 
 type BadRequestError struct {
 	Message string
@@ -38,3 +44,27 @@ func NewUnknownMacroError(macro string) error {
 
 // Sentinel error for errors.Is checking
 var ErrUnknownMacro = &UnknownMacroError{}
+
+// ToGRPCStatus converts internal errors to gRPC status codes
+// This allows the same error types to be used for both HTTP and gRPC
+// while converting them appropriately at the handler boundary
+func ToGRPCStatus(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// Check for BadRequestError (validation errors, invalid input)
+	var badReqErr *BadRequestError
+	if errors.As(err, &badReqErr) {
+		return status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	// Check for UnknownMacroError (invalid macro in URL template)
+	var unknownMacroErr *UnknownMacroError
+	if errors.As(err, &unknownMacroErr) {
+		return status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	// Default to Internal error for unexpected errors
+	return status.Errorf(codes.Internal, "Internal error: %v", err)
+}

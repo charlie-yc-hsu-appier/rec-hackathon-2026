@@ -27,10 +27,6 @@ import (
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	log "github.com/sirupsen/logrus"
-<<<<<<< HEAD
-=======
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
 	vendor_grpc "rec-vendor-api/internal/grpc"
 
@@ -40,10 +36,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	_ "rec-vendor-api/docs"
-
-	schema "github.com/plaxieappier/rec-schema/go/vendor"
->>>>>>> 6ffcbbe (start up grpc server)
+	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
 )
 
 // @title Vendor API service
