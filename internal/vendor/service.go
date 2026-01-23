@@ -7,19 +7,16 @@ import (
 	"rec-vendor-api/internal/config"
 )
 
-// Service defines the business logic interface for vendor operations
 type Service interface {
 	GetRecommendations(ctx context.Context, req Request) ([]ProductInfo, error)
 	GetVendors(ctx context.Context) ([]VendorInfo, error)
 }
 
-// VendorInfo represents vendor information
 type VendorInfo struct {
 	VendorKey   string
 	RequestHost string
 }
 
-// ServiceImpl implements the Service interface
 type ServiceImpl struct {
 	vendorRegistry map[string]Client
 	vendorConfig   config.VendorConfig

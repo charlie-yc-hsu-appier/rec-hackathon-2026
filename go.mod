@@ -7,7 +7,6 @@ require (
 	github.com/plaxieappier/rec-go-kit/httpkit v1.1.1
 	github.com/plaxieappier/rec-go-kit/logkit v1.1.0
 	github.com/plaxieappier/rec-go-kit/tracekit v1.2.0
-	github.com/plaxieappier/rec-schema v1.0.84
 	github.com/prometheus/client_golang v1.23.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
@@ -15,7 +14,6 @@ require (
 	github.com/swaggo/swag v1.16.6
 	go.opentelemetry.io/otel/trace v1.35.0
 	go.uber.org/mock v0.6.0
-	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -31,7 +29,6 @@ require (
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
@@ -47,10 +44,8 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -94,10 +89,12 @@ require (
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
-	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/grpc v1.67.3 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/plaxieappier/rec-schema => ../rec-schema

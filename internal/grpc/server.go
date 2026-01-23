@@ -3,25 +3,27 @@ package grpc
 import (
 	"context"
 
+	"rec-vendor-api/internal/config"
 	"rec-vendor-api/internal/vendor"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+<<<<<<< HEAD
 	// TODO: not yet generated at rec-schema yet
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
+=======
+	schema "github.com/plaxieappier/rec-schema/go/vendor"
+>>>>>>> 6ffcbbe (start up grpc server)
 )
 
-// APIServerImpl implements the VendorAPIServer interface from generated protobuf code
-// Note: This will compile once the protobuf code is generated via: protoc --go_out=. --go-grpc_out=. api/vendor_api.proto
 type APIServerImpl struct {
 	schema.UnimplementedVendorAPIServer
 	vendorService vendor.Service
 }
 
-// NewAPIServer creates a new gRPC API server
-func NewAPIServer(vendorService vendor.Service) *APIServerImpl {
+func NewAPIServer(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) *APIServerImpl {
 	return &APIServerImpl{
-		vendorService: vendorService,
+		vendorService: vendor.NewService(vendorRegistry, vendorConfig),
 	}
 }
 
@@ -36,13 +38,25 @@ func (s *APIServerImpl) GetVendors(ctx context.Context, _ *emptypb.Empty) (*sche
 	if err != nil {
 		return nil, err
 	}
+
+	protoVendors := make([]*schema.VendorInfo, 0, len(vendors))
+	for _, v := range vendors {
+		protoVendors = append(protoVendors, &schema.VendorInfo{
+			VendorKey:   v.VendorKey,
+			RequestHost: v.RequestHost,
+		})
+	}
 	return &schema.GetVendorsResponse{
+<<<<<<< HEAD
 		Vendors: []*schema.VendorInfo{
 			{
 				VendorKey:   vendors[0].VendorKey,
 				RequestHost: vendors[0].RequestHost,
 			},
 		},
+=======
+		Vendors: protoVendors,
+>>>>>>> 6ffcbbe (start up grpc server)
 	}, nil
 }
 

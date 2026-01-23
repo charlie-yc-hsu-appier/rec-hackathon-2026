@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 
 	"io"
 	"net/http"
@@ -25,6 +26,20 @@ import (
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	log "github.com/sirupsen/logrus"
+<<<<<<< HEAD
+=======
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	vendor_grpc "rec-vendor-api/internal/grpc"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+
+	_ "rec-vendor-api/docs"
+
+	schema "github.com/plaxieappier/rec-schema/go/vendor"
+>>>>>>> 6ffcbbe (start up grpc server)
 )
 
 // @title Vendor API service
@@ -99,7 +114,18 @@ func main() {
 	}()
 
 	// Start a gRPC server
-	grpcServer := initGRPCServer(cfg)
+	grpcServer := initGRPCServer(vendorRegistry, cfg.VendorConfig)
+	go func() {
+		addr := "0.0.0.0:10000"
+		lis, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Fatalf("Failed to listen grpc server on %v, err: %v", addr, err)
+		}
+		log.Infof("Serving gRPC server on %v", addr)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC server on %v, err: %v", addr, err)
+		}
+	}()
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
@@ -108,9 +134,10 @@ func main() {
 	log.Info("Shutting down server ...")
 }
 
-func initGRPCServer(cfg *config.Config) *grpc.Server {
+func initGRPCServer(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) *grpc.Server {
 	grpcServer := grpc.NewServer()
-	schema.RegisterVendorAPIServer(grpcServer, controller.NewGRPCHandler(vendorRegistry))
+	schema.RegisterVendorAPIServer(grpcServer, vendor_grpc.NewAPIServer(vendorRegistry, vendorConfig))
+	reflection.Register(grpcServer)
 	return grpcServer
 }
 
