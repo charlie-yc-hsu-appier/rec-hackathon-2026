@@ -1,8 +1,6 @@
 package errors
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type BadRequestError struct {
 	Message string
@@ -35,20 +33,6 @@ func (e UnknownMacroError) Is(target error) bool {
 func NewUnknownMacroError(macro string) error {
 	return &UnknownMacroError{
 		Macro: macro,
-	}
-}
-
-type InternalServerError struct {
-	Message string
-}
-
-func (e InternalServerError) Error() string {
-	return e.Message
-}
-
-func InternalServerErrorf(format string, a ...interface{}) error {
-	return &InternalServerError{
-		Message: fmt.Sprintf(format, a...),
 	}
 }
 

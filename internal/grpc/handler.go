@@ -14,6 +14,7 @@ import (
 
 	controller_errors "rec-vendor-api/internal/controller/errors"
 
+	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
 	log "github.com/sirupsen/logrus"
 )
@@ -98,7 +99,11 @@ func (s *HandlerImpl) CheckHealthCheck(ctx context.Context, req *emptypb.Empty) 
 }
 
 func convertToInternalRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
-	clientIP := GetClientIPFromContext(ctx)
+	clientIP, exists := grpc_realip.FromContext(ctx)
+	clientIPStr := ""
+	if exists {
+		clientIPStr = clientIP.String()
+	}
 
 	osStr := ""
 	switch req.Os {
@@ -122,6 +127,6 @@ func convertToInternalRequest(ctx context.Context, req *schema.GetRecommendation
 		KeetaCampaignID: req.KCampaignId,
 		Latitude:        req.Lat,
 		Longitude:       req.Lon,
-		ClientIP:        clientIP,
+		ClientIP:        clientIPStr,
 	}
 }

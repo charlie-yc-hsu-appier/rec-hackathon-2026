@@ -31,6 +31,7 @@ import (
 	vendor_grpc "rec-vendor-api/internal/grpc"
 
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -191,6 +192,7 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
+			grpc_realip.UnaryServerInterceptor(nil, nil),
 			middleware.ValidationUnaryInterceptor,
 		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{

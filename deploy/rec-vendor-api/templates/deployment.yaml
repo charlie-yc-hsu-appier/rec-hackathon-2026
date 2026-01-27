@@ -40,10 +40,12 @@ spec:
             httpGet:
               path: /healthz
               port: http
+            failureThreshold: 5
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
+            failureThreshold: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
