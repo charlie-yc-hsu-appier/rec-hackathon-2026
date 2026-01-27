@@ -178,8 +178,7 @@ func initGinServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, 
 
 func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, grpcAddr string) *grpc.Server {
 	log.Infof("Starting grpc server on %s", grpcAddr)
-	service := vendor.NewService(vendorRegistry, cfg.VendorConfig)
-	apiServer := vendor_grpc.NewAPIServer(service)
+	handler := vendor_grpc.NewHandler(vendorRegistry, cfg.VendorConfig)
 
 	recoveryFunc := func(p any) (err error) {
 		log.Fatalf("panic triggered: %v", p)
@@ -200,12 +199,11 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc.WriteBufferSize(cfg.GrpcWriteBufferSize*1024),
 		grpc.ReadBufferSize(cfg.GrpcReadBufferSize*1024),
 	)
-	schema.RegisterVendorAPIServer(grpcServer, apiServer)
+	schema.RegisterVendorAPIServer(grpcServer, handler)
 
 	// Register standard gRPC health service for Kubernetes probes
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
-	// Set the service to serving status
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	reflection.Register(grpcServer)

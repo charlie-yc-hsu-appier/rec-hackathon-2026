@@ -1,11 +1,7 @@
 package errors
 
 import (
-	"errors"
 	"fmt"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type BadRequestError struct {
@@ -58,21 +54,3 @@ func InternalServerErrorf(format string, a ...interface{}) error {
 
 // Sentinel error for errors.Is checking
 var ErrUnknownMacro = &UnknownMacroError{}
-
-func ToGRPCStatus(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	var badReqErr *BadRequestError
-	if errors.As(err, &badReqErr) {
-		return status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var unknownMacroErr *UnknownMacroError
-	if errors.As(err, &unknownMacroErr) {
-		return status.Errorf(codes.Internal, "%v", err)
-	}
-
-	return status.Errorf(codes.Internal, "Internal error: %v", err)
-}
