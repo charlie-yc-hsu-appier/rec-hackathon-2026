@@ -2,9 +2,11 @@ package config
 
 import (
 	"errors"
+	"log"
 	"path"
 	"strings"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/viper"
 )
 
@@ -45,5 +47,12 @@ func normalizeVendorsHTTPMethod(vendors []Vendor) {
 		if vendors[i].HTTPMethod != "" {
 			vendors[i].HTTPMethod = strings.ToUpper(vendors[i].HTTPMethod)
 		}
+	}
+}
+
+func LoadConfigFromEnv(cfg any) {
+	err := envconfig.Process("", cfg)
+	if err != nil {
+		log.Fatalf("failed to load env config: %v", err)
 	}
 }
