@@ -60,10 +60,15 @@ var headerMatcher = map[string]struct{}{
 }
 
 func main() {
-	cfg, err := loadConfig()
-	if err != nil {
+	var cf = flag.String("c", "", "config file")
+	var appType = flag.String("t", "", "app type")
+	flag.Parse()
+
+	cfg := &config.Config{}
+	if err := config.Load(*cf, cfg); err != nil {
 		log.Fatalf("Failed to load config, err: %v", err)
 	}
+
 	// Init logging
 	logkit.InitLogging(cfg.Logging, &logFormat.LogFormat{})
 
@@ -75,6 +80,63 @@ func main() {
 		}
 	}()
 
+	vendorRegistry, err := vendor.BuildRegistry(cfg.VendorConfig)
+	if err != nil {
+		log.Fatalf("Failed to build vendor registry, err: %v", err)
+	}
+
+	var ginServer *http.Server
+	var grpcServer *grpc.Server
+	var gatewayServer *http.Server
+
+	grpcAddr := "0.0.0.0:10000"
+	gatewayAddr := "0.0.0.0:10001"
+	ginAddr := "0.0.0.0:8080"
+	appTypeStr := *appType
+	switch appTypeStr {
+	case "gin":
+		ginServer = initGinServer(cfg, vendorRegistry, ginAddr)
+	case "grpc":
+		grpcServer = initGRPCServer(cfg, vendorRegistry, grpcAddr)
+		gatewayServer = initGatewayServer(grpcAddr, gatewayAddr)
+	default:
+		ginServer = initGinServer(cfg, vendorRegistry, ginAddr)
+		grpcServer = initGRPCServer(cfg, vendorRegistry, grpcAddr)
+		gatewayServer = initGatewayServer(grpcAddr, gatewayAddr)
+	}
+
+	// Setup graceful shutdown for all started servers
+	if ginServer != nil {
+		defer func() {
+			timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := ginServer.Shutdown(timeoutCtx); err != nil {
+				log.Fatalf("Failed to shutdown gin server, err: %v", err)
+			}
+		}()
+	}
+	if grpcServer != nil {
+		defer grpcServer.GracefulStop()
+	}
+	if gatewayServer != nil {
+		defer func() {
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer shutdownCancel()
+			if err := gatewayServer.Shutdown(shutdownCtx); err != nil {
+				log.Fatalf("Failed to shutdown gateway server, err: %v", err)
+			}
+		}()
+	}
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+	log.Info("Shutting down server ...")
+}
+
+func initGinServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, addr string) *http.Server {
+	log.Infof("Starting gin server on %s", addr)
 	r := gin.New()
 	// MUST be set to true for getting value from context
 	r.ContextWithFallback = true
@@ -91,10 +153,6 @@ func main() {
 		r.Use(gin.Recovery())
 	}
 
-	vendorRegistry, err := vendor.BuildRegistry(cfg.VendorConfig)
-	if err != nil {
-		log.Fatalf("Failed to build vendor registry, err: %v", err)
-	}
 	recommender := controller.NewRecommender(vendorRegistry)
 	vendorManager := controller.NewVendorManager(cfg.VendorConfig)
 
@@ -103,68 +161,25 @@ func main() {
 	r.GET("/healthz", controller.HealthCheck)
 	r.GET("/metrics", telemetry.PromHandler())
 
-	addr := "0.0.0.0:8080"
 	s := &http.Server{
 		Addr:    addr,
 		Handler: tracekit.OtelHTTPHandler(r, "vendor-api", cfg.Tracing),
 	}
-	defer func() {
-		timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := s.Shutdown(timeoutCtx); err != nil {
-			log.Fatalf("Failed to shutdown server, err: %v", err)
-		}
-	}()
 	go func() {
 		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Failed to listen and serve http server on %s, err: %v", addr, err)
 		}
 	}()
-
-	// Start a gRPC server
-	grpcServer := initGRPCServer(vendorRegistry, cfg)
-	grpcAddr := "0.0.0.0:10000"
-	go func() {
-		lis, err := net.Listen("tcp", grpcAddr)
-		if err != nil {
-			log.Fatalf("Failed to listen grpc server on %v, err: %v", grpcAddr, err)
-		}
-		log.Infof("Serving gRPC server on %v", grpcAddr)
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve gRPC server on %v, err: %v", grpcAddr, err)
-		}
-	}()
-	defer grpcServer.GracefulStop()
-
-	// gateway server
-	gatewayAddr := "0.0.0.0:10001"
-	gatewayServer := initGatewayServer(grpcAddr, gatewayAddr)
-	go func() {
-		log.Infof("Serving gateway server on %v", gatewayAddr)
-		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to listen and serve gateway server on %v, err: %v", gatewayAddr, err)
-		}
-	}()
-	defer func() {
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer shutdownCancel()
-		if err := gatewayServer.Shutdown(shutdownCtx); err != nil {
-			log.Fatalf("Failed to shutdown server, err: %v", err)
-		}
-	}()
-
-	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-	log.Info("Shutting down server ...")
+	return s
 }
 
-func initGRPCServer(vendorRegistry map[string]vendor.Client, cfg *config.Config) *grpc.Server {
+func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, grpcAddr string) *grpc.Server {
+	log.Infof("Starting grpc server on %s", grpcAddr)
 	service := vendor.NewService(vendorRegistry, cfg.VendorConfig)
 	apiServer := vendor_grpc.NewAPIServer(service)
 
 	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(middleware.ValidationUnaryInterceptor),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.GrpcMaxConnectionAge,
 		}),
@@ -180,10 +195,23 @@ func initGRPCServer(vendorRegistry map[string]vendor.Client, cfg *config.Config)
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	reflection.Register(grpcServer)
+
+	go func() {
+		lis, err := net.Listen("tcp", grpcAddr)
+		if err != nil {
+			log.Fatalf("Failed to listen grpc server on %v, err: %v", grpcAddr, err)
+		}
+		log.Infof("Serving gRPC server on %v", grpcAddr)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC server on %v, err: %v", grpcAddr, err)
+		}
+	}()
+
 	return grpcServer
 }
 
 func initGatewayServer(grpcAddr string, gatewayAddr string) *http.Server {
+	log.Infof("Starting gateway server on %s", gatewayAddr)
 	gatewayMux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
 		if _, ok := headerMatcher[http.CanonicalHeaderKey(key)]; ok {
 			return key, true
@@ -200,18 +228,15 @@ func initGatewayServer(grpcAddr string, gatewayAddr string) *http.Server {
 		Addr:    gatewayAddr,
 		Handler: mux,
 	}
+
+	go func() {
+		log.Infof("Serving gateway server on %v", gatewayAddr)
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Failed to listen and serve gateway server on %v, err: %v", gatewayAddr, err)
+		}
+	}()
+
 	return gatewayServer
-}
-
-func loadConfig() (*config.Config, error) {
-	var cf = flag.String("c", "", "config file")
-	flag.Parse()
-
-	cfg := &config.Config{}
-	if err := config.Load(*cf, cfg); err != nil {
-		return nil, err
-	}
-	return cfg, nil
 }
 
 func initTracer(cfg tracekit.Config) func(context.Context) error {

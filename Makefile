@@ -72,6 +72,17 @@ install-tool:
 local: config-dev
 	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml
 
+# TODO: to be removed with gin retirement
+.PHONY: local-grpc
+local-grpc: config-dev
+	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml -t grpc
+
+# TODO: to be removed with grpc retirement
+.PHONY: local-gin
+local-gin: config-dev
+	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml -t gin
+
+
 #############  Testing  #############
 .PHONY: generate
 generate:

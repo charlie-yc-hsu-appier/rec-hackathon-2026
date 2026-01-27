@@ -22,7 +22,7 @@ type APIServerImpl struct {
 	vendorService vendor.Service
 }
 
-func NewAPIServer(service vendor.Service) APIServer {
+func NewAPIServer(service vendor.Service) *APIServerImpl {
 	return &APIServerImpl{
 		vendorService: service,
 	}

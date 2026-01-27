@@ -201,7 +201,7 @@ pipeline {
           // adding `buildvcs=false` to mitigate the "error obtaining VCS status: exit status 128" error
           // note: `buildvcs=false` flag is not a must when running golangci-lint
           sh 'GOFLAGS=-buildvcs=false ./bin/golangci-lint run'
-          
+
           // Validate vendor configuration with real secrets from vault
           sh 'go run ./cmd/validate-config $CHART_DIR/secrets/vendors.yaml'
           sh 'make test'
