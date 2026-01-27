@@ -160,10 +160,17 @@ delete-dev: check-environment
 	helm delete $(RELEASE_NAME) --namespace $(DEV_NAMESPACE)
 
 
+# TODO: to be updated when gin server is retired
 .PHONY: portforward-dev
 portforward-dev:
 	kubectx $(DEV_CLUSTER)
-	kubectl port-forward svc/$(RELEASE_NAME) 8080:80 -n $(DEV_NAMESPACE)
+	@bash -c ' \
+		echo "Starting port-forwards in background..."; \
+		kubectl port-forward svc/$(RELEASE_NAME) 8080:80 -n $(DEV_NAMESPACE) & \
+		kubectl port-forward deployment/$(RELEASE_NAME) 10000:10000 -n $(DEV_NAMESPACE) -c grpc & \
+		echo "Port-forwards started. Press Ctrl+C to stop all."; \
+		trap "kill 0" EXIT; \
+		wait'
 
 
 .PHONY: run-e2e
