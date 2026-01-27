@@ -30,11 +30,6 @@ install: deploy-dev
 clean: delete-dev
 
 
-.PHONY: pre-commit-check
-pre-commit-check: generate test
-	golangci-lint run
-
-
 .PHONY: validate-vendors-config
 validate-vendors-config: config-dev
 	go run ./cmd/validate-config $(CHART_DIR)/secrets/vendors.yaml
@@ -106,7 +101,7 @@ fmt-check:
 
 
 .PHONY: lint-check
-lint-check:  check-local-libjpeg
+lint-check:
 	@echo "==> Running static analysis..."
 	@golangci-lint run ./...
 
