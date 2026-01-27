@@ -24,6 +24,7 @@ linters:
             - - IDFA
               - IDFV
               - AUID
+            - [ skipPackageNameChecks: true ]
           disabled: false
   exclusions:
     generated: lax

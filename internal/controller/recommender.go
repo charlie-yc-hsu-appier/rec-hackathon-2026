@@ -53,7 +53,7 @@ func (c *Recommender) Recommend(ctx *gin.Context) {
 	vendorClient := c.vendorRegistry[vendorKey]
 	if vendorClient == nil {
 		log.WithContext(ctx).Errorf("Invalid vendor key: %s", vendorKey)
-		handleBadRequest(ctx, fmt.Errorf("Vendor key '%s' not supported", vendorKey))
+		handleBadRequest(ctx, fmt.Errorf("vendor key '%s' not supported", vendorKey))
 		return
 	}
 
@@ -67,7 +67,7 @@ func (c *Recommender) Recommend(ctx *gin.Context) {
 		}
 
 		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
-		handleInternalServerError(ctx, fmt.Errorf("Fail to recommend any products for vendor %s. err: %w", vendorKey, err))
+		handleInternalServerError(ctx, fmt.Errorf("fail to recommend any products for vendor %s. err: %w", vendorKey, err))
 		return
 	}
 	ctx.JSON(http.StatusOK, response)

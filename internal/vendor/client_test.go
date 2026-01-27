@@ -69,7 +69,6 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 					Return(&httpkit.Response{Body: []byte(`[{"productId":1,"productUrl":"url1","productImage":"img1"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "1", ProductURL: "url1", ProductImage: "img1"}}, nil)
 				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url", nil)
-
 			},
 			want: []ProductInfo{{ProductID: "1", Url: "http://tracking-url", Image: "img1"}},
 		},
@@ -92,7 +91,6 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 					Return(&httpkit.Response{Body: []byte(`[{"productId":2,"productUrl":"url2","productImage":"img2"}]`)}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return([]unmarshaler.PartnerResp{{ProductID: "2", ProductURL: "url2", ProductImage: "img2"}}, nil)
 				ts.mockTracker.EXPECT().GenerateURL(gomock.Any(), gomock.Any()).Return("http://tracking-url-post", nil)
-
 			},
 			want: []ProductInfo{{ProductID: "2", Url: "http://tracking-url-post", Image: "img2"}},
 		},
@@ -111,7 +109,6 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				)
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), req, 1*time.Second, []int{200}).
 					Return(nil, errors.New("network error"))
-
 			},
 			wantErr: true,
 		},
@@ -124,7 +121,6 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 				ts.mockRestClient.EXPECT().Get(gomock.Any(), gomock.Any(), 1*time.Second, []int{200}).
 					Return(&httpkit.Response{Body: []byte("invalid json")}, nil)
 				ts.mockUnmarshaler.EXPECT().UnmarshalResponse(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("invalid format. body: %v", "invalid json"))
-
 			},
 			wantErr: true,
 		},
