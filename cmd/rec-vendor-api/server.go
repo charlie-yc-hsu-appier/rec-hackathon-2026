@@ -30,12 +30,15 @@ import (
 
 	vendor_grpc "rec-vendor-api/internal/grpc"
 
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
 )
@@ -178,8 +181,19 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	service := vendor.NewService(vendorRegistry, cfg.VendorConfig)
 	apiServer := vendor_grpc.NewAPIServer(service)
 
+	recoveryFunc := func(p any) (err error) {
+		log.Fatalf("panic triggered: %v", p)
+		return status.Errorf(codes.Internal, "panic triggered: %v", p)
+	}
+	recoveryOpts := []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(recoveryFunc),
+	}
+
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(middleware.ValidationUnaryInterceptor),
+		grpc.ChainUnaryInterceptor(
+			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
+			middleware.ValidationUnaryInterceptor,
+		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.GrpcMaxConnectionAge,
 		}),
