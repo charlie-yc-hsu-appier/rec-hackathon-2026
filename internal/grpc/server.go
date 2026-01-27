@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"rec-vendor-api/internal/controller/errors"
-	"rec-vendor-api/internal/grpcutils"
 	"rec-vendor-api/internal/vendor"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -79,7 +78,7 @@ func (s *APIServerImpl) CheckHealthCheck(ctx context.Context, req *emptypb.Empty
 }
 
 func convertToInternalRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
-	clientIP := grpcutils.GetClientIPFromContext(ctx)
+	clientIP := GetClientIPFromContext(ctx)
 
 	osStr := ""
 	switch req.Os {
