@@ -185,7 +185,7 @@ func initGRPCServer(vendorRegistry map[string]vendor.Client, cfg *config.Config)
 
 func initGatewayServer(grpcAddr string, gatewayAddr string) *http.Server {
 	gatewayMux := runtime.NewServeMux(runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
-		if _, ok := headerMatcher[key]; ok {
+		if _, ok := headerMatcher[http.CanonicalHeaderKey(key)]; ok {
 			return key, true
 		}
 		return runtime.DefaultHeaderMatcher(key)
