@@ -16,6 +16,10 @@ type VendorsTestSuite struct {
 	suite.Suite
 }
 
+func (ts *VendorsTestSuite) getT() *testing.T {
+	return ts.Suite.T()
+}
+
 func (ts *VendorsTestSuite) SetupTest() {
 	gin.SetMode(gin.TestMode)
 }
@@ -84,7 +88,7 @@ func (ts *VendorsTestSuite) TestGetVendors() {
 	}
 
 	for _, tc := range tt {
-		ts.Run(tc.name, func() {
+		ts.Suite.Run(tc.name, func() {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest(http.MethodGet, "/vendors", nil)
@@ -92,8 +96,8 @@ func (ts *VendorsTestSuite) TestGetVendors() {
 			vm := NewVendorManager(tc.vendorConfig)
 			vm.GetVendors(c)
 
-			require.Equal(ts.T(), http.StatusOK, w.Code)
-			require.JSONEq(ts.T(), tc.wantBody, w.Body.String())
+			require.Equal(ts.getT(), http.StatusOK, w.Code)
+			require.JSONEq(ts.getT(), tc.wantBody, w.Body.String())
 		})
 	}
 }
