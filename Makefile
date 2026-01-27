@@ -63,7 +63,7 @@ config-dev:
 .PHONY: install-tool
 install-tool:
 	go install go.uber.org/mock/mockgen@v0.4.0
-	go install golang.org/x/tools/cmd/goimports@latest
+	go install golang.org/x/tools/cmd/goimports@v0.41.0
 	brew install golangci-lint
 
 
