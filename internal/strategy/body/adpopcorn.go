@@ -28,9 +28,8 @@ type adpopcornImp struct {
 }
 
 type adpopcornAffiliate struct {
-	SubID    string `json:"subId"`
+	SubID string `json:"subId"`
 }
-
 
 func (s *Adpopcorn) GenerateBody(params Params) any {
 	body := adpopcornBody{
@@ -45,7 +44,7 @@ func (s *Adpopcorn) GenerateBody(params Params) any {
 			ImageSize: fmt.Sprintf("%dx%d", params.ImgWidth, params.ImgHeight),
 		},
 		Affiliate: adpopcornAffiliate{
-			SubID:    params.SubID,
+			SubID: params.SubID,
 		},
 	}
 

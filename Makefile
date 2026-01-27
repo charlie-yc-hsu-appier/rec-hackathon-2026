@@ -68,6 +68,7 @@ config-dev:
 .PHONY: install-tool
 install-tool:
 	go install go.uber.org/mock/mockgen@v0.4.0
+	go install golang.org/x/tools/cmd/goimports@latest
 	brew install golangci-lint
 
 
@@ -80,6 +81,39 @@ generate:
 .PHONY: test
 test:
 	go test -v -cover -race ./...
+
+
+####################### Pre-Commit Check ##################
+
+.PHONY: fmt
+fmt:
+	@echo "==> Tidying imports and simplifying format..."
+	@go mod tidy
+	@goimports -w .
+	@gofmt -s -w .
+
+
+.PHONY: fmt-check
+fmt-check:
+	@echo "==> Checking if files are formatted and imports are tidied..."
+	@if [ -n "$$(gofmt -s -l .)" ] || [ -n "$$(goimports -l .)" ]; then \
+		echo "Format check failed! Run 'make fmt' to fix the following files:"; \
+		gofmt -s -l .; \
+		goimports -l .; \
+		exit 1; \
+	fi
+	@echo "Format check passed"
+
+
+.PHONY: lint-check
+lint-check:  check-local-libjpeg
+	@echo "==> Running static analysis..."
+	@golangci-lint run ./...
+
+
+.PHONY: pre-commit-check
+pre-commit-check: fmt-check lint-check test
+	@echo "Success! All checks (Fmt/Lint/Test) passed"
 
 
 #############  Docker related  #############
