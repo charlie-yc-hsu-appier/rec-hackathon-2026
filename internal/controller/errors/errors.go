@@ -42,6 +42,20 @@ func NewUnknownMacroError(macro string) error {
 	}
 }
 
+type InternalServerError struct {
+	Message string
+}
+
+func (e InternalServerError) Error() string {
+	return e.Message
+}
+
+func InternalServerErrorf(format string, a ...interface{}) error {
+	return &InternalServerError{
+		Message: fmt.Sprintf(format, a...),
+	}
+}
+
 // Sentinel error for errors.Is checking
 var ErrUnknownMacro = &UnknownMacroError{}
 

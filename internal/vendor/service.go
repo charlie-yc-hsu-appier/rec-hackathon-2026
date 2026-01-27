@@ -2,10 +2,13 @@ package vendor
 
 import (
 	"context"
+	"errors"
 	"net/url"
 
 	"rec-vendor-api/internal/config"
 	controller_errors "rec-vendor-api/internal/controller/errors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Service interface {
@@ -33,11 +36,18 @@ func NewService(vendorRegistry map[string]Client, vendorConfig config.VendorConf
 func (s *ServiceImpl) GetRecommendations(ctx context.Context, vendorKey string, req Request) ([]ProductInfo, error) {
 	vendorClient := s.vendorRegistry[vendorKey]
 	if vendorClient == nil {
-		return nil, controller_errors.BadRequestErrorf("vendor key '%s' not supported", vendorKey)
+		log.WithContext(ctx).Errorf("Invalid vendor key: %s", vendorKey)
+		return nil, controller_errors.BadRequestErrorf("Vendor key '%s' not supported", vendorKey)
 	}
 	products, err := vendorClient.GetUserRecommendationItems(ctx, req)
 	if err != nil {
-		return nil, err
+		var badRequestErr *controller_errors.BadRequestError
+		if errors.As(err, &badRequestErr) {
+			log.WithContext(ctx).Errorf("VendorClient returned BadRequestError. err: %v", err)
+			return nil, controller_errors.BadRequestErrorf("VendorClient returned BadRequestError. err: %v", err)
+		}
+		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
+		return nil, controller_errors.InternalServerErrorf("Fail to recommend any products. err: %v", err)
 	}
 	return products, nil
 }
