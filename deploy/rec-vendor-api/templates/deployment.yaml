@@ -36,23 +36,14 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-            - name: grpc
-              containerPort: 10000
-              protocol: TCP
           readinessProbe:
-            grpc:
-              port: grpc
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: http
           livenessProbe:
-            grpc:
-              port: grpc
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 10
+            httpGet:
+              path: /healthz
+              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

@@ -19,7 +19,6 @@ import (
 type MockStrategy struct {
 	ctrl     *gomock.Controller
 	recorder *MockStrategyMockRecorder
-	isgomock struct{}
 }
 
 // MockStrategyMockRecorder is the mock recorder for MockStrategy.
@@ -57,7 +56,6 @@ func (mr *MockStrategyMockRecorder) GenerateHeaders(params any) *gomock.Call {
 type MockClock struct {
 	ctrl     *gomock.Controller
 	recorder *MockClockMockRecorder
-	isgomock struct{}
 }
 
 // MockClockMockRecorder is the mock recorder for MockClock.

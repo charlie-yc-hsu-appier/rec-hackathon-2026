@@ -146,6 +146,8 @@ github.com/plaxieappier/rec-go-kit/logkit v1.1.0 h1:4vN9Gd8ORb0e1NgwskPHZogZqDeL
 github.com/plaxieappier/rec-go-kit/logkit v1.1.0/go.mod h1:NUECfpOW/4FMzFRRSPCUlREn6CLqPocNSqKko2Jg37I=
 github.com/plaxieappier/rec-go-kit/tracekit v1.2.0 h1:alz3iVquK/osvyqn6DjdusQSfeJacXjyZa4s63wkAis=
 github.com/plaxieappier/rec-go-kit/tracekit v1.2.0/go.mod h1:GIYUQqq2LqjsuPdGExjh/g0NGVlclsTI5h9JkfzANY0=
+github.com/plaxieappier/rec-schema v1.0.84 h1:kHHbFt34SPArrZPCsbu22cZSIYB4x/rZjSHeE6Wad3Q=
+github.com/plaxieappier/rec-schema v1.0.84/go.mod h1:pHE35iKDaJK8BCImL8RPMATkmeHGHVO9uXzeRxgEDjI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_golang v1.23.0 h1:ust4zpdl9r4trLY/gSjlm07PuiBq2ynaXXlptpfy8Uc=
