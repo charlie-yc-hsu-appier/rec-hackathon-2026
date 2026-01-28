@@ -197,10 +197,10 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 			middleware.ValidationUnaryInterceptor,
 		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionAge: cfg.GrpcMaxConnectionAge,
+			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
 		}),
-		grpc.WriteBufferSize(cfg.GrpcWriteBufferSize*1024),
-		grpc.ReadBufferSize(cfg.GrpcReadBufferSize*1024),
+		grpc.WriteBufferSize(cfg.Grpc.WriteBufferSize*1024),
+		grpc.ReadBufferSize(cfg.Grpc.ReadBufferSize*1024),
 	)
 	schema.RegisterVendorAPIServer(grpcServer, handler)
 
