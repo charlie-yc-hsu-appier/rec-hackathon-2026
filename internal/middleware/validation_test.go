@@ -15,10 +15,6 @@ type ValidationTestSuite struct {
 	suite.Suite
 }
 
-func (ts *ValidationTestSuite) getT() *testing.T {
-	return ts.Suite.T()
-}
-
 type mockValidatableRequest struct {
 	field string
 }
@@ -72,7 +68,7 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidateAll() 
 	}
 
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			interceptor := ValidationUnaryInterceptor
 			handler := func(ctx context.Context, req any) (any, error) {
 				return "success", nil
@@ -119,7 +115,7 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidate() {
 	}
 
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			interceptor := ValidationUnaryInterceptor
 			handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 				return "success", nil
@@ -157,7 +153,7 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_NonValidatableRequ
 	}
 
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			interceptor := ValidationUnaryInterceptor
 			handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 				return "success", nil

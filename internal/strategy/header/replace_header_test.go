@@ -13,12 +13,8 @@ type replaceHeaderTestSuite struct {
 	mockClock *MockClock
 }
 
-func (s *replaceHeaderTestSuite) getT() *testing.T {
-	return s.Suite.T()
-}
-
 func (ts *replaceHeaderTestSuite) SetupTest() {
-	ts.mockClock = NewMockClock(gomock.NewController(ts.getT()))
+	ts.mockClock = NewMockClock(gomock.NewController(ts.T()))
 }
 
 func TestReplaceHeaderTestSuite(t *testing.T) {
@@ -41,5 +37,5 @@ func (s *replaceHeaderTestSuite) TestGenerateHeaders() {
 	})
 
 	wantedSignature := "CEA algorithm=HmacSHA256, access-key=access_key, signed-date=250707T103117Z, signature=faf13b58f6cc013892a036b778465bdcb85326d418c11398139a0b80ade01624"
-	require.Equal(s.getT(), map[string]string{"Authorization": wantedSignature}, result)
+	require.Equal(s.T(), map[string]string{"Authorization": wantedSignature}, result)
 }

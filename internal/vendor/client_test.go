@@ -30,12 +30,8 @@ type VendorClientTestSuite struct {
 	mockTracker     *url.MockStrategy
 }
 
-func (ts *VendorClientTestSuite) getT() *testing.T {
-	return ts.Suite.T()
-}
-
 func (ts *VendorClientTestSuite) SetupTest() {
-	ctrl := gomock.NewController(ts.getT())
+	ctrl := gomock.NewController(ts.T())
 	ts.mockRestClient = httpkit.NewMockClient(ctrl)
 	ts.mockHeader = header.NewMockStrategy(ctrl)
 	ts.mockRequester = url.NewMockStrategy(ctrl)
@@ -138,7 +134,7 @@ func (ts *VendorClientTestSuite) TestGetUserRecommendationItems() {
 		},
 	}
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			vc := NewClient(
 				config.Vendor{Name: "test-vendor", HTTPMethod: tc.httpMethod},
 				ts.mockRestClient,

@@ -26,12 +26,8 @@ type HandlerTestSuite struct {
 	vendorConfig   config.VendorConfig
 }
 
-func (ts *HandlerTestSuite) getT() *testing.T {
-	return ts.Suite.T()
-}
-
 func (ts *HandlerTestSuite) SetupTest() {
-	ts.mockClient = vendor.NewMockClient(gomock.NewController(ts.getT()))
+	ts.mockClient = vendor.NewMockClient(gomock.NewController(ts.T()))
 	ts.vendorRegistry = map[string]vendor.Client{"test_vendor": ts.mockClient}
 	ts.vendorConfig = config.VendorConfig{
 		Vendors: []config.Vendor{
@@ -139,7 +135,7 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 	}
 
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			ctx := tc.setupCtx()
 			tc.setupMock(ts.mockClient)
 
@@ -213,18 +209,17 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 	}
 
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			handler, err := NewHandler(ts.vendorRegistry, tc.vendorConfig)
-			require.NoError(t, err)
-			resp, err := handler.GetVendors(context.Background(), &emptypb.Empty{})
 
 			if tc.wantErr {
 				require.Error(t, err)
-				st, ok := status.FromError(err)
-				require.True(t, ok)
-				require.Equal(t, codes.InvalidArgument, st.Code())
-				require.Contains(t, st.Message(), tc.wantErrMsg)
+				require.Nil(t, handler)
+				require.Contains(t, err.Error(), tc.wantErrMsg)
 			} else {
+				require.NoError(t, err)
+				require.NotNil(t, handler)
+				resp, err := handler.GetVendors(context.Background(), &emptypb.Empty{})
 				require.NoError(t, err)
 				require.NotNil(t, resp)
 				require.Equal(t, len(tc.wantVendors), len(resp.Vendors))

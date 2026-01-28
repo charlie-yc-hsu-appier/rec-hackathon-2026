@@ -21,12 +21,8 @@ type RecommenderTestSuite struct {
 	vendorRegistry map[string]vendor.Client
 }
 
-func (ts *RecommenderTestSuite) getT() *testing.T {
-	return ts.Suite.T()
-}
-
 func (ts *RecommenderTestSuite) SetupTest() {
-	ts.mockClient = vendor.NewMockClient(gomock.NewController(ts.getT()))
+	ts.mockClient = vendor.NewMockClient(gomock.NewController(ts.T()))
 	ts.vendorRegistry = map[string]vendor.Client{"test_vendor": ts.mockClient}
 }
 
@@ -89,7 +85,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 	}
 
 	for _, tc := range tt {
-		ts.getT().Run(tc.name, func(t *testing.T) {
+		ts.T().Run(tc.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest(http.MethodGet, tc.requestURL, nil)
