@@ -28,8 +28,6 @@ import (
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	log "github.com/sirupsen/logrus"
 
-	vendor_grpc "rec-vendor-api/internal/grpc"
-
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"google.golang.org/grpc"
@@ -179,7 +177,7 @@ func initGinServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, 
 
 func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, grpcAddr string) *grpc.Server {
 	log.Infof("Starting grpc server on %s", grpcAddr)
-	handler, err := vendor_grpc.NewHandler(vendorRegistry, cfg.VendorConfig)
+	handler, err := controller.NewHandler(vendorRegistry, cfg.VendorConfig)
 	if err != nil {
 		log.Fatalf("Failed to initialize grpc handler: %v", err)
 	}

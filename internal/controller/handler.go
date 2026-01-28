@@ -1,4 +1,4 @@
-package grpc
+package controller
 
 import (
 	"context"
@@ -63,6 +63,7 @@ func (s *HandlerImpl) GetRecommendations(ctx context.Context, req *schema.GetRec
 		log.WithContext(ctx).Errorf("Fail to recommend any products. err: %v", err)
 		return nil, status.Errorf(codes.Internal, "Fail to recommend any products. err: %v", err)
 	}
+
 	protoProducts := make([]*schema.ProductInfo, 0, len(products))
 	for _, product := range products {
 		protoProducts = append(protoProducts, &schema.ProductInfo{
@@ -79,13 +80,13 @@ func (s *HandlerImpl) GetRecommendations(ctx context.Context, req *schema.GetRec
 	}, nil
 }
 
-func (s *HandlerImpl) GetVendors(ctx context.Context, _ *emptypb.Empty) (*schema.GetVendorsResponse, error) {
+func (s *HandlerImpl) GetVendors(_ context.Context, _ *emptypb.Empty) (*schema.GetVendorsResponse, error) {
 	return &schema.GetVendorsResponse{
 		Vendors: s.vendorInfo,
 	}, nil
 }
 
-func (s *HandlerImpl) HealthCheck(ctx context.Context, req *emptypb.Empty) (*schema.HealthcheckResponse, error) {
+func (s *HandlerImpl) HealthCheck(_ context.Context, _ *emptypb.Empty) (*schema.HealthcheckResponse, error) {
 	return &schema.HealthcheckResponse{
 		Status: "ok",
 	}, nil
