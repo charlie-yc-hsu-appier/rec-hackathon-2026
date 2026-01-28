@@ -188,6 +188,7 @@ pipeline {
         container('golang') {
           sh 'apk add --no-cache openssh make git build-base openssl'
           sh 'wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v2.8.0'
+          sh 'go install golang.org/x/tools/cmd/goimports@v0.41.0'
 
           sh 'mkdir -p -m 0600 /root/.ssh'
           sh 'touch /root/.ssh/known_hosts'
