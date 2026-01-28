@@ -97,7 +97,7 @@ I would like to get campaign_ids with group vendor_inl_corp
   [Arguments]             ${site_id}              ${service_type_id}
 
   # Get experiments data
-  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments/custom_flow?site_id=${site_id}&service_type_id=${service_type_id}
   Validate config api response  ${resp}  Experiments API error for ${site_id}
 
   # Extract campaign_ids where any bucket has group "vendor_inl_corp"
@@ -145,7 +145,16 @@ I would like to check campaign status
   [Arguments]             ${campaign_id}
 
   # Get campaign details
-  ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}    expected_status=404
+  
+  # If campaign not found (404), treat as archived campaign
+  ${is_404} =             Evaluate                ${resp.status_code} == 404
+  IF  ${is_404}
+    Log                   Campaign ${campaign_id} not found (404), treating as Archived
+    &{empty_result} =     Create Dictionary       status=Archived  active_indices=${EMPTY}
+    RETURN                ${empty_result}
+  END
+  
   Validate config api response  ${resp}  Campaign ${campaign_id} API error
 
   # Extract campaign status
@@ -223,7 +232,7 @@ Get active vendor_inl_corp campaign ids from config api
       ${campaign_status} =    Set Variable            ${campaign_info}[status]
       ${active_indices} =     Set Variable            ${campaign_info}[active_indices]
 
-      IF  '${campaign_status}' != 'Finished'
+      IF  '${campaign_status}' != 'Finished' and '${campaign_status}' != 'Archived'
         Append To List      ${active_campaign_ids}  ${campaign_id}
         Set To Dictionary   ${active_campaigns_info}  ${campaign_id}=${campaign_info}
         Log                 Campaign ${campaign_id} is active (status: ${campaign_status}, active indices: ${active_indices})
@@ -393,7 +402,7 @@ Get vendor subids from config api
   ${vendors} =            Evaluate                $yaml_data['vendor_config']['vendors']
   
   # Get all campaign IDs from experiments and filter by default_group
-  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments?site_id=${site_id}&service_type_id=${service_type_id}
+  ${resp} =               Get On Session          ConfigAPISession        url=/v0/recommend/experiments/custom_flow?site_id=${site_id}&service_type_id=${service_type_id}
   Validate config api response  ${resp}  Experiments API error
   
   # Filter campaign IDs by checking if any bucket has default_group containing "vendor_"
