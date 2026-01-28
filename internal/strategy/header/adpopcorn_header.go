@@ -1,13 +1,13 @@
 package header
 
 type AdpopcornHeader struct {
-	UserAgent string
+	UserAgent   string
 	ContentType string
 }
 
 func (h *AdpopcornHeader) GenerateHeaders(_ Params) map[string]string {
 	headers := map[string]string{
-		"User-Agent": h.UserAgent,
+		"User-Agent":   h.UserAgent,
 		"Content-Type": h.ContentType,
 	}
 	return headers

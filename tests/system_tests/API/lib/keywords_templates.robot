@@ -177,7 +177,7 @@ Test vendors from yaml configuration
       ${tracking_queries} =   Get From Dictionary     ${tracking_config}  queries
 
       # Auto-select test dimensions and vendor-specific parameters
-      ${dimensions} =         Auto select test dimensions  ${request_url}  ${vendor_name}
+      ${dimensions} =         Auto select test dimensions  ${request_url}  ${request_queries}  ${vendor_name}
       ${width} =              Get From Dictionary     ${dimensions}       width
       ${height} =             Get From Dictionary     ${dimensions}       height
 

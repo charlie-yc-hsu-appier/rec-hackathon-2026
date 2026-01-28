@@ -1,9 +1,10 @@
 package header
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"testing"
 )
 
 func TestKeetaHeader(t *testing.T) {

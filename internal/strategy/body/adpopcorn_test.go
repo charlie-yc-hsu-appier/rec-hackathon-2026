@@ -34,7 +34,7 @@ func TestAdpopcorn(t *testing.T) {
 					ImageSize: "1200x627",
 				},
 				Affiliate: adpopcornAffiliate{
-					SubID:    "sub-id-456",
+					SubID: "sub-id-456",
 				},
 			},
 		},
@@ -60,7 +60,7 @@ func TestAdpopcorn(t *testing.T) {
 					ImageSize: "0x0",
 				},
 				Affiliate: adpopcornAffiliate{
-					SubID:    "",
+					SubID: "",
 				},
 			},
 		},

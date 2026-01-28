@@ -4,43 +4,43 @@ Resource            ../res/init.robot
 *** Keywords ***
 # Vendor API testing utility keywords #
 Auto select test dimensions
-  [Documentation]  Auto-select random test dimensions and generate vendor-specific parameters.
+  [Documentation]  Auto-select random test dimensions and generate vendor-specific parameters from configuration.
   ...
   ...              *Purpose*
   ...              Randomly selects advertising dimensions from predefined sizes and generates
-  ...              additional parameters required by specific vendors (linkmine, adpacker, adforus).
+  ...              additional parameters required by vendors based on their YAML configuration.
+  ...              Parameters are automatically detected from request.queries configuration.
   ...
   ...              *Parameters*
   ...              - ${request_url}: (Legacy, not used) Kept for compatibility [default: ${Empty}]
-  ...              - ${vendor_name}: Vendor identifier for parameter generation [default: ${Empty}]
+  ...              - ${request_queries}: List of request query dictionaries from vendor.request.queries
+  ...              - ${vendor_name}: Vendor identifier for special handling [default: ${Empty}]
   ...
   ...              *Returns*
   ...              Dictionary containing:
   ...              - width: Ad width in pixels
   ...              - height: Ad height in pixels
-  ...              - adtype: Ad type (2 or 3) - for linkmine/adpacker vendors only
-  ...              - bundle_id: Bundle identifier (empty string) - for linkmine vendor only
-  ...              - os: Operating system (android/ios) - for adforus vendor only
+  ...              - adtype: Ad type (randomly selected: 2 or 3) - if vendor config uses {adtype}
+  ...              - bundle_id: Bundle identifier (randomly selected from common apps) - if vendor config uses {bundle_id}
+  ...              - os: Operating system (android/ios) - for adforus vendor only (special test requirement)
   ...
   ...              *Usage Example*
-  ...              | ${dimensions} = | Auto select test dimensions | vendor_name=linkmine |
+  ...              | ${dimensions} = | Auto select test dimensions | ${request_url} | ${request_queries} | ${vendor_name} |
   ...              | ${width} = | Get From Dictionary | ${dimensions} | width |
-  ...              | ${height} = | Get From Dictionary | ${dimensions} | height |
-  ...              | ${adtype} = | Get From Dictionary | ${dimensions} | adtype |
   ...
   ...              *Implementation*
   ...              1. Randomly selects from predefined sizes: 300x300, 1200x627, 1200x600
   ...              2. Parses selected size into width and height
-  ...              3. For linkmine vendor: adds bundle_id (empty) and adtype (2 or 3)
-  ...              4. For adpacker vendor: adds adtype (2 or 3)
+  ...              3. Scans request.queries for {adtype} → generates random adtype (2 or 3) if found
+  ...              4. Scans request.queries for {bundle_id} → generates random bundle_id if found
   ...              5. For adforus vendor: adds os (android, will test both OS in template)
   ...
-  ...              *Vendor-Specific Parameters*
-  ...              - Linkmine: bundle_id=${Empty}, adtype=(2|3)
-  ...              - Adpacker: adtype=(2|3)
-  ...              - Adforus: os=android (both android/ios tested in calling template)
+  ...              *Configuration-Driven Approach*
+  ...              - Automatically detects required parameters from YAML configuration
+  ...              - No hardcoded vendor names needed (except adforus OS handling)
+  ...              - New vendors are automatically supported if they use standard parameter names
   
-  [Arguments]         ${request_url}=${Empty}  ${vendor_name}=${Empty}
+  [Arguments]         ${request_url}=${Empty}  ${request_queries}=@{EMPTY}  ${vendor_name}=${Empty}
 
   # Predefined test dimensions
   @{test_sizes} =     Create List
@@ -65,45 +65,52 @@ Auto select test dimensions
 
   Log                 📏 Selected test dimensions: ${width}x${height}
 
-  # Generate additional vendor parameters for vendors that need them
-  ${is_linkmine} =    Run Keyword And Return Status
-  ...                 Should Be Equal     ${vendor_name}          linkmine
-  ${is_adpacker} =    Run Keyword And Return Status
-  ...                 Should Be Equal     ${vendor_name}          adpacker
-  ${is_adforus} =     Run Keyword And Return Status
-  ...                 Should Be Equal     ${vendor_name}          adforus
-
-  # Generate adtype parameter for both linkmine and adpacker
-  ${needs_adtype} =   Set Variable If     ${is_linkmine} or ${is_adpacker}     ${TRUE}     ${FALSE}
+  # Configuration-driven parameter detection from request.queries
+  ${needs_adtype} =   Set Variable        ${FALSE}
+  ${needs_bundle_id} =  Set Variable      ${FALSE}
   
+  # Check request_queries for required parameters
+  FOR  ${query}  IN  @{request_queries}
+    ${value} =        Get From Dictionary  ${query}  value
+    
+    # Check if this vendor uses {adtype}
+    ${has_adtype} =   Run Keyword And Return Status
+    ...               Should Contain      ${value}  {adtype}
+    ${needs_adtype} =  Set Variable If    ${has_adtype}    ${TRUE}    ${needs_adtype}
+    
+    # Check if this vendor uses {bundle_id}
+    ${has_bundle_id} =  Run Keyword And Return Status
+    ...                 Should Contain   ${value}  {bundle_id}
+    ${needs_bundle_id} =  Set Variable If    ${has_bundle_id}    ${TRUE}    ${needs_bundle_id}
+  END
+  
+  # Generate adtype if needed (detected from config)
   IF  ${needs_adtype}
-    # Common parameters for vendors that need adtype
     @{ad_types} =       Create List     2                       3
     ${adtype} =         Evaluate        __import__('random').choice($ad_types)
-    
-    # Add adtype to dimensions
     Set To Dictionary   ${dimensions}   adtype=${adtype}
-    
-    Log                 Generated adtype for ${vendor_name}: ${adtype}
+    Log                 Generated adtype (from config): ${adtype}
   END
 
-  # Linkmine-specific parameters (bundle_id)
-  IF  ${is_linkmine}
-    # Set bundle_id as empty string for linkmine
-    ${bundle_id} =      Set Variable    ${Empty}
+  # Generate bundle_id if needed (detected from config)
+  IF  ${needs_bundle_id}
+    @{bundles} =        Create List     com.coupang.mobile      kr.co.gmarket.mobile    com.elevenst        com.auction.mobile
+    ${bundle_id} =      Evaluate        __import__('random').choice($bundles)
     Set To Dictionary   ${dimensions}   bundle_id=${bundle_id}
-    
-    Log                 Linkmine-specific params - bundle_id: ${bundle_id} (empty)
+    Log                 Generated bundle_id (from config): ${bundle_id}
   END
 
   # Adforus-specific parameters (os for user_id transformation)
+  # This is special test requirement, not in YAML config
+  ${is_adforus} =     Run Keyword And Return Status
+  ...                 Should Be Equal     ${vendor_name}          adforus
+  
   IF  ${is_adforus}
     # For adforus vendor, we need to test both android and ios
     # This will be handled in the calling template to ensure both OS are tested
     # Default to android for single dimension generation (will be overridden in template)
     ${os} =             Set Variable    android
     Set To Dictionary   ${dimensions}   os=${os}
-    
     Log                 Adforus-specific params - os: ${os} (will test both android and ios)
   END
 
