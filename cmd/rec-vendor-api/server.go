@@ -9,6 +9,7 @@ import (
 
 	"io"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -190,10 +191,17 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc_recovery.WithRecoveryHandler(recoveryFunc),
 	}
 
+	// Trust all proxies to use X-Forwarded-For header
+	// since we do not know the client's IP address, we trust all proxies.
+	trustedPeers := []netip.Prefix{
+		netip.MustParsePrefix("0.0.0.0/0"),
+		netip.MustParsePrefix("::/0"),
+	}
+
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
-			grpc_realip.UnaryServerInterceptor(nil, nil),
+			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{"x-forwarded-for"}),
 			middleware.ValidationUnaryInterceptor,
 		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{

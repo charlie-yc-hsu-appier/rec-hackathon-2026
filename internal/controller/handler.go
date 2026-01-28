@@ -80,11 +80,7 @@ func (s *HandlerImpl) HealthCheck(_ context.Context, _ *emptypb.Empty) (*schema.
 }
 
 func toVendorRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
-	clientIP, exists := grpc_realip.FromContext(ctx)
-	clientIPStr := ""
-	if exists {
-		clientIPStr = clientIP.String()
-	}
+	clientIP := getClientIP(ctx)
 
 	osStr := ""
 	switch req.Os {
@@ -108,7 +104,7 @@ func toVendorRequest(ctx context.Context, req *schema.GetRecommendationsRequest)
 		KeetaCampaignID: req.KCampaignId,
 		Latitude:        req.Lat,
 		Longitude:       req.Lon,
-		ClientIP:        clientIPStr,
+		ClientIP:        clientIP,
 	}
 }
 
@@ -144,4 +140,16 @@ func toProto(products []vendor.ProductInfo) (*schema.GetRecommendationsResponse,
 	return &schema.GetRecommendationsResponse{
 		Products: protoProducts,
 	}, nil
+}
+
+func getClientIP(ctx context.Context) string {
+	realIP, ok := grpc_realip.FromContext(ctx)
+	answer := ""
+	if ok && realIP.IsValid() {
+		log.WithContext(ctx).Infof("Using real IP from peer: %s", realIP.String())
+		answer = realIP.String()
+	} else {
+		log.WithContext(ctx).Debugf("No client IP found in X-Forwarded-For or peer address")
+	}
+	return answer
 }
