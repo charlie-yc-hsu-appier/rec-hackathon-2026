@@ -64,20 +64,7 @@ func (s *HandlerImpl) GetRecommendations(ctx context.Context, req *schema.GetRec
 		return nil, status.Errorf(codes.Internal, "Fail to recommend any products. err: %v", err)
 	}
 
-	protoProducts := make([]*schema.ProductInfo, 0, len(products))
-	for _, product := range products {
-		protoProducts = append(protoProducts, &schema.ProductInfo{
-			ProductId: product.ProductID,
-			Url:       product.Url,
-			Image:     product.Image,
-			Price:     product.Price,
-			SalePrice: product.SalePrice,
-			Currency:  product.Currency,
-		})
-	}
-	return &schema.GetRecommendationsResponse{
-		Products: protoProducts,
-	}, nil
+	return toProto(products)
 }
 
 func (s *HandlerImpl) GetVendors(_ context.Context, _ *emptypb.Empty) (*schema.GetVendorsResponse, error) {
@@ -140,4 +127,21 @@ func initVendorInfo(vendorConfig config.VendorConfig) ([]*schema.VendorInfo, err
 		})
 	}
 	return vendors, nil
+}
+
+func toProto(products []vendor.ProductInfo) (*schema.GetRecommendationsResponse, error) {
+	protoProducts := make([]*schema.ProductInfo, len(products))
+	for i, product := range products {
+		protoProducts[i] = &schema.ProductInfo{
+			ProductId: product.ProductID,
+			Url:       product.Url,
+			Image:     product.Image,
+			Price:     product.Price,
+			SalePrice: product.SalePrice,
+			Currency:  product.Currency,
+		}
+	}
+	return &schema.GetRecommendationsResponse{
+		Products: protoProducts,
+	}, nil
 }

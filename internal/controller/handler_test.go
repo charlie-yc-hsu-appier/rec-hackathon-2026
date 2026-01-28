@@ -234,5 +234,5 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 
 func TestHandlerTestSuite(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(HandlerTestSuite))
+	suite.Run(t, &HandlerTestSuite{})
 }

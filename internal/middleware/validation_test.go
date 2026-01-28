@@ -26,12 +26,12 @@ func (m *mockValidatableRequest) ValidateAll() error {
 	return nil
 }
 
-// mockValidatableRequestLegacy implements only Validate() method
-type mockValidatableRequestLegacy struct {
+// mockValidatableRequestWithoutValidateAll implements only Validate() method
+type mockValidatableRequestWithoutValidateAll struct {
 	field string
 }
 
-func (m *mockValidatableRequestLegacy) Validate() error {
+func (m *mockValidatableRequestWithoutValidateAll) Validate() error {
 	if m.field == "" {
 		return status.Errorf(codes.InvalidArgument, "field is required")
 	}
@@ -84,6 +84,7 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidateAll() 
 				require.Equal(t, tc.wantCode, st.Code())
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, resp)
 				require.Equal(t, tc.wantResp, resp)
 			}
 		})
@@ -93,21 +94,21 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidateAll() 
 func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidate() {
 	tt := []struct {
 		name     string
-		request  *mockValidatableRequestLegacy
+		request  *mockValidatableRequestWithoutValidateAll
 		wantCode codes.Code
 		wantResp any
 		wantErr  bool
 	}{
 		{
 			name:     "GIVEN a valid request with Validate THEN expect successful response",
-			request:  &mockValidatableRequestLegacy{field: "value"},
+			request:  &mockValidatableRequestWithoutValidateAll{field: "value"},
 			wantCode: codes.OK,
 			wantResp: "success",
 			wantErr:  false,
 		},
 		{
 			name:     "GIVEN an invalid request with Validate THEN expect invalid argument error",
-			request:  &mockValidatableRequestLegacy{field: ""},
+			request:  &mockValidatableRequestWithoutValidateAll{field: ""},
 			wantCode: codes.InvalidArgument,
 			wantResp: nil,
 			wantErr:  true,
@@ -131,6 +132,7 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidate() {
 				require.Equal(t, tc.wantCode, st.Code())
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, resp)
 				require.Equal(t, tc.wantResp, resp)
 			}
 		})
@@ -163,8 +165,10 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_NonValidatableRequ
 
 			if tc.wantErr {
 				require.Error(t, err)
+				require.Nil(t, resp)
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, resp)
 				require.Equal(t, tc.wantResp, resp)
 			}
 		})
@@ -173,5 +177,5 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_NonValidatableRequ
 
 func TestValidationTestSuite(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(ValidationTestSuite))
+	suite.Run(t, &ValidationTestSuite{})
 }
