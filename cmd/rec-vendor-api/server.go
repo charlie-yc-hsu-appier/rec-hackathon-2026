@@ -179,7 +179,10 @@ func initGinServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, 
 
 func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client, grpcAddr string) *grpc.Server {
 	log.Infof("Starting grpc server on %s", grpcAddr)
-	handler := vendor_grpc.NewHandler(vendorRegistry, cfg.VendorConfig)
+	handler, err := vendor_grpc.NewHandler(vendorRegistry, cfg.VendorConfig)
+	if err != nil {
+		log.Fatalf("Failed to initialize grpc handler: %v", err)
+	}
 
 	recoveryFunc := func(p any) (err error) {
 		log.Fatalf("panic triggered: %v", p)

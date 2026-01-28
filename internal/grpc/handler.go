@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 
 	"rec-vendor-api/internal/config"
@@ -22,32 +23,37 @@ import (
 type Handler interface {
 	GetRecommendations(context.Context, *schema.GetRecommendationsRequest) (*schema.GetRecommendationsResponse, error)
 	GetVendors(context.Context, *emptypb.Empty) (*schema.GetVendorsResponse, error)
-	CheckHealthCheck(context.Context, *emptypb.Empty) (*schema.HealthcheckResponse, error)
+	HealthCheck(context.Context, *emptypb.Empty) (*schema.HealthcheckResponse, error)
 }
 
 type HandlerImpl struct {
 	schema.UnimplementedVendorAPIServer
 	vendorRegistry map[string]vendor.Client
-	vendorConfig   config.VendorConfig
+	vendorInfo     []*schema.VendorInfo
 }
 
-func NewHandler(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) *HandlerImpl {
+func NewHandler(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) (*HandlerImpl, error) {
+	vendorInfo, err := initVendorInfo(vendorConfig)
+	if err != nil {
+		log.Errorf("Failed to initialize vendor info: %v", err)
+		return nil, err
+	}
 	return &HandlerImpl{
 		vendorRegistry: vendorRegistry,
-		vendorConfig:   vendorConfig,
-	}
+		vendorInfo:     vendorInfo,
+	}, nil
 }
 
 func (s *HandlerImpl) GetRecommendations(ctx context.Context, req *schema.GetRecommendationsRequest) (*schema.GetRecommendationsResponse, error) {
-	internalReq := convertToInternalRequest(ctx, req)
-
 	vendorKey := req.VendorKey
 	vendorClient := s.vendorRegistry[vendorKey]
 	if vendorClient == nil {
 		log.WithContext(ctx).Errorf("Invalid vendor key: %s", vendorKey)
 		return nil, status.Errorf(codes.InvalidArgument, "Vendor key '%s' not supported", vendorKey)
 	}
-	products, err := vendorClient.GetUserRecommendationItems(ctx, internalReq)
+
+	vendorReq := toVendorRequest(ctx, req)
+	products, err := vendorClient.GetUserRecommendationItems(ctx, vendorReq)
 	if err != nil {
 		var badRequestErr *controller_errors.BadRequestError
 		if errors.As(err, &badRequestErr) {
@@ -74,31 +80,18 @@ func (s *HandlerImpl) GetRecommendations(ctx context.Context, req *schema.GetRec
 }
 
 func (s *HandlerImpl) GetVendors(ctx context.Context, _ *emptypb.Empty) (*schema.GetVendorsResponse, error) {
-	vendors := make([]*schema.VendorInfo, 0, len(s.vendorConfig.Vendors))
-	for _, v := range s.vendorConfig.Vendors {
-		requestHost := ""
-		if parsedURL, err := url.Parse(v.Request.URL); err == nil {
-			requestHost = parsedURL.Host
-		} else {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to parse request URL for vendor %s: %s", v.Name, err.Error())
-		}
-		vendors = append(vendors, &schema.VendorInfo{
-			VendorKey:   v.Name,
-			RequestHost: requestHost,
-		})
-	}
 	return &schema.GetVendorsResponse{
-		Vendors: vendors,
+		Vendors: s.vendorInfo,
 	}, nil
 }
 
-func (s *HandlerImpl) CheckHealthCheck(ctx context.Context, req *emptypb.Empty) (*schema.HealthcheckResponse, error) {
+func (s *HandlerImpl) HealthCheck(ctx context.Context, req *emptypb.Empty) (*schema.HealthcheckResponse, error) {
 	return &schema.HealthcheckResponse{
 		Status: "ok",
 	}, nil
 }
 
-func convertToInternalRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
+func toVendorRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
 	clientIP, exists := grpc_realip.FromContext(ctx)
 	clientIPStr := ""
 	if exists {
@@ -129,4 +122,21 @@ func convertToInternalRequest(ctx context.Context, req *schema.GetRecommendation
 		Longitude:       req.Lon,
 		ClientIP:        clientIPStr,
 	}
+}
+
+func initVendorInfo(vendorConfig config.VendorConfig) ([]*schema.VendorInfo, error) {
+	vendors := make([]*schema.VendorInfo, 0, len(vendorConfig.Vendors))
+	for _, v := range vendorConfig.Vendors {
+		requestHost := ""
+		if parsedURL, err := url.Parse(v.Request.URL); err == nil {
+			requestHost = parsedURL.Host
+		} else {
+			return nil, fmt.Errorf("failed to parse request URL for vendor %s: %s", v.Name, err.Error())
+		}
+		vendors = append(vendors, &schema.VendorInfo{
+			VendorKey:   v.Name,
+			RequestHost: requestHost,
+		})
+	}
+	return vendors, nil
 }

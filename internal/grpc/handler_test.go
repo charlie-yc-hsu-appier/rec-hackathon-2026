@@ -143,7 +143,8 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 			ctx := tc.setupCtx()
 			tc.setupMock(ts.mockClient)
 
-			handler := NewHandler(ts.vendorRegistry, ts.vendorConfig)
+			handler, err := NewHandler(ts.vendorRegistry, ts.vendorConfig)
+			require.NoError(t, err)
 			resp, err := handler.GetRecommendations(ctx, tc.request)
 
 			if tc.wantCode == codes.OK {
@@ -213,7 +214,8 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 
 	for _, tc := range tt {
 		ts.getT().Run(tc.name, func(t *testing.T) {
-			handler := NewHandler(ts.vendorRegistry, tc.vendorConfig)
+			handler, err := NewHandler(ts.vendorRegistry, tc.vendorConfig)
+			require.NoError(t, err)
 			resp, err := handler.GetVendors(context.Background(), &emptypb.Empty{})
 
 			if tc.wantErr {
