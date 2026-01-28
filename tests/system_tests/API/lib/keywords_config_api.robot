@@ -148,8 +148,7 @@ I would like to check campaign status
   ${resp} =               Get On Session          ConfigAPISession        url=/v0/campaigns/${campaign_id}    expected_status=404
   
   # If campaign not found (404), treat as archived campaign
-  ${is_404} =             Evaluate                ${resp.status_code} == 404
-  IF  ${is_404}
+  IF  ${resp.status_code} == 404
     Log                   Campaign ${campaign_id} not found (404), treating as Archived
     &{empty_result} =     Create Dictionary       status=Archived  active_indices=${EMPTY}
     RETURN                ${empty_result}
