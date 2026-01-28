@@ -201,7 +201,7 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
-			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{"x-forwarded-for"}),
+			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
 			middleware.ValidationUnaryInterceptor,
 		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{

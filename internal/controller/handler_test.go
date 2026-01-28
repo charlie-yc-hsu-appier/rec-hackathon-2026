@@ -50,30 +50,20 @@ func (ts *HandlerTestSuite) SetupTest() {
 func (ts *HandlerTestSuite) TestGetRecommendations() {
 	tt := []struct {
 		name         string
-		request      *schema.GetRecommendationsRequest
+		vendorKey    string
 		setupMock    func(mockClient *vendor.MockClient)
-		setupCtx     func() context.Context
 		wantCode     codes.Code
 		wantErrMsg   string
 		wantProducts []*schema.ProductInfo
 	}{
 		{
-			name: "GIVEN a valid request THEN expect a successful response",
-			request: &schema.GetRecommendationsRequest{
-				VendorKey: "test_vendor",
-				UserId:    "123",
-				ClickId:   "456",
-				W:         100,
-				H:         200,
-			},
+			name:      "GIVEN a valid request THEN expect a successful response",
+			vendorKey: "test_vendor",
 			setupMock: func(mc *vendor.MockClient) {
 				mockResp := []vendor.ProductInfo{
 					{ProductID: "1", Url: "url", Image: "img", Price: "100", SalePrice: "80", Currency: "USD"},
 				}
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(mockResp, nil)
-			},
-			setupCtx: func() context.Context {
-				return context.Background()
 			},
 			wantCode: codes.OK,
 			wantProducts: []*schema.ProductInfo{
@@ -81,53 +71,26 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 			},
 		},
 		{
-			name: "GIVEN an invalid vendor key THEN expect an invalid argument error",
-			request: &schema.GetRecommendationsRequest{
-				VendorKey: "bad_vendor",
-				UserId:    "123",
-				ClickId:   "456",
-				W:         100,
-				H:         200,
-			},
-			setupMock: func(mc *vendor.MockClient) {},
-			setupCtx: func() context.Context {
-				return context.Background()
-			},
+			name:       "GIVEN an invalid vendor key THEN expect an invalid argument error",
+			vendorKey:  "bad_vendor",
+			setupMock:  func(mc *vendor.MockClient) {},
 			wantCode:   codes.InvalidArgument,
 			wantErrMsg: "Vendor key 'bad_vendor' not supported",
 		},
 		{
-			name: "GIVEN a BadRequestError error THEN expect an invalid argument error response",
-			request: &schema.GetRecommendationsRequest{
-				VendorKey: "test_vendor",
-				UserId:    "123",
-				ClickId:   "456",
-				W:         100,
-				H:         200,
-			},
+			name:      "GIVEN a BadRequestError error THEN expect an invalid argument error response",
+			vendorKey: "test_vendor",
 			setupMock: func(mc *vendor.MockClient) {
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(nil, controller_errors.BadRequestErrorf("param missing"))
-			},
-			setupCtx: func() context.Context {
-				return context.Background()
 			},
 			wantCode:   codes.InvalidArgument,
 			wantErrMsg: "VendorClient returned BadRequestError. err: param missing",
 		},
 		{
-			name: "GIVEN an internal error THEN expect an internal server error response",
-			request: &schema.GetRecommendationsRequest{
-				VendorKey: "test_vendor",
-				UserId:    "123",
-				ClickId:   "456",
-				W:         100,
-				H:         200,
-			},
+			name:      "GIVEN an internal error THEN expect an internal server error response",
+			vendorKey: "test_vendor",
 			setupMock: func(mc *vendor.MockClient) {
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(nil, errors.New("fail"))
-			},
-			setupCtx: func() context.Context {
-				return context.Background()
 			},
 			wantCode:   codes.Internal,
 			wantErrMsg: "Fail to recommend any products. err: fail",
@@ -136,12 +99,18 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 
 	for _, tc := range tt {
 		ts.T().Run(tc.name, func(t *testing.T) {
-			ctx := tc.setupCtx()
 			tc.setupMock(ts.mockClient)
 
 			handler, err := NewHandler(ts.vendorRegistry, ts.vendorConfig)
 			require.NoError(t, err)
-			resp, err := handler.GetRecommendations(ctx, tc.request)
+			request := &schema.GetRecommendationsRequest{
+				VendorKey: tc.vendorKey,
+				UserId:    "123",
+				ClickId:   "456",
+				W:         100,
+				H:         200,
+			}
+			resp, err := handler.GetRecommendations(context.Background(), request)
 
 			if tc.wantCode == codes.OK {
 				require.NoError(t, err)
