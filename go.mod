@@ -1,8 +1,6 @@
 module rec-vendor-api
 
-go 1.23.7
-
-toolchain go1.24.2
+go 1.25.6
 
 require (
 	github.com/gin-gonic/gin v1.10.1
@@ -14,6 +12,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/swag v1.16.6
+	go.opentelemetry.io/otel/trace v1.35.0
 	go.uber.org/mock v0.6.0
 )
 
@@ -79,7 +78,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.19.0 // indirect
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.35.0 // indirect
-	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect

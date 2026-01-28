@@ -52,7 +52,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 			requestURL: "/r/bad_vendor?user_id=123&click_id=456&w=100&h=200",
 			setupMock:  func(mc *vendor.MockClient) {},
 			wantCode:   http.StatusBadRequest,
-			wantBody:   `{"detail":"Vendor key 'bad_vendor' not supported", "status":400}`,
+			wantBody:   `{"detail":"vendor key 'bad_vendor' not supported", "status":400}`,
 		},
 		{
 			name:       "GIVEN a missing user ID THEN expect a bad request response",
@@ -80,7 +80,7 @@ func (ts *RecommenderTestSuite) TestRecommend() {
 				mc.EXPECT().GetUserRecommendationItems(gomock.Any(), gomock.Any()).Return(nil, errors.New("fail"))
 			},
 			wantCode: http.StatusInternalServerError,
-			wantBody: `{"detail":"Fail to recommend any products for vendor test_vendor. err: fail", "status":500}`,
+			wantBody: `{"detail":"fail to recommend any products for vendor test_vendor. err: fail", "status":500}`,
 		},
 	}
 
