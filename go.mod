@@ -5,6 +5,7 @@ go 1.25.6
 require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/kelseyhightower/envconfig v1.4.0

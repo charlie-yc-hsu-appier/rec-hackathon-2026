@@ -20,17 +20,21 @@ import (
 	"rec-vendor-api/internal/controller"
 	logFormat "rec-vendor-api/internal/logformat"
 	"rec-vendor-api/internal/middleware"
+	grpc_context "rec-vendor-api/internal/middleware/context"
+	grpc_logging "rec-vendor-api/internal/middleware/logging"
 	"rec-vendor-api/internal/telemetry"
 	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -39,6 +43,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
+)
+
+const (
+	systemName = "vendor-api"
 )
 
 // @title Vendor API service
@@ -185,6 +193,22 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		log.Fatalf("Failed to initialize grpc handler: %v", err)
 	}
 
+	grpcMetrics := grpc_prometheus.NewServerMetrics(
+		grpc_prometheus.WithServerHandlingTimeHistogram(
+			grpc_prometheus.WithHistogramSubsystem(systemName),
+			grpc_prometheus.WithHistogramBuckets([]float64{
+				0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0,
+			}),
+		),
+		grpc_prometheus.WithServerCounterOptions(
+			grpc_prometheus.WithSubsystem(systemName),
+		),
+	)
+	reg := prometheus.DefaultRegisterer
+	reg.MustRegister(grpcMetrics)
+
+	defer telemetry.UnregisterMetrics()
+
 	recoveryFunc := func(p any) (err error) {
 		return status.Errorf(codes.Internal, "panic triggered: %v", p)
 	}
@@ -200,17 +224,21 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
+			grpc_context.UnaryServerInterceptor(),
+			grpc_logging.UnaryServerInterceptor(),
 			middleware.ValidationUnaryInterceptor,
-		),
+			grpcMetrics.UnaryServerInterceptor(),
+		)),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
 		}),
 		grpc.WriteBufferSize(cfg.Grpc.WriteBufferSizeKb*1024),
 		grpc.ReadBufferSize(cfg.Grpc.ReadBufferSizeKb*1024),
 	)
+	grpcMetrics.InitializeMetrics(grpcServer)
 	schema.RegisterVendorAPIServer(grpcServer, handler)
 
 	reflection.Register(grpcServer)
