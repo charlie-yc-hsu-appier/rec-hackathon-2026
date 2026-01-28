@@ -57,12 +57,3 @@ func PromHandler() gin.HandlerFunc {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
 }
-
-// UnregisterMetrics unregisters metrics from the default Prometheus registry.
-// This is useful for graceful shutdown and testing.
-func UnregisterMetrics() {
-	// Note: Metrics created with promauto are automatically registered
-	// and cannot be easily unregistered. This function is provided
-	// for consistency with other services and for future use cases
-	// where manual metric registration might be needed.
-}

@@ -193,22 +193,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		log.Fatalf("Failed to initialize grpc handler: %v", err)
 	}
 
-	grpcMetrics := grpc_prometheus.NewServerMetrics(
-		grpc_prometheus.WithServerHandlingTimeHistogram(
-			grpc_prometheus.WithHistogramSubsystem(systemName),
-			grpc_prometheus.WithHistogramBuckets([]float64{
-				0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0,
-			}),
-		),
-		grpc_prometheus.WithServerCounterOptions(
-			grpc_prometheus.WithSubsystem(systemName),
-		),
-	)
-	reg := prometheus.DefaultRegisterer
-	reg.MustRegister(grpcMetrics)
-
-	defer telemetry.UnregisterMetrics()
-
 	recoveryFunc := func(p any) (err error) {
 		return status.Errorf(codes.Internal, "panic triggered: %v", p)
 	}
@@ -223,6 +207,8 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		netip.MustParsePrefix("::/0"),
 	}
 
+	grpcMetrics := initGRPCMetrics()
+	unaryInterceptorOpts := getMetricInterceptorOpt()
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
@@ -230,7 +216,9 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 			grpc_context.UnaryServerInterceptor(),
 			grpc_logging.UnaryServerInterceptor(),
 			middleware.ValidationUnaryInterceptor,
-			grpcMetrics.UnaryServerInterceptor(),
+			grpcMetrics.UnaryServerInterceptor(
+				unaryInterceptorOpts...,
+			),
 		)),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
@@ -303,4 +291,41 @@ func initTracer(cfg tracekit.Config) func(context.Context) error {
 func jsonRecoveryHandler(ctx *gin.Context, recovered any) {
 	log.WithContext(ctx).WithField("stack", string(debug.Stack())).Error(fmt.Sprintf("%v", recovered))
 	ctx.AbortWithStatus(http.StatusInternalServerError)
+}
+
+func initGRPCMetrics() *grpc_prometheus.ServerMetrics {
+	grpcMetrics := grpc_prometheus.NewServerMetrics(
+		grpc_prometheus.WithServerHandlingTimeHistogram(
+			grpc_prometheus.WithHistogramSubsystem(systemName),
+			grpc_prometheus.WithHistogramBuckets([]float64{
+				0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0,
+			}),
+		),
+		grpc_prometheus.WithServerCounterOptions(
+			grpc_prometheus.WithSubsystem(systemName),
+		),
+		grpc_prometheus.WithContextLabels("site", "oid"),
+	)
+	prometheus.MustRegister(grpcMetrics)
+	return grpcMetrics
+}
+
+func getMetricInterceptorOpt() []grpc_prometheus.Option {
+	return []grpc_prometheus.Option{
+		grpc_prometheus.WithLabelsFromContext(func(ctx context.Context) prometheus.Labels {
+			requestInfo := telemetry.RequestInfoFromContext(ctx)
+			site := requestInfo.SiteID
+			oid := requestInfo.OID
+			if site == "" {
+				site = "unknown"
+			}
+			if oid == "" {
+				oid = "unknown"
+			}
+			return prometheus.Labels{
+				"site": site,
+				"oid":  oid,
+			}
+		}),
+	}
 }
