@@ -43,27 +43,76 @@ type mockNonValidatableRequest struct {
 	field string
 }
 
-func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidateAll() {
+// mockRequestType represents the type of mock request to create
+type mockRequestType int
+
+const (
+	mockTypeValidateAll mockRequestType = iota
+	mockTypeValidate
+	mockTypeNonValidatable
+)
+
+func newMockRequest(mockType mockRequestType, fieldValue string) any {
+	switch mockType {
+	case mockTypeValidateAll:
+		return &mockValidatableRequest{field: fieldValue}
+	case mockTypeValidate:
+		return &mockValidatableRequestWithoutValidateAll{field: fieldValue}
+	case mockTypeNonValidatable:
+		return &mockNonValidatableRequest{field: fieldValue}
+	default:
+		return nil
+	}
+}
+
+func (ts *ValidationTestSuite) TestValidationUnaryInterceptor() {
 	tt := []struct {
 		name     string
-		request  *mockValidatableRequest
+		mockType mockRequestType
+		fieldVal string
 		wantCode codes.Code
 		wantResp any
 		wantErr  bool
 	}{
 		{
 			name:     "GIVEN a valid request with ValidateAll THEN expect successful response",
-			request:  &mockValidatableRequest{field: "value"},
+			mockType: mockTypeValidateAll,
+			fieldVal: "value",
 			wantCode: codes.OK,
 			wantResp: "success",
 			wantErr:  false,
 		},
 		{
 			name:     "GIVEN an invalid request with ValidateAll THEN expect invalid argument error",
-			request:  &mockValidatableRequest{field: ""},
+			mockType: mockTypeValidateAll,
+			fieldVal: "",
 			wantCode: codes.InvalidArgument,
 			wantResp: nil,
 			wantErr:  true,
+		},
+		{
+			name:     "GIVEN a valid request with Validate THEN expect successful response",
+			mockType: mockTypeValidate,
+			fieldVal: "value",
+			wantCode: codes.OK,
+			wantResp: "success",
+			wantErr:  false,
+		},
+		{
+			name:     "GIVEN an invalid request with Validate THEN expect invalid argument error",
+			mockType: mockTypeValidate,
+			fieldVal: "",
+			wantCode: codes.InvalidArgument,
+			wantResp: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "GIVEN a non-validatable request THEN expect request to pass through",
+			mockType: mockTypeNonValidatable,
+			fieldVal: "value",
+			wantCode: codes.OK,
+			wantResp: "success",
+			wantErr:  false,
 		},
 	}
 
@@ -74,7 +123,8 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidateAll() 
 				return "success", nil
 			}
 
-			resp, err := interceptor(context.Background(), tc.request, nil, handler)
+			request := newMockRequest(tc.mockType, tc.fieldVal)
+			resp, err := interceptor(context.Background(), request, nil, handler)
 
 			if tc.wantErr {
 				require.Error(t, err)
@@ -82,90 +132,6 @@ func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidateAll() 
 				st, ok := status.FromError(err)
 				require.True(t, ok)
 				require.Equal(t, tc.wantCode, st.Code())
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, resp)
-				require.Equal(t, tc.wantResp, resp)
-			}
-		})
-	}
-}
-
-func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_WithValidate() {
-	tt := []struct {
-		name     string
-		request  *mockValidatableRequestWithoutValidateAll
-		wantCode codes.Code
-		wantResp any
-		wantErr  bool
-	}{
-		{
-			name:     "GIVEN a valid request with Validate THEN expect successful response",
-			request:  &mockValidatableRequestWithoutValidateAll{field: "value"},
-			wantCode: codes.OK,
-			wantResp: "success",
-			wantErr:  false,
-		},
-		{
-			name:     "GIVEN an invalid request with Validate THEN expect invalid argument error",
-			request:  &mockValidatableRequestWithoutValidateAll{field: ""},
-			wantCode: codes.InvalidArgument,
-			wantResp: nil,
-			wantErr:  true,
-		},
-	}
-
-	for _, tc := range tt {
-		ts.T().Run(tc.name, func(t *testing.T) {
-			interceptor := ValidationUnaryInterceptor
-			handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "success", nil
-			}
-
-			resp, err := interceptor(context.Background(), tc.request, nil, handler)
-
-			if tc.wantErr {
-				require.Error(t, err)
-				require.Nil(t, resp)
-				st, ok := status.FromError(err)
-				require.True(t, ok)
-				require.Equal(t, tc.wantCode, st.Code())
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, resp)
-				require.Equal(t, tc.wantResp, resp)
-			}
-		})
-	}
-}
-
-func (ts *ValidationTestSuite) TestValidationUnaryInterceptor_NonValidatableRequest() {
-	tt := []struct {
-		name     string
-		request  *mockNonValidatableRequest
-		wantResp any
-		wantErr  bool
-	}{
-		{
-			name:     "GIVEN a non-validatable request THEN expect request to pass through",
-			request:  &mockNonValidatableRequest{field: "value"},
-			wantResp: "success",
-			wantErr:  false,
-		},
-	}
-
-	for _, tc := range tt {
-		ts.T().Run(tc.name, func(t *testing.T) {
-			interceptor := ValidationUnaryInterceptor
-			handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "success", nil
-			}
-
-			resp, err := interceptor(context.Background(), tc.request, nil, handler)
-
-			if tc.wantErr {
-				require.Error(t, err)
-				require.Nil(t, resp)
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, resp)
