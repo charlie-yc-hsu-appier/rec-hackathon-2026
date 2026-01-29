@@ -35,6 +35,7 @@ import (
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -208,8 +209,8 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	}
 
 	grpcMetrics := initGRPCMetrics()
-	unaryInterceptorOpts := getMetricInterceptorOpt()
 	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
@@ -217,7 +218,7 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 			grpc_logging.UnaryServerInterceptor(),
 			middleware.ValidationUnaryInterceptor,
 			grpcMetrics.UnaryServerInterceptor(
-				unaryInterceptorOpts...,
+				getMetricInterceptorOpt()...,
 			),
 		)),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
