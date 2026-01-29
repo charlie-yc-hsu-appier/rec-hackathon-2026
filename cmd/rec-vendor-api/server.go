@@ -34,13 +34,17 @@ import (
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/metric/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
@@ -209,8 +213,11 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	}
 
 	grpcMetrics := initGRPCMetrics()
+	prometheus.MustRegister(grpcMetrics)
 	grpcServer := grpc.NewServer(
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.StatsHandler(otelgrpc.NewServerHandler(
+			getOtelGRPCOpts()...,
+		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
@@ -229,7 +236,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	)
 	grpcMetrics.InitializeMetrics(grpcServer)
 	schema.RegisterVendorAPIServer(grpcServer, handler)
-
 	reflection.Register(grpcServer)
 
 	go func() {
@@ -260,6 +266,7 @@ func initGatewayServer(grpcAddr string, gatewayAddr string) *http.Server {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/", gatewayMux)
+	mux.Handle("/metrics", promhttp.Handler())
 	gatewayServer := &http.Server{
 		Addr:    gatewayAddr,
 		Handler: mux,
@@ -307,7 +314,6 @@ func initGRPCMetrics() *grpc_prometheus.ServerMetrics {
 		),
 		grpc_prometheus.WithContextLabels("site", "oid"),
 	)
-	prometheus.MustRegister(grpcMetrics)
 	return grpcMetrics
 }
 
@@ -328,5 +334,20 @@ func getMetricInterceptorOpt() []grpc_prometheus.Option {
 				"oid":  oid,
 			}
 		}),
+	}
+}
+
+func getOtelGRPCOpts() []otelgrpc.Option {
+	excludedMethods := map[string]struct{}{
+		grpc_health_v1.Health_Check_FullMethodName: {},
+		grpc_health_v1.Health_Watch_FullMethodName: {},
+		grpc_health_v1.Health_List_FullMethodName:  {},
+	}
+	return []otelgrpc.Option{
+		otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
+			_, excluded := excludedMethods[info.FullMethodName]
+			return !excluded
+		}),
+		otelgrpc.WithMeterProvider(noop.NewMeterProvider()), // disable meters since we collect metrics with prometheus
 	}
 }
