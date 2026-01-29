@@ -51,9 +51,6 @@ make pre-commit-check
 ### Test on dev cluster
 
 ```shell
-# setup dev name
-export DEV_NAME=$YOUR_NAME
-
 # Publish docker image & deploy to dev cluster
 make all install
 

@@ -12,6 +12,12 @@ type Config struct {
 	EnableGinLogger bool            `mapstructure:"enable_gin_logger"`
 	Tracing         tracekit.Config `mapstructure:"tracing"`
 	VendorConfig    VendorConfig    `mapstructure:"vendor_config"`
+	Grpc            GrpcConfig      `mapstructure:"grpc"`
+}
+type GrpcConfig struct {
+	MaxConnectionAge  time.Duration `mapstructure:"max_connection_age"`
+	WriteBufferSizeKb int           `mapstructure:"write_buffer_size_kb"`
+	ReadBufferSizeKb  int           `mapstructure:"read_buffer_size_kb"`
 }
 
 type VendorConfig struct {
