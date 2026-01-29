@@ -64,13 +64,13 @@ const (
 //go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 var headerMatcher = map[string]struct{}{
-	"X-Requester":    {},
-	"X-Rec-Siteid":   {},
-	"X-Rec-Bidobjid": {},
-	"X-Rec-Oid":      {},
-	"X-Request-Id":   {},
-	"X-Request-Ts":   {},
-	"Traceparent":    {},
+	grpc_context.HeaderRequester:   {},
+	grpc_context.HeaderSiteID:      {},
+	grpc_context.HeaderBidObjID:    {},
+	grpc_context.HeaderOID:         {},
+	grpc_context.HeaderReqID:       {},
+	grpc_context.HeaderRequestTs:   {},
+	grpc_context.HeaderTraceparent: {},
 }
 
 func main() {
@@ -198,13 +198,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		log.Fatalf("Failed to initialize grpc handler: %v", err)
 	}
 
-	recoveryFunc := func(p any) (err error) {
-		return status.Errorf(codes.Internal, "panic triggered: %v", p)
-	}
-	recoveryOpts := []grpc_recovery.Option{
-		grpc_recovery.WithRecoveryHandler(recoveryFunc),
-	}
-
 	// Trust all proxies to use X-Forwarded-For header
 	// since we do not know the client's IP address, we trust all proxies.
 	trustedPeers := []netip.Prefix{
@@ -212,21 +205,22 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		netip.MustParsePrefix("::/0"),
 	}
 
-	grpcMetrics := initGRPCMetrics()
+	customMetricLabels := []string{"site", "oid"}
+	grpcMetrics := initGRPCMetrics(customMetricLabels)
 	prometheus.MustRegister(grpcMetrics)
 	grpcServer := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler(
-			getOtelGRPCOpts()...,
+			getOtelOpts()...,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
+			grpc_recovery.UnaryServerInterceptor(getRecoveryOpts()...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
 			grpc_context.UnaryServerInterceptor(),
 			grpc_logging.UnaryServerInterceptor(),
-			middleware.ValidationUnaryInterceptor,
 			grpcMetrics.UnaryServerInterceptor(
-				getMetricInterceptorOpt()...,
+				getMetricOpts()...,
 			),
+			middleware.ValidationUnaryInterceptor,
 		)),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
@@ -301,7 +295,7 @@ func jsonRecoveryHandler(ctx *gin.Context, recovered any) {
 	ctx.AbortWithStatus(http.StatusInternalServerError)
 }
 
-func initGRPCMetrics() *grpc_prometheus.ServerMetrics {
+func initGRPCMetrics(customMetricLabels []string) *grpc_prometheus.ServerMetrics {
 	grpcMetrics := grpc_prometheus.NewServerMetrics(
 		grpc_prometheus.WithServerHandlingTimeHistogram(
 			grpc_prometheus.WithHistogramSubsystem(systemName),
@@ -312,12 +306,12 @@ func initGRPCMetrics() *grpc_prometheus.ServerMetrics {
 		grpc_prometheus.WithServerCounterOptions(
 			grpc_prometheus.WithSubsystem(systemName),
 		),
-		grpc_prometheus.WithContextLabels("site", "oid"),
+		grpc_prometheus.WithContextLabels(customMetricLabels...),
 	)
 	return grpcMetrics
 }
 
-func getMetricInterceptorOpt() []grpc_prometheus.Option {
+func getMetricOpts() []grpc_prometheus.Option {
 	return []grpc_prometheus.Option{
 		grpc_prometheus.WithLabelsFromContext(func(ctx context.Context) prometheus.Labels {
 			requestInfo := telemetry.RequestInfoFromContext(ctx)
@@ -337,17 +331,27 @@ func getMetricInterceptorOpt() []grpc_prometheus.Option {
 	}
 }
 
-func getOtelGRPCOpts() []otelgrpc.Option {
-	excludedMethods := map[string]struct{}{
-		grpc_health_v1.Health_Check_FullMethodName: {},
-		grpc_health_v1.Health_Watch_FullMethodName: {},
-		grpc_health_v1.Health_List_FullMethodName:  {},
-	}
+func getOtelOpts() []otelgrpc.Option {
 	return []otelgrpc.Option{
 		otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
-			_, excluded := excludedMethods[info.FullMethodName]
-			return !excluded
+			switch info.FullMethodName {
+			case
+				grpc_health_v1.Health_Check_FullMethodName,
+				grpc_health_v1.Health_Watch_FullMethodName,
+				grpc_health_v1.Health_List_FullMethodName:
+				return false
+			default:
+				return true
+			}
 		}),
 		otelgrpc.WithMeterProvider(noop.NewMeterProvider()), // disable meters since we collect metrics with prometheus
+	}
+}
+
+func getRecoveryOpts() []grpc_recovery.Option {
+	return []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(func(p any) (err error) {
+			return status.Errorf(codes.Internal, "panic triggered: %v", p)
+		}),
 	}
 }

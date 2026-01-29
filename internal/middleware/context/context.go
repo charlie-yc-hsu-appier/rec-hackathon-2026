@@ -11,10 +11,13 @@ import (
 )
 
 const (
-	headerSiteID   = "x-rec-siteid"
-	headerOID      = "x-rec-oid"
-	headerBidObjID = "x-rec-bidobjid"
-	headerReqID    = "x-request-id"
+	HeaderSiteID      = "x-rec-siteid"
+	HeaderOID         = "x-rec-oid"
+	HeaderBidObjID    = "x-rec-bidobjid"
+	HeaderReqID       = "x-request-id"
+	HeaderRequestTs   = "x-request-ts"
+	HeaderRequester   = "x-requester"
+	HeaderTraceparent = "traceparent"
 )
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
@@ -35,10 +38,10 @@ func setRequestInfo(ctx context.Context) context.Context {
 
 	// Extract metadata from gRPC context
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		requestInfo.SiteID = strings.Join(md.Get(headerSiteID), "")
-		requestInfo.OID = strings.Join(md.Get(headerOID), "")
-		requestInfo.BidObjID = strings.Join(md.Get(headerBidObjID), "")
-		requestInfo.ReqID = strings.Join(md.Get(headerReqID), "")
+		requestInfo.SiteID = strings.Join(md.Get(HeaderSiteID), "")
+		requestInfo.OID = strings.Join(md.Get(HeaderOID), "")
+		requestInfo.BidObjID = strings.Join(md.Get(HeaderBidObjID), "")
+		requestInfo.ReqID = strings.Join(md.Get(HeaderReqID), "")
 	}
 
 	// Extract peer information (IP address) if available
