@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "rec-vendor-api.fullname" . }}
+  name: {{ include "rec-vendor-api.fullname" . }}-headless
   labels:
     {{- include "rec-vendor-api.labels" . | nindent 4 }}
 spec:
