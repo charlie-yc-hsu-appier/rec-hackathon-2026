@@ -184,7 +184,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	}
 
 	recoveryFunc := func(p any) (err error) {
-		log.Fatalf("panic triggered: %v", p)
 		return status.Errorf(codes.Internal, "panic triggered: %v", p)
 	}
 	recoveryOpts := []grpc_recovery.Option{
@@ -207,8 +206,8 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
 		}),
-		grpc.WriteBufferSize(cfg.Grpc.WriteBufferSize*1024),
-		grpc.ReadBufferSize(cfg.Grpc.ReadBufferSize*1024),
+		grpc.WriteBufferSize(cfg.Grpc.WriteBufferSizeKb*1024),
+		grpc.ReadBufferSize(cfg.Grpc.ReadBufferSizeKb*1024),
 	)
 	schema.RegisterVendorAPIServer(grpcServer, handler)
 

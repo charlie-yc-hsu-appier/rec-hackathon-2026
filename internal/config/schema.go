@@ -15,9 +15,9 @@ type Config struct {
 	Grpc            GrpcConfig      `mapstructure:"grpc"`
 }
 type GrpcConfig struct {
-	MaxConnectionAge time.Duration `mapstructure:"max_connection_age"`
-	WriteBufferSize  int           `mapstructure:"write_buffer_size_kb"`
-	ReadBufferSize   int           `mapstructure:"read_buffer_size_kb"`
+	MaxConnectionAge  time.Duration `mapstructure:"max_connection_age"`
+	WriteBufferSizeKb int           `mapstructure:"write_buffer_size_kb"`
+	ReadBufferSizeKb  int           `mapstructure:"read_buffer_size_kb"`
 }
 
 type VendorConfig struct {

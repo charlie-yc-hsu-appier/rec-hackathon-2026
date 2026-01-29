@@ -72,6 +72,13 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 			},
 		},
 		{
+			name:       "GIVEN an invalid vendor key THEN expect a bad request response",
+			vendorKey:  "wrong_vendor_key",
+			setupMock:  func(mc *vendor.MockClient) {},
+			wantCode:   codes.InvalidArgument,
+			wantErrMsg: "Vendor key 'wrong_vendor_key' not supported",
+		},
+		{
 			name:      "GIVEN a BadRequestError error THEN expect an invalid argument error response",
 			vendorKey: "test_vendor",
 			setupMock: func(mc *vendor.MockClient) {
@@ -129,7 +136,6 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 		name         string
 		vendorConfig config.VendorConfig
 		wantVendors  []*schema.VendorInfo
-		wantErr      bool
 		wantErrMsg   string
 	}{
 		{
@@ -139,7 +145,6 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 				{VendorKey: "test_vendor", RequestHost: "example.com"},
 				{VendorKey: "another_vendor", RequestHost: "another.com"},
 			},
-			wantErr: false,
 		},
 		{
 			name: "GIVEN empty vendor config THEN expect empty vendors list",
@@ -147,7 +152,22 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 				Vendors: []config.Vendor{},
 			},
 			wantVendors: []*schema.VendorInfo{},
-			wantErr:     false,
+		},
+		{
+			name: "GIVEN vendor with invalid URL THEN expect vendor with empty request host",
+			vendorConfig: config.VendorConfig{
+				Vendors: []config.Vendor{
+					{
+						Name: "invalid_vendor",
+						Request: config.URLPattern{
+							URL: "://invalid-url",
+						},
+					},
+				},
+			},
+			wantVendors: []*schema.VendorInfo{
+				{VendorKey: "invalid_vendor", RequestHost: ""},
+			},
 		},
 	}
 
@@ -155,21 +175,14 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 		ts.T().Run(tc.name, func(t *testing.T) {
 			handler, err := NewHandler(ts.vendorRegistry, tc.vendorConfig)
 
-			if tc.wantErr {
-				require.Error(t, err)
-				require.Nil(t, handler)
-				require.Contains(t, err.Error(), tc.wantErrMsg)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, handler)
-				resp, err := handler.GetVendors(context.Background(), &emptypb.Empty{})
-				require.NoError(t, err)
-				require.NotNil(t, resp)
-				require.Equal(t, len(tc.wantVendors), len(resp.Vendors))
-				for i, wantVendor := range tc.wantVendors {
-					require.Equal(t, wantVendor.VendorKey, resp.Vendors[i].VendorKey)
-					require.Equal(t, wantVendor.RequestHost, resp.Vendors[i].RequestHost)
-				}
+			require.NoError(t, err)
+			require.NotNil(t, handler)
+			resp, err := handler.GetVendors(context.Background(), &emptypb.Empty{})
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			require.Equal(t, len(tc.wantVendors), len(resp.Vendors))
+			for i, wantVendor := range tc.wantVendors {
+				require.True(t, proto.Equal(wantVendor, resp.Vendors[i]))
 			}
 		})
 	}
