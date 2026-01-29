@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/url"
 
 	"rec-vendor-api/internal/config"
@@ -33,14 +32,9 @@ type HandlerImpl struct {
 }
 
 func NewHandler(vendorRegistry map[string]vendor.Client, vendorConfig config.VendorConfig) (*HandlerImpl, error) {
-	vendorInfo, err := initVendorInfo(vendorConfig)
-	if err != nil {
-		log.Errorf("Failed to initialize vendor info: %v", err)
-		return nil, err
-	}
 	return &HandlerImpl{
 		vendorRegistry: vendorRegistry,
-		vendorInfo:     vendorInfo,
+		vendorInfo:     initVendorInfo(vendorConfig),
 	}, nil
 }
 
@@ -80,8 +74,6 @@ func (s *HandlerImpl) HealthCheck(_ context.Context, _ *emptypb.Empty) (*schema.
 }
 
 func toVendorRequest(ctx context.Context, req *schema.GetRecommendationsRequest) vendor.Request {
-	clientIP := getClientIP(ctx)
-
 	osStr := ""
 	switch req.Os {
 	case schema.OperationSystem_ANDROID:
@@ -104,25 +96,23 @@ func toVendorRequest(ctx context.Context, req *schema.GetRecommendationsRequest)
 		KeetaCampaignID: req.KCampaignId,
 		Latitude:        req.Lat,
 		Longitude:       req.Lon,
-		ClientIP:        clientIP,
+		ClientIP:        getClientIP(ctx),
 	}
 }
 
-func initVendorInfo(vendorConfig config.VendorConfig) ([]*schema.VendorInfo, error) {
+func initVendorInfo(vendorConfig config.VendorConfig) []*schema.VendorInfo {
 	vendors := make([]*schema.VendorInfo, 0, len(vendorConfig.Vendors))
 	for _, v := range vendorConfig.Vendors {
 		requestHost := ""
 		if parsedURL, err := url.Parse(v.Request.URL); err == nil {
 			requestHost = parsedURL.Host
-		} else {
-			return nil, fmt.Errorf("failed to parse request URL for vendor %s: %s", v.Name, err.Error())
 		}
 		vendors = append(vendors, &schema.VendorInfo{
 			VendorKey:   v.Name,
 			RequestHost: requestHost,
 		})
 	}
-	return vendors, nil
+	return vendors
 }
 
 func toProto(products []vendor.ProductInfo) (*schema.GetRecommendationsResponse, error) {
@@ -143,13 +133,11 @@ func toProto(products []vendor.ProductInfo) (*schema.GetRecommendationsResponse,
 }
 
 func getClientIP(ctx context.Context) string {
-	realIP, ok := grpc_realip.FromContext(ctx)
-	answer := ""
-	if ok && realIP.IsValid() {
+	if realIP, ok := grpc_realip.FromContext(ctx); ok && realIP.IsValid() {
 		log.WithContext(ctx).Infof("Using real IP from peer: %s", realIP.String())
-		answer = realIP.String()
-	} else {
-		log.WithContext(ctx).Debugf("No client IP found in X-Forwarded-For or peer address")
+		return realIP.String()
 	}
-	return answer
+
+	log.WithContext(ctx).Debugf("No client IP found in X-Forwarded-For or peer address")
+	return ""
 }

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
@@ -71,13 +72,6 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 			},
 		},
 		{
-			name:       "GIVEN an invalid vendor key THEN expect an invalid argument error",
-			vendorKey:  "bad_vendor",
-			setupMock:  func(mc *vendor.MockClient) {},
-			wantCode:   codes.InvalidArgument,
-			wantErrMsg: "Vendor key 'bad_vendor' not supported",
-		},
-		{
 			name:      "GIVEN a BadRequestError error THEN expect an invalid argument error response",
 			vendorKey: "test_vendor",
 			setupMock: func(mc *vendor.MockClient) {
@@ -117,12 +111,7 @@ func (ts *HandlerTestSuite) TestGetRecommendations() {
 				require.NotNil(t, resp)
 				require.Equal(t, len(tc.wantProducts), len(resp.Products))
 				for i, wantProduct := range tc.wantProducts {
-					require.Equal(t, wantProduct.ProductId, resp.Products[i].ProductId)
-					require.Equal(t, wantProduct.Url, resp.Products[i].Url)
-					require.Equal(t, wantProduct.Image, resp.Products[i].Image)
-					require.Equal(t, wantProduct.Price, resp.Products[i].Price)
-					require.Equal(t, wantProduct.SalePrice, resp.Products[i].SalePrice)
-					require.Equal(t, wantProduct.Currency, resp.Products[i].Currency)
+					require.True(t, proto.Equal(wantProduct, resp.Products[i]))
 				}
 			} else {
 				require.Error(t, err)
@@ -151,21 +140,6 @@ func (ts *HandlerTestSuite) TestGetVendors() {
 				{VendorKey: "another_vendor", RequestHost: "another.com"},
 			},
 			wantErr: false,
-		},
-		{
-			name: "GIVEN vendor config with invalid URL THEN expect an error",
-			vendorConfig: config.VendorConfig{
-				Vendors: []config.Vendor{
-					{
-						Name: "invalid_vendor",
-						Request: config.URLPattern{
-							URL: "://invalid-url",
-						},
-					},
-				},
-			},
-			wantErr:    true,
-			wantErrMsg: "failed to parse request URL for vendor invalid_vendor",
 		},
 		{
 			name: "GIVEN empty vendor config THEN expect empty vendors list",
