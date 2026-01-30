@@ -2,7 +2,9 @@ package config
 
 import (
 	"errors"
-	"log"
+
+	log "github.com/sirupsen/logrus"
+
 	"path"
 	"strings"
 

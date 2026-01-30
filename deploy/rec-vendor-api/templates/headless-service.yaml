@@ -10,6 +10,6 @@ spec:
     - port: {{ .Values.portConfig.grpcPort }}
       targetPort: grpc
       protocol: TCP
-      name: gin
+      name: grpc
   selector:
     {{- include "rec-vendor-api.selectorLabels" . | nindent 4 }}
