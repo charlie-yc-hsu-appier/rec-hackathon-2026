@@ -7,7 +7,6 @@ DOCKER_TAG := $(DEV_NAME)
 
 CHART_DIR := ./deploy/rec-vendor-api
 RELEASE_NAME := rec-vendor-api-dev-$(DEV_NAME)
-HEADLESS_SERVICE_NAME := rec-vendor-api-dev-$(DEV_NAME)-headless
 
 DEV_CLUSTER := gke_appier-k8s-ai-rec_asia-east1_nelson
 DEV_NAMESPACE := rec
@@ -161,17 +160,11 @@ delete-dev: check-environment
 	helm delete $(RELEASE_NAME) --namespace $(DEV_NAMESPACE)
 
 
-# TODO: to be updated when gin server is retired
+# TODO: change port-forward to the gateway server when gin server is retired
 .PHONY: portforward-dev
 portforward-dev:
 	kubectx $(DEV_CLUSTER)
-	@bash -c ' \
-		echo "Starting port-forwards in background..."; \
-		kubectl port-forward svc/$(RELEASE_NAME) 8080:80 -n $(DEV_NAMESPACE) & \
-		kubectl port-forward svc/$(HEADLESS_SERVICE_NAME) 10000:10000 -n $(DEV_NAMESPACE) & \
-		echo "Port-forwards started. Press Ctrl+C to stop all."; \
-		trap "kill 0" EXIT; \
-		wait'
+	kubectl port-forward svc/$(RELEASE_NAME) 8080:80 -n $(DEV_NAMESPACE)
 
 
 .PHONY: run-e2e
