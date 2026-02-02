@@ -20,6 +20,12 @@ type GrpcConfig struct {
 	ReadBufferSizeKb  int           `mapstructure:"read_buffer_size_kb"`
 }
 
+type PortConfig struct {
+	GrpcPort    string `envconfig:"GRPC_PORT" default:"10000"`
+	GatewayPort string `envconfig:"GATEWAY_PORT" default:"10001"`
+	GinPort     string `envconfig:"GIN_PORT" default:"8080"`
+}
+
 type VendorConfig struct {
 	ProxyURL string        `mapstructure:"proxy_url"`
 	Timeout  time.Duration `mapstructure:"timeout"`

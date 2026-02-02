@@ -64,7 +64,7 @@ var headerMatcher = map[string]struct{}{
 
 func main() {
 	var cf = flag.String("c", "", "config file")
-	var appType = flag.String("t", "", "app type")
+	var appType = flag.String("t", "", "app type: gin, grpc, all, default: all")
 	flag.Parse()
 
 	cfg := &config.Config{}
@@ -92,9 +92,13 @@ func main() {
 	var grpcServer *grpc.Server
 	var gatewayServer *http.Server
 
-	grpcAddr := "0.0.0.0:10000"
-	gatewayAddr := "0.0.0.0:10001"
-	ginAddr := "0.0.0.0:8080"
+	// Load port configuration from environment variables
+	portConfig := &config.PortConfig{}
+	config.LoadConfigFromEnv(portConfig)
+
+	grpcAddr := "0.0.0.0:" + portConfig.GrpcPort
+	gatewayAddr := "0.0.0.0:" + portConfig.GatewayPort
+	ginAddr := "0.0.0.0:" + portConfig.GinPort
 	appTypeStr := *appType
 	switch appTypeStr {
 	case "gin":

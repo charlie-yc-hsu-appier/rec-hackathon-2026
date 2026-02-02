@@ -7,6 +7,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/plaxieappier/rec-go-kit/httpkit v1.1.1
 	github.com/plaxieappier/rec-go-kit/logkit v1.1.0
 	github.com/plaxieappier/rec-go-kit/tracekit v1.2.0

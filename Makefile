@@ -160,6 +160,7 @@ delete-dev: check-environment
 	helm delete $(RELEASE_NAME) --namespace $(DEV_NAMESPACE)
 
 
+# TODO: change port-forward to the gateway server when gin server is retired
 .PHONY: portforward-dev
 portforward-dev:
 	kubectx $(DEV_CLUSTER)

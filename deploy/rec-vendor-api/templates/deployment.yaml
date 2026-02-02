@@ -32,9 +32,14 @@ spec:
           args:
             - -c
             - /etc/secrets/config.yaml
+            - -t
+            - gin
+          env:
+            - name: GIN_PORT
+              value: {{ .Values.portConfig.ginPort | quote }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ .Values.portConfig.ginPort }}
               protocol: TCP
           readinessProbe:
             httpGet:
@@ -52,6 +57,41 @@ spec:
             - name: secrets
               mountPath: /etc/secrets
               readOnly: true
+
+        - name: grpc
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - -c
+            - /etc/secrets/config.yaml
+            - -t
+            - grpc
+          env:
+            - name: GRPC_PORT
+              value: {{ .Values.portConfig.grpcPort | quote }}
+            - name: GATEWAY_PORT
+              value: {{ .Values.portConfig.gatewayPort | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.portConfig.grpcPort }}
+              protocol: TCP
+            - name: gateway
+              containerPort: {{ .Values.portConfig.gatewayPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: secrets
+              mountPath: /etc/secrets
+              readOnly: true
+          livenessProbe:
+            grpc:
+              port: {{ .Values.portConfig.grpcPort }}
+            failureThreshold: 10
+          readinessProbe:
+            grpc:
+              port: {{ .Values.portConfig.grpcPort }}
+            failureThreshold: 5
 
         - name: nginx
           image: {{ .Values.nginx.image }}

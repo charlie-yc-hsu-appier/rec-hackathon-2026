@@ -27,9 +27,16 @@ resources:
     cpu: 300m
     memory: 32Mi
 
+# TODO: to be merged with portConfig when gin server is retired
 service:
   type: ClusterIP
   port: 80
+
+portConfig:
+  ginPort: 8080
+  grpcPort: 10000
+  gatewayPort: 10001
+
 
 nodeSelector:
   cloud.google.com/compute-class: shared
