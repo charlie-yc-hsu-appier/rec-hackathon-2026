@@ -85,12 +85,14 @@ spec:
               mountPath: /etc/secrets
               readOnly: true
           livenessProbe:
-            grpc:
-              port: {{ .Values.portConfig.grpcPort }}
+            httpGet:
+              path: /healthz
+              port: {{ .Values.portConfig.gatewayPort }}
             failureThreshold: 10
           readinessProbe:
-            grpc:
-              port: {{ .Values.portConfig.grpcPort }}
+            httpGet:
+              path: /healthz
+              port: {{ .Values.portConfig.gatewayPort }}
             failureThreshold: 5
 
         - name: nginx
