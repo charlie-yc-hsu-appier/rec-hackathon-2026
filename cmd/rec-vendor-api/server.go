@@ -118,7 +118,7 @@ func main() {
 			timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			if err := ginServer.Shutdown(timeoutCtx); err != nil {
-				log.Fatalf("Failed to shutdown gin server, err: %v", err)
+				log.Errorf("Failed to shutdown gin server, err: %v", err)
 			}
 		}()
 	}
@@ -130,7 +130,7 @@ func main() {
 			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer shutdownCancel()
 			if err := gatewayServer.Shutdown(shutdownCtx); err != nil {
-				log.Fatalf("Failed to shutdown gateway server, err: %v", err)
+				log.Errorf("Failed to shutdown gateway server, err: %v", err)
 			}
 		}()
 	}
