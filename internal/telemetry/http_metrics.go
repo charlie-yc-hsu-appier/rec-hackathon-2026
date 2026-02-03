@@ -57,26 +57,3 @@ func PromHandler() gin.HandlerFunc {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
 }
-
-var (
-	grpcHistogramBucket = []float64{0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0}
-
-	GrpcMetrics = newGrpcPromMetrics()
-)
-
-type GrpcPromMetrics struct {
-	ServerHandledHistogram *prometheus.HistogramVec
-}
-
-func newGrpcPromMetrics() GrpcPromMetrics {
-	m := GrpcPromMetrics{}
-	m.ServerHandledHistogram = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Subsystem: systemName,
-			Name:      "grpc_server_handled_duration_seconds",
-			Help:      "request latency by status code",
-			Buckets:   grpcHistogramBucket,
-		}, []string{"grpc_method", "grpc_code", "site", "oid"},
-	)
-	return m
-}
