@@ -188,6 +188,7 @@ pipeline {
         container('golang') {
           sh 'apk add --no-cache openssh make git build-base openssl'
           sh 'wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v2.8.0'
+          sh 'go install golang.org/x/tools/cmd/goimports@v0.41.0'
 
           sh 'mkdir -p -m 0600 /root/.ssh'
           sh 'touch /root/.ssh/known_hosts'
@@ -200,7 +201,7 @@ pipeline {
           // adding `buildvcs=false` to mitigate the "error obtaining VCS status: exit status 128" error
           // note: `buildvcs=false` flag is not a must when running golangci-lint
           sh 'GOFLAGS=-buildvcs=false ./bin/golangci-lint run'
-          
+
           // Validate vendor configuration with real secrets from vault
           sh 'go run ./cmd/validate-config $CHART_DIR/secrets/vendors.yaml'
           sh 'make test'

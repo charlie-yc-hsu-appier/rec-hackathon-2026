@@ -1,6 +1,7 @@
 VAULT_ADDR := https://vault.appier.us
 VAULT_KEY_PATH := secret/project/recommendation
 
+DEV_NAME ?= $(shell whoami | sed -e "s/\./-/g")
 DOCKER_DEV_REPO := asia-docker.pkg.dev/appier-docker/docker-ai-rec-asia/rec-vendor-api-dev
 DOCKER_TAG := $(DEV_NAME)
 
@@ -65,6 +66,21 @@ install-tool:
 	go install go.uber.org/mock/mockgen@v0.4.0
 	go install golang.org/x/tools/cmd/goimports@v0.41.0
 	brew install golangci-lint
+
+#############  Local ################
+.PHONY: local
+local: config-dev
+	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml
+
+# TODO: to be removed with gin retirement
+.PHONY: local-grpc
+local-grpc: config-dev
+	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml -t grpc
+
+# TODO: to be removed with grpc retirement
+.PHONY: local-gin
+local-gin: config-dev
+	go run ./cmd/rec-vendor-api/server.go -c $(CHART_DIR)/secrets/config.yaml -t gin
 
 
 #############  Testing  #############
@@ -144,6 +160,7 @@ delete-dev: check-environment
 	helm delete $(RELEASE_NAME) --namespace $(DEV_NAMESPACE)
 
 
+# TODO: change port-forward to the gateway server when gin server is retired
 .PHONY: portforward-dev
 portforward-dev:
 	kubectx $(DEV_CLUSTER)

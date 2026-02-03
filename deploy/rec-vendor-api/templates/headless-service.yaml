@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rec-vendor-api.fullname" . }}-headless
+  labels:
+    {{- include "rec-vendor-api.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .Values.portConfig.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    {{- include "rec-vendor-api.selectorLabels" . | nindent 4 }}
