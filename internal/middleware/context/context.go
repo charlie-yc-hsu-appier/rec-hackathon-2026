@@ -78,8 +78,8 @@ func extractRequestParams(req any, info *telemetry.RequestInfo) {
 
 func getMethodName(fullMethod string) string {
 	fullMethod = strings.TrimPrefix(fullMethod, "/")
-	if before, _, found := strings.Cut(fullMethod, "/"); found {
-		return before
+	if _, after, found := strings.Cut(fullMethod, "/"); found {
+		return after
 	}
 
 	return "unknown"
