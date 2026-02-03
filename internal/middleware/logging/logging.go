@@ -31,15 +31,13 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-func logAccessLog(ctx context.Context, method string, code string, level log.Level) {
+func logAccessLog(ctx context.Context, method string, codeStr string, level log.Level) {
 	remoteAddr := "unknown"
 	if p, ok := peer.FromContext(ctx); ok {
 		remoteAddr = p.Addr.String()
 	}
-
+	message := "access_log: " + method + " finished unary call with code " + codeStr
 	log.WithContext(ctx).WithFields(log.Fields{
 		"remote_addr": remoteAddr,
-		"method":      method,
-		"code":        code,
-	}).Log(level, "access_log")
+	}).Log(level, message)
 }
