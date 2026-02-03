@@ -22,12 +22,12 @@ const (
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = setRequestInfo(ctx)
+		ctx = setRequestInfo(ctx, info.FullMethod)
 		return handler(ctx, req)
 	}
 }
 
-func setRequestInfo(ctx context.Context) context.Context {
+func setRequestInfo(ctx context.Context, fullMethod string) context.Context {
 	requestInfo := telemetry.RequestInfo{}
 
 	// Extract trace ID from OpenTelemetry span context
@@ -44,9 +44,26 @@ func setRequestInfo(ctx context.Context) context.Context {
 		requestInfo.ReqID = strings.Join(md.Get(HeaderReqID), "")
 	}
 
-	// Extract peer information (IP address) if available
-	// Note: This is informational and not part of RequestInfo structure,
-	// but we can log it if needed in the future
+	requestInfo.MethodName = getMethodName(fullMethod)
+	site := requestInfo.SiteID
+	oid := requestInfo.OID
+	if site == "" {
+		site = "unknown"
+	}
+	if oid == "" {
+		oid = "unknown"
+	}
+	requestInfo.SiteID = site
+	requestInfo.OID = oid
 
 	return telemetry.RequestInfoToContext(ctx, requestInfo)
+}
+
+func getMethodName(fullMethod string) string {
+	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
+	if before, _, found := strings.Cut(fullMethod, "/"); found {
+		return before
+	}
+
+	return "unknown"
 }

@@ -3,8 +3,7 @@ package logging
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
+	"rec-vendor-api/internal/telemetry"
 
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -14,12 +13,11 @@ import (
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		startTime := time.Now()
 		resp, err := handler(ctx, req)
-		methodName := getMethodName(info.FullMethod)
 		code := grpc_logging.DefaultErrorToCode(err)
 		level := grpc_logrus.DefaultCodeToLevel(code)
-		message := fmt.Sprintf("%s finished unary call with code %s, duration: %v", methodName, code.String(), time.Since(startTime))
+		requestInfo := telemetry.RequestInfoFromContext(ctx)
+		message := fmt.Sprintf("%s finished unary call with code %s", requestInfo.MethodName, code.String())
 		messageProducer(ctx, message, level)
 		return resp, err
 	}
@@ -40,15 +38,4 @@ func messageProducer(ctx context.Context, message string, level log.Level) {
 	case log.PanicLevel:
 		log.WithContext(ctx).Panic(message)
 	}
-}
-
-// getMethodName returns the method name from the grpc fullMethod.
-// e.g. "/v1/GetProductFeatures" -> "GetProductFeatures"
-func getMethodName(fullMethod string) string {
-	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
-	if i := strings.Index(fullMethod, "/"); i >= 0 {
-		return fullMethod[i+1:]
-	}
-
-	return "unknown"
 }

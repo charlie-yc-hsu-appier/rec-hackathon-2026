@@ -58,3 +58,6 @@ secrets/
 # local e2e test results
 tests/results/
 .pabotsuitenames
+
+
+/vendor

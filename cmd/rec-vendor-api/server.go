@@ -22,18 +22,17 @@ import (
 	"rec-vendor-api/internal/middleware"
 	grpc_context "rec-vendor-api/internal/middleware/context"
 	grpc_logging "rec-vendor-api/internal/middleware/logging"
+	grpc_metrics "rec-vendor-api/internal/middleware/metrics"
 	"rec-vendor-api/internal/telemetry"
 	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -48,10 +47,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
-)
-
-const (
-	systemName = "vendor-api"
 )
 
 // @title Vendor API service
@@ -205,9 +200,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		netip.MustParsePrefix("::/0"),
 	}
 
-	customMetricLabels := []string{"site", "oid"}
-	grpcMetrics := initGRPCMetrics(customMetricLabels)
-	prometheus.MustRegister(grpcMetrics)
 	grpcServer := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler(
 			getOtelOpts()...,
@@ -217,9 +209,7 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
 			grpc_context.UnaryServerInterceptor(),
 			grpc_logging.UnaryServerInterceptor(),
-			grpcMetrics.UnaryServerInterceptor(
-				getMetricOpts()...,
-			),
+			grpc_metrics.UnaryServerInterceptor(&telemetry.GrpcMetrics),
 			middleware.ValidationUnaryInterceptor,
 		)),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
@@ -228,7 +218,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc.WriteBufferSize(cfg.Grpc.WriteBufferSizeKb*1024),
 		grpc.ReadBufferSize(cfg.Grpc.ReadBufferSizeKb*1024),
 	)
-	grpcMetrics.InitializeMetrics(grpcServer)
 	schema.RegisterVendorAPIServer(grpcServer, handler)
 	reflection.Register(grpcServer)
 
@@ -293,42 +282,6 @@ func initTracer(cfg tracekit.Config) func(context.Context) error {
 func jsonRecoveryHandler(ctx *gin.Context, recovered any) {
 	log.WithContext(ctx).WithField("stack", string(debug.Stack())).Error(fmt.Sprintf("%v", recovered))
 	ctx.AbortWithStatus(http.StatusInternalServerError)
-}
-
-func initGRPCMetrics(customMetricLabels []string) *grpc_prometheus.ServerMetrics {
-	grpcMetrics := grpc_prometheus.NewServerMetrics(
-		grpc_prometheus.WithServerHandlingTimeHistogram(
-			grpc_prometheus.WithHistogramSubsystem(systemName),
-			grpc_prometheus.WithHistogramBuckets([]float64{
-				0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0,
-			}),
-		),
-		grpc_prometheus.WithServerCounterOptions(
-			grpc_prometheus.WithSubsystem(systemName),
-		),
-		grpc_prometheus.WithContextLabels(customMetricLabels...),
-	)
-	return grpcMetrics
-}
-
-func getMetricOpts() []grpc_prometheus.Option {
-	return []grpc_prometheus.Option{
-		grpc_prometheus.WithLabelsFromContext(func(ctx context.Context) prometheus.Labels {
-			requestInfo := telemetry.RequestInfoFromContext(ctx)
-			site := requestInfo.SiteID
-			oid := requestInfo.OID
-			if site == "" {
-				site = "unknown"
-			}
-			if oid == "" {
-				oid = "unknown"
-			}
-			return prometheus.Labels{
-				"site": site,
-				"oid":  oid,
-			}
-		}),
-	}
 }
 
 func getOtelOpts() []otelgrpc.Option {
