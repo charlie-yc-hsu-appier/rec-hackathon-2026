@@ -2,6 +2,7 @@ package grpc_request_info
 
 import (
 	"context"
+	"rec-vendor-api/internal/constants"
 	"rec-vendor-api/internal/telemetry"
 	"testing"
 
@@ -95,7 +96,7 @@ func (ts *ContextTestSuite) TestUnaryServerInterceptor() {
 
 			interceptor := UnaryServerInterceptor()
 			info := &grpc.UnaryServerInfo{
-				FullMethod: "/vendorapi.VendorAPI/GetRecommendations",
+				FullMethod: constants.FullMethodGetRecommendations,
 			}
 
 			_, err := interceptor(ctx, req, info, handler)
@@ -113,10 +114,13 @@ func (ts *ContextTestSuite) TestUnaryServerInterceptor() {
 
 func (ts *ContextTestSuite) TestExtractMetadataHeaders() {
 	tt := []struct {
-		name         string
-		metadata     map[string]string
-		hasMetadata  bool
-		expectedInfo telemetry.RequestInfo
+		name             string
+		metadata         map[string]string
+		hasMetadata      bool
+		expectedSiteID   string
+		expectedOID      string
+		expectedBidObjID string
+		expectedReqID    string
 	}{
 		{
 			name: "GIVEN all headers present THEN all values extracted",
@@ -126,24 +130,20 @@ func (ts *ContextTestSuite) TestExtractMetadataHeaders() {
 				HeaderBidObjID: "bidobj789",
 				HeaderReqID:    "req-id-001",
 			},
-			hasMetadata: true,
-			expectedInfo: telemetry.RequestInfo{
-				SiteID:   "site123",
-				OID:      "oid456",
-				BidObjID: "bidobj789",
-				ReqID:    "req-id-001",
-			},
+			hasMetadata:      true,
+			expectedSiteID:   "site123",
+			expectedOID:      "oid456",
+			expectedBidObjID: "bidobj789",
+			expectedReqID:    "req-id-001",
 		},
 		{
-			name:        "GIVEN no metadata THEN empty values",
-			metadata:    map[string]string{},
-			hasMetadata: true,
-			expectedInfo: telemetry.RequestInfo{
-				SiteID:   "",
-				OID:      "",
-				BidObjID: "",
-				ReqID:    "",
-			},
+			name:             "GIVEN no metadata THEN empty values",
+			metadata:         map[string]string{},
+			hasMetadata:      true,
+			expectedSiteID:   "",
+			expectedOID:      "",
+			expectedBidObjID: "",
+			expectedReqID:    "",
 		},
 		{
 			name: "GIVEN partial headers THEN only present values extracted",
@@ -151,38 +151,31 @@ func (ts *ContextTestSuite) TestExtractMetadataHeaders() {
 				HeaderSiteID: "site123",
 				HeaderReqID:  "req-id-001",
 			},
-			hasMetadata: true,
-			expectedInfo: telemetry.RequestInfo{
-				SiteID:   "site123",
-				OID:      "",
-				BidObjID: "",
-				ReqID:    "req-id-001",
-			},
+			hasMetadata:      true,
+			expectedSiteID:   "site123",
+			expectedOID:      "",
+			expectedBidObjID: "",
+			expectedReqID:    "req-id-001",
 		},
 		{
 			name: "GIVEN empty header values THEN empty strings extracted",
 			metadata: map[string]string{
 				HeaderSiteID: "",
-				HeaderOID:    "",
 			},
-			hasMetadata: true,
-			expectedInfo: telemetry.RequestInfo{
-				SiteID:   "",
-				OID:      "",
-				BidObjID: "",
-				ReqID:    "",
-			},
+			hasMetadata:      true,
+			expectedSiteID:   "",
+			expectedOID:      "",
+			expectedBidObjID: "",
+			expectedReqID:    "",
 		},
 		{
-			name:        "GIVEN context without metadata THEN no panic and empty values",
-			metadata:    nil,
-			hasMetadata: false,
-			expectedInfo: telemetry.RequestInfo{
-				SiteID:   "",
-				OID:      "",
-				BidObjID: "",
-				ReqID:    "",
-			},
+			name:             "GIVEN context without metadata THEN no panic and empty values",
+			metadata:         nil,
+			hasMetadata:      false,
+			expectedSiteID:   "",
+			expectedOID:      "",
+			expectedBidObjID: "",
+			expectedReqID:    "",
 		},
 	}
 
@@ -197,67 +190,47 @@ func (ts *ContextTestSuite) TestExtractMetadataHeaders() {
 			} else {
 				ctx = context.Background()
 			}
-			info := &telemetry.RequestInfo{}
 
-			extractMetadataHeaders(ctx, info)
+			siteID, oid, bidObjID, reqID := extractMetadataHeaders(ctx)
 
-			assert.Equal(t, tc.expectedInfo.SiteID, info.SiteID)
-			assert.Equal(t, tc.expectedInfo.OID, info.OID)
-			assert.Equal(t, tc.expectedInfo.BidObjID, info.BidObjID)
-			assert.Equal(t, tc.expectedInfo.ReqID, info.ReqID)
+			assert.Equal(t, tc.expectedSiteID, siteID)
+			assert.Equal(t, tc.expectedOID, oid)
+			assert.Equal(t, tc.expectedBidObjID, bidObjID)
+			assert.Equal(t, tc.expectedReqID, reqID)
 		})
 	}
 }
 
-func (ts *ContextTestSuite) TestSetDefaultMetadataValues() {
+func (ts *ContextTestSuite) TestApplyDefault() {
 	tt := []struct {
 		name         string
-		inputInfo    telemetry.RequestInfo
-		expectedInfo telemetry.RequestInfo
+		value        string
+		defaultValue string
+		expected     string
 	}{
 		{
-			name: "GIVEN empty SiteID and OID THEN defaults set to unknown",
-			inputInfo: telemetry.RequestInfo{
-				SiteID: "",
-				OID:    "",
-			},
-			expectedInfo: telemetry.RequestInfo{
-				SiteID: "unknown",
-				OID:    "unknown",
-			},
+			name:         "GIVEN empty value THEN default returned",
+			value:        "",
+			defaultValue: "unknown",
+			expected:     "unknown",
 		},
 		{
-			name: "GIVEN SiteID present but OID empty THEN only OID defaults",
-			inputInfo: telemetry.RequestInfo{
-				SiteID: "site123",
-				OID:    "",
-			},
-			expectedInfo: telemetry.RequestInfo{
-				SiteID: "site123",
-				OID:    "unknown",
-			},
+			name:         "GIVEN non-empty value THEN value returned",
+			value:        "site123",
+			defaultValue: "unknown",
+			expected:     "site123",
 		},
 		{
-			name: "GIVEN OID present but SiteID empty THEN only SiteID defaults",
-			inputInfo: telemetry.RequestInfo{
-				SiteID: "",
-				OID:    "oid456",
-			},
-			expectedInfo: telemetry.RequestInfo{
-				SiteID: "unknown",
-				OID:    "oid456",
-			},
+			name:         "GIVEN empty value and empty default THEN empty returned",
+			value:        "",
+			defaultValue: "",
+			expected:     "",
 		},
 		{
-			name: "GIVEN both SiteID and OID present THEN no defaults applied",
-			inputInfo: telemetry.RequestInfo{
-				SiteID: "site123",
-				OID:    "oid456",
-			},
-			expectedInfo: telemetry.RequestInfo{
-				SiteID: "site123",
-				OID:    "oid456",
-			},
+			name:         "GIVEN non-empty value and non-empty default THEN value returned",
+			value:        "oid456",
+			defaultValue: "default-oid",
+			expected:     "oid456",
 		},
 	}
 
@@ -265,21 +238,19 @@ func (ts *ContextTestSuite) TestSetDefaultMetadataValues() {
 		ts.T().Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			info := tc.inputInfo
+			result := applyDefault(tc.value, tc.defaultValue)
 
-			setDefaultMetadataValues(&info)
-
-			assert.Equal(t, tc.expectedInfo.SiteID, info.SiteID)
-			assert.Equal(t, tc.expectedInfo.OID, info.OID)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
 
 func (ts *ContextTestSuite) TestExtractRequestParams() {
 	tt := []struct {
-		name         string
-		request      any
-		expectedInfo telemetry.RequestInfo
+		name              string
+		request           any
+		expectedVendorKey string
+		expectedSubID     string
 	}{
 		{
 			name: "GIVEN GetRecommendationsRequest THEN VendorKey and SubID extracted",
@@ -287,10 +258,8 @@ func (ts *ContextTestSuite) TestExtractRequestParams() {
 				VendorKey: "test-vendor",
 				Subid:     "test-subid",
 			},
-			expectedInfo: telemetry.RequestInfo{
-				VendorKey: "test-vendor",
-				SubID:     "test-subid",
-			},
+			expectedVendorKey: "test-vendor",
+			expectedSubID:     "test-subid",
 		},
 		{
 			name: "GIVEN GetRecommendationsRequest with empty values THEN empty strings extracted",
@@ -298,26 +267,20 @@ func (ts *ContextTestSuite) TestExtractRequestParams() {
 				VendorKey: "",
 				Subid:     "",
 			},
-			expectedInfo: telemetry.RequestInfo{
-				VendorKey: "",
-				SubID:     "",
-			},
+			expectedVendorKey: "",
+			expectedSubID:     "",
 		},
 		{
-			name:    "GIVEN different request type THEN no extraction",
-			request: &struct{ SomeField string }{SomeField: "value"},
-			expectedInfo: telemetry.RequestInfo{
-				VendorKey: "",
-				SubID:     "",
-			},
+			name:              "GIVEN different request type THEN no extraction",
+			request:           &struct{ SomeField string }{SomeField: "value"},
+			expectedVendorKey: "",
+			expectedSubID:     "",
 		},
 		{
-			name:    "GIVEN nil request THEN no panic and empty values",
-			request: nil,
-			expectedInfo: telemetry.RequestInfo{
-				VendorKey: "",
-				SubID:     "",
-			},
+			name:              "GIVEN nil request THEN no panic and empty values",
+			request:           nil,
+			expectedVendorKey: "",
+			expectedSubID:     "",
 		},
 	}
 
@@ -325,12 +288,10 @@ func (ts *ContextTestSuite) TestExtractRequestParams() {
 		ts.T().Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			info := &telemetry.RequestInfo{}
+			vendorKey, subID := extractRequestParams(tc.request)
 
-			extractRequestParams(tc.request, info)
-
-			assert.Equal(t, tc.expectedInfo.VendorKey, info.VendorKey)
-			assert.Equal(t, tc.expectedInfo.SubID, info.SubID)
+			assert.Equal(t, tc.expectedVendorKey, vendorKey)
+			assert.Equal(t, tc.expectedSubID, subID)
 		})
 	}
 }
@@ -376,10 +337,9 @@ func (ts *ContextTestSuite) TestGetMethodName() {
 
 func (ts *ContextTestSuite) TestExtractTraceID() {
 	tt := []struct {
-		name           string
-		setupCtx       func() context.Context
-		expectTraceID  bool
-		expectedResult func(traceID trace.TraceID) string
+		name          string
+		setupCtx      func() context.Context
+		expectTraceID bool
 	}{
 		{
 			name: "GIVEN context with valid sampled trace THEN traceID extracted",
@@ -394,9 +354,6 @@ func (ts *ContextTestSuite) TestExtractTraceID() {
 				return trace.ContextWithSpanContext(context.Background(), spanContext)
 			},
 			expectTraceID: true,
-			expectedResult: func(traceID trace.TraceID) string {
-				return traceID.String()
-			},
 		},
 		{
 			name: "GIVEN context with non-sampled trace THEN traceID not extracted",
@@ -426,22 +383,21 @@ func (ts *ContextTestSuite) TestExtractTraceID() {
 			t.Parallel()
 
 			ctx := tc.setupCtx()
-			info := &telemetry.RequestInfo{}
 
-			extractTraceID(ctx, info)
+			traceID := extractTraceID(ctx)
 
 			if tc.expectTraceID {
-				assert.NotEmpty(t, info.TraceID)
+				assert.NotEmpty(t, traceID)
 				spanCtx := trace.SpanContextFromContext(ctx)
-				assert.Equal(t, spanCtx.TraceID().String(), info.TraceID)
+				assert.Equal(t, spanCtx.TraceID().String(), traceID)
 			} else {
-				assert.Empty(t, info.TraceID)
+				assert.Empty(t, traceID)
 			}
 		})
 	}
 }
 
-func (ts *ContextTestSuite) TestSetRequestInfo() {
+func (ts *ContextTestSuite) TestBuildRequestInfo() {
 	tt := []struct {
 		name         string
 		setupCtx     func() context.Context
@@ -498,9 +454,8 @@ func (ts *ContextTestSuite) TestSetRequestInfo() {
 
 			ctx := tc.setupCtx()
 
-			newCtx := setRequestInfo(ctx, "/vendorapi.VendorAPI/GetRecommendations", tc.request)
+			requestInfo := buildRequestInfo(ctx, "/vendorapi.VendorAPI/GetRecommendations", tc.request)
 
-			requestInfo := telemetry.RequestInfoFromContext(newCtx)
 			assert.Equal(t, tc.expectedInfo.MethodName, requestInfo.MethodName)
 			assert.Equal(t, tc.expectedInfo.SiteID, requestInfo.SiteID)
 			assert.Equal(t, tc.expectedInfo.OID, requestInfo.OID)
