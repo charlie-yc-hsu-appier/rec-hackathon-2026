@@ -24,6 +24,8 @@ import (
 	"rec-vendor-api/internal/telemetry"
 	"rec-vendor-api/internal/vendor"
 
+	grpc_request_info "rec-vendor-api/internal/middleware/grpc_request_info"
+
 	"github.com/gin-gonic/gin"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
@@ -54,13 +56,13 @@ import (
 //go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 var headerMatcher = map[string]struct{}{
-	"X-Requester":    {},
-	"X-Rec-Siteid":   {},
-	"X-Rec-Bidobjid": {},
-	"X-Rec-Oid":      {},
-	"X-Request-Id":   {},
-	"X-Request-Ts":   {},
-	"Traceparent":    {},
+	grpc_request_info.HeaderRequester:   {},
+	grpc_request_info.HeaderSiteID:      {},
+	grpc_request_info.HeaderBidObjID:    {},
+	grpc_request_info.HeaderOID:         {},
+	grpc_request_info.HeaderReqID:       {},
+	grpc_request_info.HeaderRequestTs:   {},
+	grpc_request_info.HeaderTraceparent: {},
 }
 
 func main() {
@@ -201,8 +203,9 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		)),
 		grpc.ChainUnaryInterceptor(
 			grpc_recovery.UnaryServerInterceptor(getRecoveryOpts()...),
-			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
 			middleware.ValidationUnaryInterceptor,
+			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
+			grpc_request_info.UnaryServerInterceptor(),
 		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
