@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"rec-vendor-api/internal/config"
+	"rec-vendor-api/internal/constants"
 	"rec-vendor-api/internal/controller"
 	logFormat "rec-vendor-api/internal/logformat"
 	"rec-vendor-api/internal/middleware"
@@ -24,18 +25,20 @@ import (
 	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
 	log "github.com/sirupsen/logrus"
-
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/metric/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
 
 	schema "github.com/plaxieappier/rec-schema/go/vendorapi"
@@ -185,13 +188,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		log.Fatalf("Failed to initialize grpc handler: %v", err)
 	}
 
-	recoveryFunc := func(p any) (err error) {
-		return status.Errorf(codes.Internal, "panic triggered: %v", p)
-	}
-	recoveryOpts := []grpc_recovery.Option{
-		grpc_recovery.WithRecoveryHandler(recoveryFunc),
-	}
-
 	// Trust all proxies to use X-Forwarded-For header
 	// since we do not know the client's IP address, we trust all proxies.
 	trustedPeers := []netip.Prefix{
@@ -200,8 +196,11 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 	}
 
 	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler(
+			getOtelOpts()...,
+		)),
 		grpc.ChainUnaryInterceptor(
-			grpc_recovery.UnaryServerInterceptor(recoveryOpts...),
+			grpc_recovery.UnaryServerInterceptor(getRecoveryOpts()...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
 			middleware.ValidationUnaryInterceptor,
 		),
@@ -212,7 +211,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc.ReadBufferSize(cfg.Grpc.ReadBufferSizeKb*1024),
 	)
 	schema.RegisterVendorAPIServer(grpcServer, handler)
-
 	reflection.Register(grpcServer)
 
 	go func() {
@@ -275,4 +273,26 @@ func initTracer(cfg tracekit.Config) func(context.Context) error {
 func jsonRecoveryHandler(ctx *gin.Context, recovered any) {
 	log.WithContext(ctx).WithField("stack", string(debug.Stack())).Error(fmt.Sprintf("%v", recovered))
 	ctx.AbortWithStatus(http.StatusInternalServerError)
+}
+
+func getOtelOpts() []otelgrpc.Option {
+	return []otelgrpc.Option{
+		otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
+			switch info.FullMethodName {
+			case constants.FullMethodHealthCheck:
+				return false
+			default:
+				return true
+			}
+		}),
+		otelgrpc.WithMeterProvider(noop.NewMeterProvider()), // disable meters since we collect metrics with prometheus
+	}
+}
+
+func getRecoveryOpts() []grpc_recovery.Option {
+	return []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(func(p any) (err error) {
+			return status.Errorf(codes.Internal, "panic triggered: %v", p)
+		}),
+	}
 }
