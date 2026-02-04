@@ -14,17 +14,17 @@ const (
 var (
 	histogramBucket = []float64{0.01, 0.03, 0.05, 0.07, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1}
 
-	Metrics = newExternalPromMetrics()
+	Metrics = NewPromMetrics()
 )
 
-type externalPromMetrics struct {
+type PromMetrics struct {
 	RestApiDurationSeconds *prometheus.HistogramVec
 	RestApiErrorTotal      *prometheus.CounterVec
 	RestApiAnomalyTotal    *prometheus.CounterVec
 }
 
-func newExternalPromMetrics() externalPromMetrics {
-	m := externalPromMetrics{}
+func NewPromMetrics() PromMetrics {
+	m := PromMetrics{}
 	m.RestApiDurationSeconds = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Subsystem: systemName,

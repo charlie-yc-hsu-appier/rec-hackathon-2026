@@ -25,13 +25,11 @@ import (
 	"rec-vendor-api/internal/vendor"
 
 	"github.com/gin-gonic/gin"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_realip "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/realip"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plaxieappier/rec-go-kit/logkit"
 	"github.com/plaxieappier/rec-go-kit/tracekit"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -56,13 +54,13 @@ import (
 //go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 var headerMatcher = map[string]struct{}{
-	"x-rec-siteid":   {},
-	"x-rec-oid":      {},
-	"x-rec-bidobjid": {},
-	"x-request-id":   {},
-	"x-request-ts":   {},
-	"x-requester":    {},
-	"traceparent":    {},
+	"X-Requester":    {},
+	"X-Rec-Siteid":   {},
+	"X-Rec-Bidobjid": {},
+	"X-Rec-Oid":      {},
+	"X-Request-Id":   {},
+	"X-Request-Ts":   {},
+	"Traceparent":    {},
 }
 
 func main() {
@@ -201,11 +199,11 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc.StatsHandler(otelgrpc.NewServerHandler(
 			getOtelOpts()...,
 		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+		grpc.ChainUnaryInterceptor(
 			grpc_recovery.UnaryServerInterceptor(getRecoveryOpts()...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
 			middleware.ValidationUnaryInterceptor,
-		)),
+		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge: cfg.Grpc.MaxConnectionAge,
 		}),
@@ -243,7 +241,6 @@ func initGatewayServer(grpcAddr string, gatewayAddr string) *http.Server {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/", gatewayMux)
-	mux.Handle("/metrics", promhttp.Handler())
 	gatewayServer := &http.Server{
 		Addr:    gatewayAddr,
 		Handler: mux,
@@ -282,8 +279,7 @@ func getOtelOpts() []otelgrpc.Option {
 	return []otelgrpc.Option{
 		otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
 			switch info.FullMethodName {
-			case
-				constants.FullMethodHealthCheck:
+			case constants.FullMethodHealthCheck:
 				return false
 			default:
 				return true
