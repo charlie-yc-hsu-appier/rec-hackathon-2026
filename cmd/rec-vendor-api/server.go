@@ -21,9 +21,6 @@ import (
 	"rec-vendor-api/internal/controller"
 	logFormat "rec-vendor-api/internal/logformat"
 	"rec-vendor-api/internal/middleware"
-	grpc_context "rec-vendor-api/internal/middleware/context"
-	grpc_logging "rec-vendor-api/internal/middleware/logging"
-	grpc_metrics "rec-vendor-api/internal/middleware/metrics"
 	"rec-vendor-api/internal/telemetry"
 	"rec-vendor-api/internal/vendor"
 
@@ -59,13 +56,13 @@ import (
 //go:generate swag init -d ../../ -g cmd/rec-vendor-api/server.go -o ../../docs --parseInternal --parseDependency
 
 var headerMatcher = map[string]struct{}{
-	grpc_context.HeaderRequester:   {},
-	grpc_context.HeaderSiteID:      {},
-	grpc_context.HeaderBidObjID:    {},
-	grpc_context.HeaderOID:         {},
-	grpc_context.HeaderReqID:       {},
-	grpc_context.HeaderRequestTs:   {},
-	grpc_context.HeaderTraceparent: {},
+	"x-rec-siteid":   {},
+	"x-rec-oid":      {},
+	"x-rec-bidobjid": {},
+	"x-request-id":   {},
+	"x-request-ts":   {},
+	"x-requester":    {},
+	"traceparent":    {},
 }
 
 func main() {
@@ -207,9 +204,6 @@ func initGRPCServer(cfg *config.Config, vendorRegistry map[string]vendor.Client,
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_recovery.UnaryServerInterceptor(getRecoveryOpts()...),
 			grpc_realip.UnaryServerInterceptor(trustedPeers, []string{grpc_realip.XForwardedFor}),
-			grpc_context.UnaryServerInterceptor(),
-			grpc_logging.UnaryServerInterceptor(),
-			grpc_metrics.UnaryServerInterceptor(&telemetry.GrpcMetrics),
 			middleware.ValidationUnaryInterceptor,
 		)),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
