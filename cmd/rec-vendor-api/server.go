@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"rec-vendor-api/internal/config"
+	"rec-vendor-api/internal/constants"
 	"rec-vendor-api/internal/controller"
 	logFormat "rec-vendor-api/internal/logformat"
 	"rec-vendor-api/internal/middleware"
@@ -40,7 +41,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/stats"
@@ -289,9 +289,7 @@ func getOtelOpts() []otelgrpc.Option {
 		otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
 			switch info.FullMethodName {
 			case
-				grpc_health_v1.Health_Check_FullMethodName,
-				grpc_health_v1.Health_Watch_FullMethodName,
-				grpc_health_v1.Health_List_FullMethodName:
+				constants.FullMethodHealthCheck:
 				return false
 			default:
 				return true

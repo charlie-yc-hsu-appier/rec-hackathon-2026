@@ -1,6 +1,8 @@
 package telemetry
 
 import (
+	"rec-vendor-api/internal/constants"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -31,9 +33,9 @@ var (
 
 	// TODO: to be removed after gin/nginx retirement, currently used to match gin labels
 	GrpcMethodToPathMapping = map[string]string{
-		"GetRecommendations": "/r/:vendor_key",
-		"GetVendors":         "/vendors",
-		"HealthCheck":        "/healthz",
+		constants.MethodGetRecommendations: "/r/:vendor_key",
+		constants.MethodGetVendors:         "/vendors",
+		constants.MethodHealthCheck:        "/healthz",
 	}
 
 	GrpcMetrics = newGrpcPromMetrics()
@@ -74,7 +76,7 @@ func GetPathFromMethodAndVendorKey(methodName, vendorKey string) string {
 	}
 
 	// For GetRecommendations, replace :vendor_key with actual value
-	if methodName == "GetRecommendations" && vendorKey != "" {
+	if methodName == constants.MethodGetRecommendations && vendorKey != "" {
 		return "/r/" + vendorKey
 	}
 

@@ -2,6 +2,7 @@ package logging
 
 import (
 	"context"
+	"rec-vendor-api/internal/constants"
 	"rec-vendor-api/internal/telemetry"
 
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
@@ -11,14 +12,10 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-const (
-	MethodGetRecommendations = "GetRecommendations"
-)
-
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		requestInfo := telemetry.RequestInfoFromContext(ctx)
-		if requestInfo.MethodName == MethodGetRecommendations {
+		if requestInfo.MethodName == constants.MethodGetRecommendations {
 			resp, err := handler(ctx, req)
 
 			code := grpc_logging.DefaultErrorToCode(err)
