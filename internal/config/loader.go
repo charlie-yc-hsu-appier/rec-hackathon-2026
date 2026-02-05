@@ -2,7 +2,9 @@ package config
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 
 	"path"
@@ -36,6 +38,11 @@ func Load(configPath string, cfg *Config) error {
 	// Unmarshal the configuration into the struct
 	if err := v.Unmarshal(cfg); err != nil {
 		return err
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(cfg); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
 	}
 
 	// Normalize HTTPMethod to uppercase for all vendors

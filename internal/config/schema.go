@@ -29,13 +29,13 @@ type PortConfig struct {
 type VendorConfig struct {
 	ProxyURL string        `mapstructure:"proxy_url"`
 	Timeout  time.Duration `mapstructure:"timeout"`
-	Vendors  []Vendor      `mapstructure:"vendors"`
+	Vendors  []Vendor      `mapstructure:"vendors" validate:"dive"`
 }
 
 type Vendor struct {
 	Name         string     `mapstructure:"name"`
 	WithProxy    bool       `mapstructure:"with_proxy"`
-	HTTPMethod   string     `mapstructure:"http_method"`
+	HTTPMethod   string     `mapstructure:"http_method" validate:"oneof=GET POST get post"`
 	AccessKey    string     `mapstructure:"access_key"`
 	SecretKey    string     `mapstructure:"secret_key"`
 	UserAgent    string     `mapstructure:"user_agent"`
