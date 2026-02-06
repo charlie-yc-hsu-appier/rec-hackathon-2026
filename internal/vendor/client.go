@@ -2,8 +2,13 @@ package vendor
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"rec-vendor-api/internal/config"
@@ -78,6 +83,8 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 		return nil, fmt.Errorf("unsupported HTTP method: %s (supported: GET, POST)", v.cfg.HTTPMethod)
 	}
 	if err != nil {
+		categorized := categorizeError(restResp, err)
+		telemetry.Metrics.RestApiAnomalyTotal.WithLabelValues(v.cfg.Name, requestInfo.SiteID, requestInfo.OID, categorized).Inc()
 		return nil, err
 	}
 
@@ -112,4 +119,29 @@ func (v *vendorClient) GetUserRecommendationItems(ctx context.Context, req Reque
 	}
 
 	return products, nil
+}
+
+func categorizeError(restResp *httpkit.Response, err error) string {
+	if err == nil {
+		return ""
+	}
+	if isTimeoutError(err) {
+		return "network timeout"
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
+		strings.Contains(err.Error(), "EOF") || strings.Contains(err.Error(), "connection reset") {
+		return "remote connection reset"
+	}
+	if restResp != nil {
+		return "invalid http status code: " + strconv.Itoa(restResp.StatusCode)
+	}
+	return "unknown network error"
+}
+
+func isTimeoutError(err error) bool {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }

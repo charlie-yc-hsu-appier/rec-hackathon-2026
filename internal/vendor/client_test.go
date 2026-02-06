@@ -166,3 +166,70 @@ func TestVendorClientTestSuite(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, &VendorClientTestSuite{})
 }
+
+func TestCategorizeError(t *testing.T) {
+	t.Parallel()
+
+	tt := []struct {
+		name     string
+		restResp *httpkit.Response
+		err      error
+		want     string
+	}{
+		{
+			name:     "GIVEN nil error THEN return empty string",
+			restResp: nil,
+			err:      nil,
+			want:     "",
+		},
+		{
+			name:     "GIVEN context deadline exceeded THEN return network timeout",
+			restResp: nil,
+			err:      context.DeadlineExceeded,
+			want:     "network timeout",
+		},
+		{
+			name:     "GIVEN context canceled THEN return network timeout",
+			restResp: nil,
+			err:      context.Canceled,
+			want:     "network timeout",
+		},
+		{
+			name:     "GIVEN io.EOF error THEN return remote connection reset",
+			restResp: nil,
+			err:      errors.New("Get \"xxx\": EOF"),
+			want:     "remote connection reset",
+		},
+		{
+			name:     "GIVEN connection reset error THEN return remote connection reset",
+			restResp: nil,
+			err:      errors.New("invalid status code, status: 502 Bad Gateway, resp body: upstream error: Post \"xxx\": read: connection reset by peer"),
+			want:     "remote connection reset",
+		},
+		{
+			name:     "GIVEN http response with 404 status THEN return invalid http status code",
+			restResp: &httpkit.Response{StatusCode: 404},
+			err:      errors.New("http error"),
+			want:     "invalid http status code: 404",
+		},
+		{
+			name:     "GIVEN http response with 500 status THEN return invalid http status code",
+			restResp: &httpkit.Response{StatusCode: 500},
+			err:      errors.New("http error"),
+			want:     "invalid http status code: 500",
+		},
+		{
+			name:     "GIVEN generic network error THEN return unknown network error",
+			restResp: nil,
+			err:      errors.New("some generic network error"),
+			want:     "unknown network error",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			got := categorizeError(tc.restResp, tc.err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
