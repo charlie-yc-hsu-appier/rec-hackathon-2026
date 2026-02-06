@@ -35,7 +35,7 @@ type VendorConfig struct {
 type Vendor struct {
 	Name         string     `mapstructure:"name"`
 	WithProxy    bool       `mapstructure:"with_proxy"`
-	HTTPMethod   string     `mapstructure:"http_method" validate:"oneof=GET POST get post"`
+	HTTPMethod   string     `mapstructure:"http_method" validate:"oneof=GET POST"`
 	AccessKey    string     `mapstructure:"access_key"`
 	SecretKey    string     `mapstructure:"secret_key"`
 	UserAgent    string     `mapstructure:"user_agent"`
