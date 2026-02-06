@@ -21,6 +21,13 @@ import (
 	"github.com/plaxieappier/rec-go-kit/httpkit"
 )
 
+const (
+	errNetworkTimeout        = "network timeout"
+	errRemoteConnectionReset = "remote connection reset"
+	errInvalidHTTPStatus     = "invalid http status: "
+	errUnknownNetworkError   = "unknown network error"
+)
+
 type vendorClient struct {
 	cfg                   config.Vendor
 	client                httpkit.Client
@@ -126,16 +133,16 @@ func categorizeError(restResp *httpkit.Response, err error) string {
 		return ""
 	}
 	if isTimeoutError(err) {
-		return "network timeout"
+		return errNetworkTimeout
 	}
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
 		strings.Contains(err.Error(), "EOF") || strings.Contains(err.Error(), "connection reset") {
-		return "remote connection reset"
+		return errRemoteConnectionReset
 	}
 	if restResp != nil {
-		return "invalid http status code: " + strconv.Itoa(restResp.StatusCode)
+		return errInvalidHTTPStatus + strconv.Itoa(restResp.StatusCode)
 	}
-	return "unknown network error"
+	return errUnknownNetworkError
 }
 
 func isTimeoutError(err error) bool {
