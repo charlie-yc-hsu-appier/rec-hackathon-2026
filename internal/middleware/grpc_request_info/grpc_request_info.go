@@ -63,10 +63,17 @@ func extractMetadataHeaders(ctx context.Context) (siteID, oid, bidObjID, reqID s
 		return "", "", "", ""
 	}
 
-	siteID = strings.Join(md.Get(HeaderSiteID), "")
-	oid = strings.Join(md.Get(HeaderOID), "")
-	bidObjID = strings.Join(md.Get(HeaderBidObjID), "")
-	reqID = strings.Join(md.Get(HeaderReqID), "")
+	getFirst := func(key string) string {
+		if values := md.Get(key); len(values) > 0 {
+			return values[0]
+		}
+		return ""
+	}
+
+	siteID = getFirst(HeaderSiteID)
+	oid = getFirst(HeaderOID)
+	bidObjID = getFirst(HeaderBidObjID)
+	reqID = getFirst(HeaderReqID)
 	return siteID, oid, bidObjID, reqID
 }
 
