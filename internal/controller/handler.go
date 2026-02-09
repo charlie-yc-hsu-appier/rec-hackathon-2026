@@ -134,10 +134,7 @@ func toProto(products []vendor.ProductInfo) (*schema.GetRecommendationsResponse,
 
 func getClientIP(ctx context.Context) string {
 	if realIP, ok := grpc_realip.FromContext(ctx); ok && realIP.IsValid() {
-		log.WithContext(ctx).Infof("Using real IP from peer: %s", realIP.String())
 		return realIP.String()
 	}
-
-	log.WithContext(ctx).Debugf("No client IP found in X-Forwarded-For or peer address")
 	return ""
 }

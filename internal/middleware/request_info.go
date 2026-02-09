@@ -1,3 +1,4 @@
+// TODO: to be removed after gin/nginx retirement
 package middleware
 
 import (

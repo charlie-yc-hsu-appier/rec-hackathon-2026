@@ -10,12 +10,13 @@ import (
 	"rec-vendor-api/internal/strategy/url"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 )
 
 // VendorsOnlyConfig represents a config with only vendors section
 type VendorsOnlyConfig struct {
-	Vendors []config.Vendor `mapstructure:"vendors"`
+	Vendors []config.Vendor `mapstructure:"vendors" validate:"dive"`
 }
 
 func main() {
@@ -81,6 +82,11 @@ func loadVendorsOnly(configPath string, cfg *VendorsOnlyConfig) error {
 	// Try to unmarshal vendors directly
 	if err := v.Unmarshal(cfg); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(cfg); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
 	}
 
 	return nil

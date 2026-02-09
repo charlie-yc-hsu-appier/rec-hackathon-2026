@@ -2,11 +2,12 @@ package config
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 
 	"path"
-	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/viper"
@@ -38,18 +39,12 @@ func Load(configPath string, cfg *Config) error {
 		return err
 	}
 
-	// Normalize HTTPMethod to uppercase for all vendors
-	normalizeVendorsHTTPMethod(cfg.VendorConfig.Vendors)
+	validate := validator.New()
+	if err := validate.Struct(cfg); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
+	}
 
 	return nil
-}
-
-func normalizeVendorsHTTPMethod(vendors []Vendor) {
-	for i := range vendors {
-		if vendors[i].HTTPMethod != "" {
-			vendors[i].HTTPMethod = strings.ToUpper(vendors[i].HTTPMethod)
-		}
-	}
 }
 
 func LoadConfigFromEnv(cfg any) {
