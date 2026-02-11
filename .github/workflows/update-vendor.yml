@@ -26,9 +26,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          use_vertex: 'true'
-          claude_args: |
-            --allowedTools BatchTool,Write,Edit,View,Glob,Grep,Bash,LS
           prompt: |
             You are an AI coding assistant.
 
@@ -81,7 +78,6 @@ jobs:
             }
 
             Please implement the requested changes in this repository.
-          show_full_output: true
 
       - name: Create Pull Request
         id: create_pr
@@ -93,13 +89,3 @@ jobs:
           body: |
             Auto-generated update. The vendor configuration has been updated.
           assignees: yvonne-feng-appier
-
-      # - name: Send Opsgenie Heartbeat on Success
-      #   if: success()
-      #   uses: fjogeleit/http-request-action@v1
-      #   with:
-      #     url: ${{ vars.OPSGENIE_HEARTBEAT_URL }}
-      #     method: GET
-      #     timeout: 1000 # ms
-      #     retry: 3
-      #     customHeaders: '{"Authorization": "GenieKey ${{ secrets.OPSGENIE_API_KEY }}"}'
