@@ -7,7 +7,7 @@ on:
 
 env:
   VENDOR_CONFIG_FILE_PATH: "config-template/vendors.yaml"
-  PR_BRANCH_NAME: "update-vendor"
+  PR_BRANCH_NAME: "update-vendor-base-action"
 
 jobs:
   update-vendor:
@@ -21,87 +21,76 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+      - name: Generate prompt file
         run: |
-          pip install anthropic pyyaml
+          cat > task-prompt.txt <<'EOF'
+          You are an AI coding assistant.
 
-      - name: Update vendor config with Claude
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          python << 'EOF'
-          import anthropic
-          import os
-          import json
+          You have been assigned to work on the following task:
 
-          client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
-
-          # Read current vendor config
-          with open('config-template/vendors.yaml', 'r') as f:
-              current_config = f.read()
-
-          new_vendor_config = {
-              "name": "linkmine",
-              "with_proxy": True,
-              "http_method": "GET",
-              "request": {
-                  "url": "https://testtttttt/reco/v2/",
-                  "queries": [
-                      {"key": "app_code", "value": "{subid}"},
-                      {"key": "device_id", "value": "{user_id_lower}"},
-                      {"key": "device_lmt", "value": "0"},
-                      {"key": "imp_imageSize", "value": "{width}x{height}"},
-                      {"key": "app_bundleId", "value": ""},
-                      {"key": "imp_adType", "value": "{adtype}"}
-                  ]
-              },
-              "tracking": {
-                  "url": "{product_url}",
-                  "queries": [
-                      {"key": "param1", "value": "{click_id_base64}"}
-                  ]
-              }
+          Read the current vendor configuration from config-template/vendors.yaml.
+          Find the vendor named "linkmine" and update its configuration to match the following JSON exactly:
+          {
+            "name": "linkmine",
+            "with_proxy": true,
+            "http_method": "GET",
+            "request": {
+              "url": "https://testtttttt/reco/v2/",
+              "queries": [
+                {
+                  "key": "app_code",
+                  "value": "{subid}"
+                },
+                {
+                  "key": "device_id",
+                  "value": "{user_id_lower}"
+                },
+                {
+                  "key": "device_lmt",
+                  "value": "0"
+                },
+                {
+                  "key": "imp_imageSize",
+                  "value": "{width}x{height}"
+                },
+                {
+                  "key": "app_bundleId",
+                  "value": ""
+                },
+                {
+                  "key": "imp_adType",
+                  "value": "{adtype}"
+                }
+              ]
+            },
+            "tracking": {
+              "url": "{product_url}",
+              "queries": [
+                {
+                  "key": "param1",
+                  "value": "{click_id_base64}"
+                }
+              ]
+            }
           }
 
-          prompt = f"""Here is the current vendor configuration file:
-          ```yaml
-                    {current_config}
-          ```
+          If the vendor "linkmine" doesn't exist, add it to the vendors list.
+          Preserve the YAML formatting and structure of the file.
 
-                    Please update this YAML file to include or update the vendor "linkmine" with the following configuration:
-          ```json
-                    {json.dumps(new_vendor_config, indent=2)}
-          ```
-
-          If the vendor "linkmine" already exists, update it. If it doesn't exist, add it to the vendors list.
-          Preserve the YAML formatting and structure. Return ONLY the complete updated YAML file content, nothing else."""
-
-          message = client.messages.create(
-              model="claude-sonnet-4-5-20250929",
-              max_tokens=4000,
-              messages=[
-                  {"role": "user", "content": prompt}
-              ]
-          )
-
-          updated_config = message.content[0].text
-          
-          # Remove markdown code blocks if present
-          if updated_config.startswith('```'):
-              lines = updated_config.split('\n')
-              updated_config = '\n'.join(lines[1:-1])
-
-          # Write updated config
-          with open('config-template/vendors.yaml', 'w') as f:
-              f.write(updated_config)
-
-          print("✅ Vendor configuration updated successfully")
+          IMPORTANT: After completing your changes, you MUST create a git commit.
+          If no changes are needed, do NOT create any commit.
           EOF
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action/base-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --allowedTools Write,Edit,View,Bash
+            --max-turns 10
+          prompt_file: task-prompt.txt
+          show_full_output: true
 
       - name: Create Pull Request
         id: create_pr
