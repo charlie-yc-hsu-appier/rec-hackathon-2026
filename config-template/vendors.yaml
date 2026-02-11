@@ -3,7 +3,7 @@ vendors:
     with_proxy: true
     http_method: GET
     request:
-      url: "https://api.linkmine.co.kr/coupang/reco/v2/"
+      url: "https://testtttttt/reco/v2/"
       queries:
         - key: app_code
           value: "{subid}"
