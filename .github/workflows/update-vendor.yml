@@ -12,67 +12,14 @@ env:
 jobs:
   update-vendor:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-
-      - name: Generate prompt file
-        run: |
-          cat > task-prompt.txt <<'EOF'
-          You are an AI coding assistant.
-
-          You have been assigned to work on the following task:
-
-          read current vendor configuration from config-template/vendors.yaml
-          compare and update the configuration according to the following json:
-          {
-            "name": "linkmine",
-            "with_proxy": true,
-            "http_method": "GET",
-            "request": {
-              "url": "https://testtttttt/reco/v2/",
-              "queries": [
-                {
-                  "key": "app_code",
-                  "value": "{subid}"
-                },
-                {
-                  "key": "device_id",
-                  "value": "{user_id_lower}"
-                },
-                {
-                  "key": "device_lmt",
-                  "value": "0"
-                },
-                {
-                  "key": "imp_imageSize",
-                  "value": "{width}x{height}"
-                },
-                {
-                  "key": "app_bundleId",
-                  "value": ""
-                },
-                {
-                  "key": "imp_adType",
-                  "value": "{adtype}"
-                }
-              ]
-            },
-            "tracking": {
-              "url": "{product_url}",
-              "queries": [
-                {
-                  "key": "param1",
-                  "value": "{click_id_base64}"
-                }
-              ]
-            }
-          }
-
-          Please implement the requested changes in this repository.
-
-          EOF
 
       - name: Run Claude Code
         id: claude
@@ -82,7 +29,58 @@ jobs:
           use_vertex: 'true'
           claude_args: |
             --allowedTools BatchTool,Write,Edit,View,Glob,Grep,Bash,LS
-          prompt_file: task-prompt.txt
+          prompt: |
+            You are an AI coding assistant.
+
+            You have been assigned to work on the following task:
+
+            read current vendor configuration from config-template/vendors.yaml
+            compare and update the configuration according to the following json:
+            {
+              "name": "linkmine",
+              "with_proxy": true,
+              "http_method": "GET",
+              "request": {
+                "url": "https://testtttttt/reco/v2/",
+                "queries": [
+                  {
+                    "key": "app_code",
+                    "value": "{subid}"
+                  },
+                  {
+                    "key": "device_id",
+                    "value": "{user_id_lower}"
+                  },
+                  {
+                    "key": "device_lmt",
+                    "value": "0"
+                  },
+                  {
+                    "key": "imp_imageSize",
+                    "value": "{width}x{height}"
+                  },
+                  {
+                    "key": "app_bundleId",
+                    "value": ""
+                  },
+                  {
+                    "key": "imp_adType",
+                    "value": "{adtype}"
+                  }
+                ]
+              },
+              "tracking": {
+                "url": "{product_url}",
+                "queries": [
+                  {
+                    "key": "param1",
+                    "value": "{click_id_base64}"
+                  }
+                ]
+              }
+            }
+
+            Please implement the requested changes in this repository.
           show_full_output: true
 
       - name: Create Pull Request
