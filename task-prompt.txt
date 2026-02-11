@@ -1,0 +1,55 @@
+You are an AI coding assistant.
+
+You have been assigned to work on the following task:
+
+Read the current vendor configuration from config-template/vendors.yaml.
+Find the vendor named "linkmine" and update its configuration to match the following JSON exactly:
+{
+  "name": "linkmine",
+  "with_proxy": true,
+  "http_method": "GET",
+  "request": {
+    "url": "https://testtttttt/reco/v2/",
+    "queries": [
+      {
+        "key": "app_code",
+        "value": "{subid}"
+      },
+      {
+        "key": "device_id",
+        "value": "{user_id_lower}"
+      },
+      {
+        "key": "device_lmt",
+        "value": "0"
+      },
+      {
+        "key": "imp_imageSize",
+        "value": "{width}x{height}"
+      },
+      {
+        "key": "app_bundleId",
+        "value": ""
+      },
+      {
+        "key": "imp_adType",
+        "value": "{adtype}"
+      }
+    ]
+  },
+  "tracking": {
+    "url": "{product_url}",
+    "queries": [
+      {
+        "key": "param1",
+        "value": "{click_id_base64}"
+      }
+    ]
+  }
+}
+
+If the vendor "linkmine" doesn't exist, add it to the vendors list.
+Preserve the YAML formatting and structure of the file.
+
+IMPORTANT: After completing your changes, you MUST create a git commit.
+If no changes are needed, do NOT create any commit.
