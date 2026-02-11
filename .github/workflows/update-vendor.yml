@@ -21,63 +21,87 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Run Claude Code
-        id: claude
-        uses: anthropics/claude-code-action@v1
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            You are an AI coding assistant.
+          python-version: '3.11'
 
-            You have been assigned to work on the following task:
+      - name: Install dependencies
+        run: |
+          pip install anthropic pyyaml
 
-            read current vendor configuration from config-template/vendors.yaml
-            compare and update the configuration according to the following json:
-            {
+      - name: Update vendor config with Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python << 'EOF'
+          import anthropic
+          import os
+          import json
+
+          client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+
+          # Read current vendor config
+          with open('config-template/vendors.yaml', 'r') as f:
+              current_config = f.read()
+
+          new_vendor_config = {
               "name": "linkmine",
-              "with_proxy": true,
+              "with_proxy": True,
               "http_method": "GET",
               "request": {
-                "url": "https://testtttttt/reco/v2/",
-                "queries": [
-                  {
-                    "key": "app_code",
-                    "value": "{subid}"
-                  },
-                  {
-                    "key": "device_id",
-                    "value": "{user_id_lower}"
-                  },
-                  {
-                    "key": "device_lmt",
-                    "value": "0"
-                  },
-                  {
-                    "key": "imp_imageSize",
-                    "value": "{width}x{height}"
-                  },
-                  {
-                    "key": "app_bundleId",
-                    "value": ""
-                  },
-                  {
-                    "key": "imp_adType",
-                    "value": "{adtype}"
-                  }
-                ]
+                  "url": "https://testtttttt/reco/v2/",
+                  "queries": [
+                      {"key": "app_code", "value": "{subid}"},
+                      {"key": "device_id", "value": "{user_id_lower}"},
+                      {"key": "device_lmt", "value": "0"},
+                      {"key": "imp_imageSize", "value": "{width}x{height}"},
+                      {"key": "app_bundleId", "value": ""},
+                      {"key": "imp_adType", "value": "{adtype}"}
+                  ]
               },
               "tracking": {
-                "url": "{product_url}",
-                "queries": [
-                  {
-                    "key": "param1",
-                    "value": "{click_id_base64}"
-                  }
-                ]
+                  "url": "{product_url}",
+                  "queries": [
+                      {"key": "param1", "value": "{click_id_base64}"}
+                  ]
               }
-            }
+          }
 
-            Please implement the requested changes in this repository.
+          prompt = f"""Here is the current vendor configuration file:
+          ```yaml
+                    {current_config}
+          ```
+
+                    Please update this YAML file to include or update the vendor "linkmine" with the following configuration:
+          ```json
+                    {json.dumps(new_vendor_config, indent=2)}
+          ```
+
+          If the vendor "linkmine" already exists, update it. If it doesn't exist, add it to the vendors list.
+          Preserve the YAML formatting and structure. Return ONLY the complete updated YAML file content, nothing else."""
+
+          message = client.messages.create(
+              model="claude-sonnet-4-5-20250929",
+              max_tokens=4000,
+              messages=[
+                  {"role": "user", "content": prompt}
+              ]
+          )
+
+          updated_config = message.content[0].text
+          
+          # Remove markdown code blocks if present
+          if updated_config.startswith('```'):
+              lines = updated_config.split('\n')
+              updated_config = '\n'.join(lines[1:-1])
+
+          # Write updated config
+          with open('config-template/vendors.yaml', 'w') as f:
+              f.write(updated_config)
+
+          print("✅ Vendor configuration updated successfully")
+          EOF
 
       - name: Create Pull Request
         id: create_pr
