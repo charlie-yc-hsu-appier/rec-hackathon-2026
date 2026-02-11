@@ -1,0 +1,104 @@
+name: Update Vendor
+
+on:
+  # schedule:
+  #   - cron: "0 2,8,14,20 * * *" # every day at 4AM, 10AM, 4PM, 10PM GMT+8
+  workflow_dispatch: # allows manual trigger
+
+env:
+  VENDOR_CONFIG_FILE_PATH: "config-template/vendors.yaml"
+  PR_BRANCH_NAME: "update-vendor-base-action"
+
+jobs:
+  update-vendor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Generate prompt file
+        run: |
+          cat > task-prompt.txt <<'EOF'
+          You are an AI coding assistant.
+
+          You have been assigned to work on the following task:
+
+          Read the current vendor configuration from config-template/vendors.yaml.
+          Find the vendor named "linkmine" and update its configuration to match the following JSON exactly:
+          {
+            "name": "linkmine",
+            "with_proxy": true,
+            "http_method": "GET",
+            "request": {
+              "url": "https://testtttttt/reco/v2/",
+              "queries": [
+                {
+                  "key": "app_code",
+                  "value": "{subid}"
+                },
+                {
+                  "key": "device_id",
+                  "value": "{user_id_lower}"
+                },
+                {
+                  "key": "device_lmt",
+                  "value": "0"
+                },
+                {
+                  "key": "imp_imageSize",
+                  "value": "{width}x{height}"
+                },
+                {
+                  "key": "app_bundleId",
+                  "value": ""
+                },
+                {
+                  "key": "imp_adType",
+                  "value": "{adtype}"
+                }
+              ]
+            },
+            "tracking": {
+              "url": "{product_url}",
+              "queries": [
+                {
+                  "key": "param1",
+                  "value": "{click_id_base64}"
+                }
+              ]
+            }
+          }
+
+          If the vendor "linkmine" doesn't exist, add it to the vendors list.
+          Preserve the YAML formatting and structure of the file.
+
+          IMPORTANT: After completing your changes, you MUST create a git commit.
+          If no changes are needed, do NOT create any commit.
+          EOF
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action/base-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --allowedTools Write,Edit,View,Bash
+            --max-turns 10
+          prompt_file: task-prompt.txt
+          show_full_output: true
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: update vendor config"
+          branch: ${{ env.PR_BRANCH_NAME }}
+          title: "[GitHub Action] Update Vendor Config"
+          body: |
+            Auto-generated update. The vendor configuration has been updated.
+          assignees: yvonne-feng-appier
