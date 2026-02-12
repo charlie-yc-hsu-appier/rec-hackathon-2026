@@ -1,0 +1,239 @@
+# Issue form → parse vendor JSON + AI provider → build prompt from .github/prompts/vendor-onboard-prompt.md
+# → run Gemini or Claude (chosen in issue) → create-pull-request
+name: Update Vendor
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number (required for manual run)"
+        required: true
+        type: number
+      base_branch:
+        description: "Base branch for the PR"
+        required: false
+        type: string
+        default: "main"
+      ai_provider:
+        description: "Override AI provider (default from issue: Gemini or Claude)"
+        required: false
+        type: choice
+        options:
+          - Gemini
+          - Claude
+        default: Gemini
+      timeout_minutes:
+        description: "Job timeout (minutes)"
+        required: false
+        type: number
+        default: 15
+  issues:
+    types:
+      - opened
+      - edited
+
+permissions:
+  issues: read
+  contents: write
+  pull-requests: write
+  id-token: write
+
+env:
+  VENDOR_CONFIG_FILE_PATH: "config-template/vendors.yaml"
+
+jobs:
+  update-vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(format('{0}', github.event.inputs.timeout_minutes || 15)) }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+
+      - name: Resolve issue number and get issue
+        id: get_issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.inputs?.issue_number ?? context.payload.issue?.number;
+            if (!issueNumber) {
+              core.setFailed('Missing issue number (provide it for workflow_dispatch or trigger from an issue).');
+              return;
+            }
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number(issueNumber),
+            });
+            const title = (issue.title || '').replace(/"/g, "'").replace(/`/g, '\\`');
+            const body = (issue.body || '').replace(/"/g, "'").replace(/`/g, '\\`');
+            const kebabCase = (str) => String(str).toLowerCase().trim()
+              .replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '');
+            const branchName = 'feature/vendor-' + (kebabCase(issue.title) || 'vendor-onboard');
+            core.setOutput('issue_number', String(issue.number));
+            core.setOutput('title', title);
+            core.setOutput('body', body);
+            core.setOutput('branch_name', branchName);
+            return { title, body, issue_number: issue.number, branch_name: branchName };
+
+      - name: Parse issue body to vendor JSON and AI provider
+        id: parse
+        env:
+          ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
+          OVERRIDE_AI: ${{ github.event.inputs.ai_provider }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const bodyContent = process.env.ISSUE_BODY || '';
+            const overrideAi = (process.env.OVERRIDE_AI || '').trim().toLowerCase();
+            const parseBody = (text) => {
+              const sections = {};
+              const lines = (text || '').split(/\r?\n/);
+              let currentLabel = null;
+              let currentLines = [];
+              for (const line of lines) {
+                const match = line.match(/^###\s+(.+)$/);
+                if (match) {
+                  if (currentLabel !== null) sections[currentLabel] = currentLines.join('\n').trim();
+                  currentLabel = match[1].trim();
+                  currentLines = [];
+                } else if (currentLabel !== null) currentLines.push(line);
+              }
+              if (currentLabel !== null) sections[currentLabel] = currentLines.join('\n').trim();
+              return sections;
+            };
+            const isNoResponse = (v) => {
+              if (!v || typeof v !== 'string') return true;
+              const s = v.trim().replace(/^[_*]+|[_*]+$/g, '').trim().toLowerCase();
+              return s === '' || s === 'no response';
+            };
+            const parseQueryLines = (str) => {
+              if (!str || typeof str !== 'string' || isNoResponse(str)) return [];
+              return str.split(/\r?\n/).map(s => s.trim()).filter(line => line && !isNoResponse(line))
+                .map(line => {
+                  const colonIdx = line.indexOf(':');
+                  const eqIdx = line.indexOf('=');
+                  let key, value;
+                  if (colonIdx >= 0 && (eqIdx < 0 || colonIdx <= eqIdx)) {
+                    key = line.slice(0, colonIdx).trim();
+                    value = line.slice(colonIdx + 1).trim();
+                  } else if (eqIdx >= 0) {
+                    key = line.slice(0, eqIdx).trim();
+                    value = line.slice(eqIdx + 1).trim();
+                  } else return null;
+                  if (isNoResponse(key) || isNoResponse(value)) return null;
+                  return key ? { key, value: value || '' } : null;
+                }).filter(Boolean);
+            };
+            const raw = parseBody(bodyContent);
+            const get = (label) => (raw[label] || '').trim();
+            const name = get('Vendor name');
+            const http_method = (get('HTTP method') || 'GET').toUpperCase();
+            if (http_method !== 'GET' && http_method !== 'POST') {
+              core.setFailed(`Invalid http_method: ${http_method}. Must be GET or POST.`);
+              return;
+            }
+            const withProxyRaw = get('With proxy');
+            const with_proxy = (withProxyRaw && withProxyRaw.toLowerCase() === 'false') ? false : true;
+            const request_url = get('Request URL');
+            const tracking_url = get('Tracking URL');
+            const request_queries = parseQueryLines(get('Request queries'));
+            const tracking_queries = parseQueryLines(get('Tracking queries'));
+            const user_agent = get('User-Agent');
+            const content_type = get('Content-Type');
+            if (!name || !request_url || !tracking_url) {
+              core.setFailed('Missing required fields: Vendor name, Request URL, or Tracking URL.');
+              return;
+            }
+            const vendor = {
+              name, with_proxy, http_method,
+              request: { url: request_url, queries: request_queries },
+              tracking: { url: tracking_url, queries: tracking_queries },
+            };
+            if (!isNoResponse(user_agent)) vendor.user_agent = user_agent;
+            if (!isNoResponse(content_type)) vendor.content_type = content_type;
+            core.setOutput('vendor_json', JSON.stringify(vendor, null, 2));
+
+            const aiFromIssue = (get('AI provider') || '').trim().toLowerCase();
+            const aiProvider = overrideAi === 'claude' || overrideAi === 'gemini'
+              ? overrideAi
+              : (aiFromIssue === 'claude' ? 'claude' : 'gemini');
+            core.setOutput('ai_provider', aiProvider);
+
+      - name: Build prompt (predefined prompt + issue data)
+        id: create_prompt
+        env:
+          VENDOR_JSON: ${{ steps.parse.outputs.vendor_json }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const ws = process.env.GITHUB_WORKSPACE || process.cwd();
+            const promptPath = path.join(ws, '.github/prompts/vendor-onboard-prompt.md');
+            const outPath = path.join(ws, 'vendor-prompt-sent.txt');
+            if (!fs.existsSync(promptPath)) {
+              core.setFailed('Predefined prompt not found: .github/prompts/vendor-onboard-prompt.md');
+              return;
+            }
+            const template = fs.readFileSync(promptPath, 'utf8');
+            const vendorJson = process.env.VENDOR_JSON || '{}';
+            const prompt = template.replace(/\{\{VENDOR_JSON\}\}/g, vendorJson);
+            fs.writeFileSync(outPath, prompt, 'utf8');
+            core.setOutput('prompt', prompt);
+
+      - name: Set prompt output for run-gemini-cli
+        id: prompt_output
+        if: steps.parse.outputs.ai_provider == 'gemini'
+        run: |
+          echo "prompt<<EOF" >> "$GITHUB_OUTPUT"
+          cat vendor-prompt-sent.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Upload prompt to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendor-prompt
+          path: vendor-prompt-sent.txt
+
+      - name: Run Gemini CLI
+        id: run_gemini
+        if: steps.parse.outputs.ai_provider == 'gemini'
+        uses: google-github-actions/run-gemini-cli@v0
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: ${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
+          prompt: ${{ steps.prompt_output.outputs.prompt }}
+          upload_artifacts: 'true'
+
+      - name: Run Claude Code
+        id: run_claude
+        if: steps.parse.outputs.ai_provider == 'claude'
+        uses: anthropics/claude-code-action/base-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --allowedTools Write,Edit,View,Bash
+            --max-turns 10
+          prompt_file: vendor-prompt-sent.txt
+          show_full_output: true
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN || github.token }}
+          commit-message: "chore(vendors): add or update vendor from issue"
+          branch: ${{ steps.get_issue.outputs.branch_name }}
+          base: ${{ github.event.inputs.base_branch || 'main' }}
+          title: "[Vendor] ${{ steps.get_issue.outputs.title }}"
+          body: |
+            Auto-generated by Update Vendor workflow (${{ steps.parse.outputs.ai_provider }}).
+
+            Fixes #${{ steps.get_issue.outputs.issue_number }}
