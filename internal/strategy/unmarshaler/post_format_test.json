@@ -1,0 +1,13 @@
+{
+  "rCode": "200",
+  "rMessage": "OK",
+  "data": {
+    "result": [
+      {
+        "productId": 12345,
+        "productUrl": "http://example.com/product",
+        "productImage": "http://example.com/image.jpg"
+      }
+    ]
+  }
+}
