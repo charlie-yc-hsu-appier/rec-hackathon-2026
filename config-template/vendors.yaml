@@ -250,18 +250,28 @@ vendors:
           value: "{click_id_base64}"
         - key: adid
           value: "{user_id_case_by_os}"
-  - name: binalab
-    with_proxy: true
-    http_method: GET
-    request:
-      url: "https://x8.binalabapi.com/Binal/productL.php"
-      queries:
-        - key: adid
-          value: "{user_id_lower}"
-        - key: puid
-          value: "{click_id_base64}"
-        - key: imgSize
-          value: "{width}x{height}"
-    tracking:
-      url: "{product_url}"
-      queries: []
+    - name: binalab
+      with_proxy: true
+      http_method: GET
+      request:
+        url: "https://x8.binalabapi.com/Binal/productL.php"
+        queries:
+          - key: adid
+            value: "{user_id_lower}"
+          - key: puid
+            value: "{click_id_base64}"
+          - key: imgSize
+            value: "{width}x{height}"
+      tracking:
+        url: "{product_url}"
+        queries: []
+    - name: vendor_post
+      with_proxy: true
+      http_method: POST
+      request:
+        url: "http://test"
+        queries: []
+      tracking:
+        url: "{product_url}"
+        queries: []
+  
