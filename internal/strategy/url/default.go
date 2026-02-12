@@ -129,6 +129,14 @@ func (s *Default) GetMacroValue(macro string, params Params) (string, error) {
 		return params.Latitude, nil
 	case "{longitude}":
 		return params.Longitude, nil
+	case "{width>x<height}":
+		if params.ImgWidth == 0 {
+			return "", errors.BadRequestErrorf("ImgWidth not provided")
+		}
+		if params.ImgHeight == 0 {
+			return "", errors.BadRequestErrorf("ImgHeight not provided")
+		}
+		return strconv.Itoa(params.ImgWidth) + "x" + strconv.Itoa(params.ImgHeight), nil
 	default:
 		return "", errors.NewUnknownMacroError(macro)
 	}
