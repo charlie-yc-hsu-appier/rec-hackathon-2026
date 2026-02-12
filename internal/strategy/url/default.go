@@ -77,6 +77,11 @@ func (s *Default) GetMacroValue(macro string, params Params) (string, error) {
 			return "", errors.BadRequestErrorf("UserID not provided")
 		}
 		return strings.ToLower(params.UserID), nil
+	case "{user_id_to_lower}":
+		if params.UserID == "" {
+			return "", errors.BadRequestErrorf("UserID not provided")
+		}
+		return strings.ToLower(params.UserID), nil
 	case "{user_id_case_by_os}":
 		if params.UserID == "" {
 			return "", errors.BadRequestErrorf("UserID not provided")
