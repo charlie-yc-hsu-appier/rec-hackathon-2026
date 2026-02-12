@@ -155,12 +155,25 @@ jobs:
               core.setFailed('Missing required fields: Vendor name, Request URL, or Tracking URL.');
               return;
             }
+            const parseOptionalJson = (raw) => {
+              if (!raw || typeof raw !== 'string') return null;
+              const s = raw.trim();
+              if (!s) return null;
+              try {
+                const p = JSON.parse(s);
+                if (p && typeof p === 'object') return p;
+              } catch (_) {}
+              try {
+                const normalized = s.replace(/'/g, '"');
+                const p = JSON.parse(normalized);
+                if (p && typeof p === 'object') return p;
+              } catch (_) {}
+              return { _raw: s };
+            };
             const request = { url: request_url, queries: request_queries };
             if (!isNoResponse(requestBodyRaw)) {
-              try {
-                const parsed = JSON.parse(requestBodyRaw);
-                if (parsed && typeof parsed === 'object') request.body = parsed;
-              } catch (_) {}
+              const body = parseOptionalJson(requestBodyRaw);
+              if (body) request.body = body;
             }
             const vendor = {
               name, with_proxy, http_method,
@@ -168,10 +181,8 @@ jobs:
               tracking: { url: tracking_url, queries: tracking_queries },
             };
             if (!isNoResponse(responseBodyRaw)) {
-              try {
-                const parsed = JSON.parse(responseBodyRaw);
-                if (parsed && typeof parsed === 'object') vendor.response_body = parsed;
-              } catch (_) {}
+              const respBody = parseOptionalJson(responseBodyRaw);
+              if (respBody) vendor.response_body = respBody;
             }
             const headers = {};
             if (!isNoResponse(user_agent)) headers.user_agent = user_agent;
