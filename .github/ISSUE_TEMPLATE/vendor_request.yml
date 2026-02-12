@@ -78,6 +78,15 @@ body:
     validations:
       required: false
 
+  - type: textarea
+    id: request-body
+    attributes:
+      label: Request body (JSON)
+      description: "Optional. JSON body for POST requests. Must be valid JSON (e.g. {\"key\": \"value\"}). Leave empty for GET or no body."
+      placeholder: '{"key": "value"}'
+    validations:
+      required: false
+
   - type: input
     id: tracking-url
     attributes:
@@ -93,6 +102,15 @@ body:
       label: Tracking queries
       description: 'One key-value pair per line, e.g. subparam: "{click_id_base64}"'
       placeholder: 'subparam: {click_id_base64}'
+    validations:
+      required: false
+
+  - type: textarea
+    id: response-body
+    attributes:
+      label: Response body (JSON)
+      description: "Optional. JSON schema or example for response body. Must be valid JSON. Leave empty if not needed."
+      placeholder: '{}'
     validations:
       required: false
 

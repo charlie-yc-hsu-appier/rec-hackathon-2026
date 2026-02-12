@@ -149,17 +149,34 @@ jobs:
             const tracking_queries = parseQueryLines(get('Tracking queries'));
             const user_agent = get('User-Agent');
             const content_type = get('Content-Type');
+            const requestBodyRaw = get('Request body (JSON)');
+            const responseBodyRaw = get('Response body (JSON)');
             if (!name || !request_url || !tracking_url) {
               core.setFailed('Missing required fields: Vendor name, Request URL, or Tracking URL.');
               return;
             }
+            const request = { url: request_url, queries: request_queries };
+            if (!isNoResponse(requestBodyRaw)) {
+              try {
+                const parsed = JSON.parse(requestBodyRaw);
+                if (parsed && typeof parsed === 'object') request.body = parsed;
+              } catch (_) {}
+            }
             const vendor = {
               name, with_proxy, http_method,
-              request: { url: request_url, queries: request_queries },
+              request,
               tracking: { url: tracking_url, queries: tracking_queries },
             };
-            if (!isNoResponse(user_agent)) vendor.user_agent = user_agent;
-            if (!isNoResponse(content_type)) vendor.content_type = content_type;
+            if (!isNoResponse(responseBodyRaw)) {
+              try {
+                const parsed = JSON.parse(responseBodyRaw);
+                if (parsed && typeof parsed === 'object') vendor.response_body = parsed;
+              } catch (_) {}
+            }
+            const headers = {};
+            if (!isNoResponse(user_agent)) headers.user_agent = user_agent;
+            if (!isNoResponse(content_type)) headers.content_type = content_type;
+            if (Object.keys(headers).length > 0) vendor.headers = headers;
             core.setOutput('vendor_json', JSON.stringify(vendor, null, 2));
 
             const aiFromIssue = (get('AI provider') || '').trim().toLowerCase();
