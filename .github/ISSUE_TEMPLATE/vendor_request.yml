@@ -16,7 +16,7 @@ body:
       options:
         - Gemini
         - Claude
-      default: Gemini
+      default: 0
     validations:
       required: true
 
