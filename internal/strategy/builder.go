@@ -31,7 +31,7 @@ func BuildRequest(v config.Vendor) url.Strategy {
 func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 	switch v.Name {
 	case "adpopcorn":
-		return &unmarshaler.WrappedCoupangPartner{}
+		return &unmarshaler.Adpopcorn{}
 	case "adpacker":
 		return &unmarshaler.Adpacker{}
 	case "keeta":
@@ -56,6 +56,8 @@ func BuildBody(v config.Vendor) body.Strategy {
 	switch v.Name {
 	case "replace":
 		return &body.Replace{}
+	case "adpopcorn":
+		return &body.Adpopcorn{}
 	default:
 		return &body.NoBody{}
 	}
