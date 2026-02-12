@@ -18,5 +18,3 @@ Read the current repo and find if there exists unmarshaler that already support 
 Update the request header if there is any change. Create a file for header strategy if needed and assign it to the vendor in function BuildHeader of file {{BUILDER_FILE_PATH}}.
 
 Create or update the unit tests for the above changes. If there is just config update, no need to create or update unit tests.
-          
-Finally, output the updated vendor configuration file content only. Make sure the output is a valid YAML content.
