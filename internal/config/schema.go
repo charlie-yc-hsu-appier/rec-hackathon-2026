@@ -46,7 +46,6 @@ type Vendor struct {
 	SCaSecret    string     `mapstructure:"s_ca_secret"`
 	Request      URLPattern `mapstructure:"request"`
 	Tracking     URLPattern `mapstructure:"tracking"`
-	ContentType  string     `mapstructure:"content_type"`
 }
 
 type URLPattern struct {

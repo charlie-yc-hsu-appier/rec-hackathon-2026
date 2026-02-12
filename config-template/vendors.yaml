@@ -160,12 +160,17 @@ vendors:
       queries: []
   - name: adpopcorn
     with_proxy: true
-    http_method: POST
+    http_method: GET
     user_agent: tzyu.net
-    content_type: application/json
     request:
-      url: "https://ssp-ext-proxy.adpopcorn.com/coupang/reco/v2"
-      queries: []
+      url: "https://ssp-ext-proxy.adpopcorn.com/coupang/reco"
+      queries:
+        - key: identifier
+          value: "{user_id_lower}"
+        - key: subId
+          value: "{subid}"
+        - key: imageSize
+          value: "{width}x{height}"
     tracking:
       url: "{product_url}"
       queries:
