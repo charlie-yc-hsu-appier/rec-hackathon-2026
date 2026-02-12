@@ -44,6 +44,19 @@ func TestDefault(t *testing.T) {
 			wantURL: "https://example.com/image?app_bundleId=com.example.app&click_id=dGVzdC1pZA&imp_adType=1&partner_id=kakao_kr&site_domain=http%3A%2F%2Fexample.com%2Fquery%3Fparam1%3D123%26param2%3D456&size=200x100&user=testuser&user_case_android=testuser",
 		},
 		{
+			name: "GIVEN user_id_to_lower macro THEN return the expected lowercase user ID",
+			urlPattern: config.URLPattern{
+				URL: "https://example.com/image",
+				Queries: []config.Query{
+					{Key: "user", Value: "{user_id_to_lower}"},
+				},
+			},
+			params: Params{
+				UserID: "TestUser",
+			},
+			wantURL: "https://example.com/image?user=testuser",
+		},
+		{
 			name: "GIVEN missing placeholders THEN return the expected URL",
 			urlPattern: config.URLPattern{
 				URL: "https://example.com/image/user/abc",

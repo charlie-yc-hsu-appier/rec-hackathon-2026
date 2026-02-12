@@ -72,7 +72,7 @@ func (s *Default) GetMacroValue(macro string, params Params) (string, error) {
 			return "", errors.BadRequestErrorf("ImgHeight not provided")
 		}
 		return strconv.Itoa(params.ImgHeight), nil
-	case "{user_id_lower}":
+	case "{user_id_lower}", "{user_id_to_lower}":
 		if params.UserID == "" {
 			return "", errors.BadRequestErrorf("UserID not provided")
 		}
