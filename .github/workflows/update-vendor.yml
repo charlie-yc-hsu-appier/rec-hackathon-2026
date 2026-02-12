@@ -7,7 +7,8 @@ on:
 
 env:
   VENDOR_CONFIG_FILE_PATH: "config-template/vendors.yaml"
-  PR_BRANCH_NAME: "update-vendor-post-method-2"
+  PR_BRANCH_NAME: "github-action/update-vendor"
+  BUILDER_FILE_PATH: "internal/strategy/builder.go"
 
 jobs:
   update-vendor:
@@ -21,64 +22,40 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Generate prompt file
+      - name: Set Up Inputs
         run: |
-          cat > task-prompt.txt <<'EOF'
+          VENDOR_DATA='{"name":"linkmine","with_proxy":true,"http_method":"GET","request":{"url":"https://test","queries":[{"key":"app_code","value":"{subid}"},{"key":"device_id","value":"{user_id_lower}"}]},"tracking":{"url":"{product_url}","queries":[{"key":"subparam","value":"{click_id_base64}"}]}}'
+          echo "VENDOR_DATA=$VENDOR_DATA" >> $GITHUB_ENV
+
+      - name: Define Vendor Name
+        run: |
+          VENDOR_NAME=${{ fromJson(env.VENDOR_DATA).name }}
+          echo "VENDOR_NAME=$VENDOR_NAME" >> $GITHUB_ENV
+
+      - name: Generate Prompt File
+        run: |
+          cat > task-prompt.txt <<EOF
           You are an AI coding assistant.
-          Read the current code base and modify the vendor "adpopcorn":
 
-          the request method changes from GET to POST
+          Read the current vendor configuration from ${{ env.VENDOR_CONFIG_FILE_PATH }}
+          Find the vendor named "${{ env.VENDOR_NAME }}" and update its configuration to match the following JSON: 
+          ${{ fromJson(env.VENDOR_DATA) }}
 
-          the request header is:
-          ```{'Content-Type': 'application/json', 'User-Agent': 'tzyu.net'}```
-
-          the request url is:
-          ```https://ssp-ext-proxy.adpopcorn.com/coupang/reco/v2```
-
-          the POST request body is
-          ```
-          {
-              "app": {
-                  "bundleId": ""
-              },
-              "device": {
-                  "id": <user_id_lower>,
-                  "lmt": 0
-              },
-              "imp": {
-                  "imageSize": <width>x<height>
-              },
-              "affiliate": {
-                  "subId": <subid>
-              }
-          }
-          ```
-
-          the response body will be:
-          ```
-          {
-              "rCode": string,
-              "rMessage": string,
-              "data": {
-                  "result": [
-                      {
-                          "productId": int,
-                          "productUrl": string,
-                          "productImage": string
-                      }
-                  ]
-              }
-          }
-          ```
-
-          Modify the config-template/vendors.yaml for the configuration change. Note that the required fields of the vendor configuration are "name", "with_proxy", "http_method", "request.url", "request.queries" and "tracking.url". If any of these fields are not applicable, still keep them in the config with empty value.
-
-          Create a file to structure the POST body and name it as adpopcorn.go if it does not exist. Assign this body strategy to vendor "adpopcorn" in function `BuildBody` of file internal/strategy/builder.go.
-
-          Read the current repo and find if there exists unmarshaler that already support parsing the above body, if no, create it. Assgin this unmarshaler to vendor "adpopcorn" in function `BuildUnmarshaler` of file internal/strategy/builder.go.
-
+          Note that the required fields of the vendor configuration are "name", "with_proxy", "http_method", "request.url", "request.queries" and "tracking.url". If any of these fields are not applicable, still keep them in the config with empty value.
+          Note that "body", "response_body" and "headers" are not required fields in the vendor configuration, but they are important for the implementation. 
+          
+          If the request method is GET, you can ignore the "body". If there are new fields in queries, check if we can support the macro for the value, if not, add the support in the code base.
+          
+          If the request method is POST, you need to implement or update the "body" based on the provided JSON.
+          Create a file to structure the POST body and name it as ${{ env.VENDOR_NAME }}.go, if it does not exist. 
+          Assign this body strategy to vendor "${{ env.VENDOR_NAME }}" in function BuildBody of file ${{ env.BUILDER_FILE_PATH }}.
+          
+          Read the current repo and find if there exists unmarshaler that already support parsing the above response_body, if no, create it. Assign this unmarshaler to vendor "${{ env.VENDOR_NAME }}" in function BuildUnmarshaler of file ${{ env.BUILDER_FILE_PATH }}.
+          
+          Update the request header if there is any change. Create a file for header strategy if needed and assign it to the vendor in function BuildHeader of file ${{ env.BUILDER_FILE_PATH }}.
+          
           Create or update the unit tests for the above changes.
-
+          
           EOF
 
       - name: Run Claude Code
@@ -92,7 +69,7 @@ jobs:
           prompt_file: task-prompt.txt
           show_full_output: true
 
-      - name: Remove prompt file
+      - name: Remove Temporary Files
         run: rm task-prompt.txt
 
       - name: Create Pull Request
