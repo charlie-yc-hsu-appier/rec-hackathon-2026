@@ -92,6 +92,9 @@ jobs:
           prompt_file: task-prompt.txt
           show_full_output: true
 
+      - name: Remove prompt file
+        run: rm task-prompt.txt
+
       - name: Create Pull Request
         id: create_pr
         uses: peter-evans/create-pull-request@v6
