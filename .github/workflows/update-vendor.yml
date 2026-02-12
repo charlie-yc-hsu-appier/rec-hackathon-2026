@@ -7,7 +7,7 @@ on:
 
 env:
   VENDOR_CONFIG_FILE_PATH: "config-template/vendors.yaml"
-  PR_BRANCH_NAME: "update-vendor-post-method"
+  PR_BRANCH_NAME: "update-vendor-post-method-2"
 
 jobs:
   update-vendor:
@@ -71,7 +71,7 @@ jobs:
           }
           ```
 
-          Modify the config-template/vendors.yaml for the configuration change.
+          Modify the config-template/vendors.yaml for the configuration change. Note that the required fields of the vendor configuration are "name", "with_proxy", "http_method", "request.url", "request.queries" and "tracking.url". If any of these fields are not applicable, still keep them in the config with empty value.
 
           Create a file to structure the POST body and name it as adpopcorn.go if it does not exist. Assign this body strategy to vendor "adpopcorn" in function `BuildBody` of file internal/strategy/builder.go.
 
