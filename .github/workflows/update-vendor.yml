@@ -157,18 +157,25 @@ jobs:
             }
             const parseOptionalJson = (raw) => {
               if (!raw || typeof raw !== 'string') return null;
-              const s = raw.trim();
+              let s = raw.trim();
               if (!s) return null;
               try {
                 const p = JSON.parse(s);
                 if (p && typeof p === 'object') return p;
               } catch (_) {}
+              s = s.replace(/'/g, '"');
               try {
-                const normalized = s.replace(/'/g, '"');
-                const p = JSON.parse(normalized);
+                const p = JSON.parse(s);
                 if (p && typeof p === 'object') return p;
               } catch (_) {}
-              return { _raw: s };
+              const quote = (v) => '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+              s = s.replace(/:\s*((?:\{(?!\s*")[^}]*\}(?:[^{,}\]]|\{[^}]*\})*)+)\s*([,}\]])/g, (_, val, end) => ':' + quote(val.trim()) + end);
+              s = s.replace(/:\s*((?!(?:true|false|null)\b)[a-zA-Z_][a-zA-Z0-9_]*)\s*([,}\]])/g, (_, val, end) => ':' + quote(val) + end);
+              try {
+                const p = JSON.parse(s);
+                if (p && typeof p === 'object') return p;
+              } catch (_) {}
+              return { _raw: raw.trim() };
             };
             const request = { url: request_url, queries: request_queries };
             if (!isNoResponse(requestBodyRaw)) {
