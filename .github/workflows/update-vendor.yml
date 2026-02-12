@@ -39,7 +39,7 @@ jobs:
 
           Read the current vendor configuration from ${{ env.VENDOR_CONFIG_FILE_PATH }}
           Find the vendor named "${{ env.VENDOR_NAME }}" and update its configuration to match the following JSON: 
-          ${{ fromJson(env.VENDOR_DATA) }}
+          ${{ env.VENDOR_DATA }}
 
           Note that the required fields of the vendor configuration are "name", "with_proxy", "http_method", "request.url", "request.queries" and "tracking.url". If any of these fields are not applicable, still keep them in the config with empty value.
           Note that "body", "response_body" and "headers" are not required fields in the vendor configuration, but they are important for the implementation. 
@@ -54,7 +54,9 @@ jobs:
           
           Update the request header if there is any change. Create a file for header strategy if needed and assign it to the vendor in function BuildHeader of file ${{ env.BUILDER_FILE_PATH }}.
           
-          Create or update the unit tests for the above changes.
+          Create or update the unit tests for the above changes. If there is just config update, no need to create or update unit tests.
+          
+          Finally, output the updated vendor configuration file content only. Make sure the output is a valid YAML content.
           
           EOF
 
