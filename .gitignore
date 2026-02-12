@@ -58,3 +58,7 @@ secrets/
 # local e2e test results
 tests/results/
 .pabotsuitenames
+
+# Workflow temp (vendor issue-to-PR)
+vendor-prompt-sent.txt
+.gemini/

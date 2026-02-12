@@ -1,0 +1,132 @@
+name: Vendor onboarding request
+description: Request onboarding for a new vendor. The workflow will parse this form and open a PR to update config-template/vendors.yaml (using Gemini or Claude).
+title: "[Vendor] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill in the fields below. The **Update Vendor** workflow will parse this issue and open a PR to update vendor config.
+        Use placeholders like `{subid}`, `{user_id_lower}`, `{click_id_base64}`, `{product_url}`, `{width}`, `{height}`, `{adtype}` in query values.
+
+  - type: dropdown
+    id: ai-provider
+    attributes:
+      label: AI provider
+      description: Which AI to use for editing vendors.yaml (Gemini or Claude)
+      options:
+        - Gemini
+        - Claude
+      default: Gemini
+    validations:
+      required: true
+
+  - type: input
+    id: vendor-name
+    attributes:
+      label: Vendor name
+      description: Vendor identifier (e.g. adpopcorn, linkmine)
+      placeholder: adpopcorn
+    validations:
+      required: true
+
+  - type: input
+    id: jira-link
+    attributes:
+      label: Jira link
+      description: Optional link to Jira ticket
+      placeholder: https://appier.atlassian.net/browse/AI-XXXXX
+    validations:
+      required: false
+
+  - type: dropdown
+    id: http-method
+    attributes:
+      label: HTTP method
+      description: Recommendation API HTTP method
+      options:
+        - GET
+        - POST
+    validations:
+      required: true
+
+  - type: dropdown
+    id: with-proxy
+    attributes:
+      label: With proxy
+      description: Use proxy for requests
+      options:
+        - "true"
+        - "false"
+    validations:
+      required: false
+
+  - type: input
+    id: request-url
+    attributes:
+      label: Request URL
+      description: Recommendation API endpoint URL
+      placeholder: https://api.example.com/reco/v2
+    validations:
+      required: true
+
+  - type: textarea
+    id: request-queries
+    attributes:
+      label: Request queries
+      description: "One key-value pair per line, e.g. key: value or key=value. Use placeholders like {subid}, {user_id_lower}."
+      placeholder: "app_code: {subid}\ndevice_id: {user_id_lower}"
+    validations:
+      required: false
+
+  - type: input
+    id: tracking-url
+    attributes:
+      label: Tracking URL
+      description: Usually {product_url} or a fixed tracking URL
+      placeholder: "{product_url}"
+    validations:
+      required: true
+
+  - type: textarea
+    id: tracking-queries
+    attributes:
+      label: Tracking queries
+      description: 'One key-value pair per line, e.g. subparam: "{click_id_base64}"'
+      placeholder: 'subparam: {click_id_base64}'
+    validations:
+      required: false
+
+  - type: input
+    id: user-agent
+    attributes:
+      label: User-Agent
+      description: Optional User-Agent header value
+      placeholder: tzyu.net
+    validations:
+      required: false
+
+  - type: input
+    id: content-type
+    attributes:
+      label: Content-Type
+      description: Optional Content-Type header (e.g. application/json)
+      placeholder: application/json
+    validations:
+      required: false
+
+  - type: input
+    id: api-spec-link
+    attributes:
+      label: API spec link
+      description: Optional link to vendor API documentation
+      placeholder: https://vendor.example.com/docs
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Any extra context or checklist (e.g. tests to run)
+    validations:
+      required: false
