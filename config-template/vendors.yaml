@@ -265,3 +265,30 @@ vendors:
     tracking:
       url: "{product_url}"
       queries: []
+  - name: vendor_post
+    with_proxy: true
+    http_method: POST
+    request:
+      url: "http://test"
+      queries: []
+      body:
+        app:
+          bundleId: ""
+        device:
+          id: "{user_id_lower}"
+          lmt: 0
+        imp:
+          imageSize: "{width>x<height}"
+        affiliate:
+          subId: "{subid}"
+    tracking:
+      url: "{product_url}"
+      queries: []
+    response_body:
+      rCode: "abc"
+      rMessage: "msg"
+      data:
+        result:
+          - productId: 123
+            productUrl: "http://url"
+            productImage: "http://image"

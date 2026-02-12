@@ -40,6 +40,8 @@ func BuildUnmarshaler(v config.Vendor) unmarshaler.Strategy {
 		return &unmarshaler.Adforus{}
 	case "replace":
 		return &unmarshaler.Replace{}
+	case "vendor_post":
+		return &unmarshaler.VendorPost{}
 	default:
 		return &unmarshaler.CoupangPartner{}
 	}
@@ -56,8 +58,8 @@ func BuildBody(v config.Vendor) body.Strategy {
 	switch v.Name {
 	case "replace":
 		return &body.Replace{}
-	case "adpopcorn":
-		return &body.Adpopcorn{}
+	case "vendor_post":
+		return &body.VendorPost{}
 	default:
 		return &body.NoBody{}
 	}
