@@ -222,7 +222,6 @@ jobs:
         uses: google-github-actions/run-gemini-cli@v0
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          gemini_model: ${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
           prompt: ${{ steps.prompt_output.outputs.prompt }}
           upload_artifacts: 'true'
 
